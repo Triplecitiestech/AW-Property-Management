@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { PropertyStatusEnum, OccupancyEnum } from '@/lib/supabase/types'
+import { getOrCreateUserOrg } from '@/lib/actions/organizations'
 
 // ---- Create Property (wizard flow — returns id, does not redirect) ----
 
@@ -19,6 +20,8 @@ export async function createPropertyForWizard(
 
     if (!name?.trim()) return { error: 'Property name is required.' }
 
+    const orgId = await getOrCreateUserOrg()
+
     const { data: property, error } = await supabase
       .from('properties')
       .insert({
@@ -26,6 +29,7 @@ export async function createPropertyForWizard(
         address: address?.trim() ?? '',
         description: description?.trim() || null,
         owner_id: user.id,
+        org_id: orgId,
       })
       .select('id')
       .single()
@@ -62,9 +66,11 @@ export async function createProperty(formData: FormData) {
 
   if (!name?.trim()) return { error: 'Property name is required.' }
 
+  const orgId = await getOrCreateUserOrg()
+
   const { data: property, error } = await supabase
     .from('properties')
-    .insert({ name: name.trim(), address: address?.trim() ?? '', description: description?.trim() || null, owner_id: user.id })
+    .insert({ name: name.trim(), address: address?.trim() ?? '', description: description?.trim() || null, owner_id: user.id, org_id: orgId })
     .select('id')
     .single()
 

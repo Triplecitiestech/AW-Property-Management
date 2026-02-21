@@ -43,6 +43,16 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    href: '/settings',
+    label: 'Settings',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+  },
 ]
 
 export default function Sidebar() {
@@ -59,11 +69,11 @@ export default function Sidebar() {
   const sidebarContent = (
     <aside
       className={`fixed inset-y-0 left-0 w-60 flex flex-col z-40 transition-transform duration-300
-        bg-[#0e0e1c] border-r border-[#1e1e30]
+        bg-[#0c1220] border-r border-[#1e2d42]
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
     >
       {/* Logo */}
-      <div className="p-5 border-b border-[#1e1e30]">
+      <div className="p-5 border-b border-[#1e2d42]">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
                           bg-gradient-to-br from-violet-600 to-cyan-500 shadow-lg shadow-violet-900/50">
@@ -74,7 +84,7 @@ export default function Sidebar() {
           </div>
           <div>
             <p className="font-bold text-white text-sm tracking-wide">AW Properties</p>
-            <p className="text-xs text-[#50507a]">Operations Hub</p>
+            <p className="text-xs text-[#4a6080]">Operations Hub</p>
           </div>
         </div>
       </div>
@@ -93,7 +103,7 @@ export default function Sidebar() {
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all
                 ${active
                   ? 'bg-violet-600/15 text-violet-300 shadow-[inset_0_0_0_1px_rgba(139,92,246,0.2)]'
-                  : 'text-[#7070a0] hover:text-white hover:bg-[#1a1a2e]'
+                  : 'text-[#6480a0] hover:text-white hover:bg-[#1a2436]'
                 }`}
             >
               <span className={`flex-shrink-0 ${active ? 'text-violet-400' : ''}`}>
@@ -109,11 +119,11 @@ export default function Sidebar() {
       </nav>
 
       {/* Sign out */}
-      <div className="p-3 border-t border-[#1e1e30]">
+      <div className="p-3 border-t border-[#1e2d42]">
         <button
           onClick={handleSignOut}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium
-                     text-[#7070a0] hover:text-white hover:bg-[#1a1a2e] w-full transition-all"
+                     text-[#6480a0] hover:text-white hover:bg-[#1a2436] w-full transition-all"
         >
           <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -129,10 +139,10 @@ export default function Sidebar() {
     <>
       {/* Mobile top bar */}
       <header className="md:hidden fixed top-0 inset-x-0 h-14 z-30 flex items-center px-4 gap-3
-                         bg-[#0e0e1c] border-b border-[#1e1e30]">
+                         bg-[#0c1220] border-b border-[#1e2d42]">
         <button
           onClick={() => setMobileOpen(true)}
-          className="p-1.5 rounded-lg text-[#7070a0] hover:text-white hover:bg-[#1a1a2e] transition-colors"
+          className="p-1.5 rounded-lg text-[#6480a0] hover:text-white hover:bg-[#1a2436] transition-colors"
           aria-label="Open menu"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,0 +1,97 @@
+import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
+
+function StatusBadge({ status }: { status: string }) {
+  return <span className={`badge badge-${status}`}>{status.replace(/_/g, ' ')}</span>
+}
+
+export default async function PropertiesPage() {
+  const supabase = await createClient()
+
+  const { data: properties } = await supabase
+    .from('properties')
+    .select('*, property_status(*)')
+    .order('name')
+
+  const { data: openTicketCounts } = await supabase
+    .from('service_requests')
+    .select('property_id')
+    .in('status', ['open', 'in_progress'])
+
+  const ticketMap: Record<string, number> = {}
+  openTicketCounts?.forEach(t => {
+    ticketMap[t.property_id] = (ticketMap[t.property_id] ?? 0) + 1
+  })
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1>Properties</h1>
+          <p className="text-gray-500 mt-1">{properties?.length ?? 0} properties</p>
+        </div>
+        <Link href="/properties/new" className="btn-primary">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add Property
+        </Link>
+      </div>
+
+      <div className="grid gap-4">
+        {properties?.map(property => {
+          const ps = Array.isArray(property.property_status)
+            ? property.property_status[0]
+            : property.property_status
+          const ticketCount = ticketMap[property.id] ?? 0
+          return (
+            <Link
+              key={property.id}
+              href={`/properties/${property.id}`}
+              className="card p-5 flex items-center justify-between hover:shadow-md transition-shadow"
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{property.name}</h3>
+                    <p className="text-sm text-gray-500">{property.address || 'No address'}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 ml-4 flex-shrink-0">
+                {ticketCount > 0 && (
+                  <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
+                    {ticketCount} ticket{ticketCount !== 1 ? 's' : ''}
+                  </span>
+                )}
+                {ps && <StatusBadge status={ps.occupancy} />}
+                {ps && <StatusBadge status={ps.status} />}
+                <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </Link>
+          )
+        })}
+
+        {(!properties || properties.length === 0) && (
+          <div className="card p-12 text-center">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            </div>
+            <h3 className="font-medium text-gray-900 mb-1">No properties yet</h3>
+            <p className="text-sm text-gray-500 mb-4">Add your first property to get started.</p>
+            <Link href="/properties/new" className="btn-primary">Add Property</Link>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

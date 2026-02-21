@@ -4,19 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
-export const CONTACT_ROLES = [
-  { value: 'primary',     label: 'Primary Manager' },
-  { value: 'maintenance', label: 'General Maintenance' },
-  { value: 'plumbing',    label: 'Plumbing' },
-  { value: 'hvac',        label: 'HVAC' },
-  { value: 'electrical',  label: 'Electrical' },
-  { value: 'cleaning',    label: 'Cleaning' },
-  { value: 'groceries',   label: 'Groceries / Resupply' },
-  { value: 'other',       label: 'Other' },
-] as const
-
-export type ContactRole = (typeof CONTACT_ROLES)[number]['value']
-
 export async function addContact(propertyId: string, formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

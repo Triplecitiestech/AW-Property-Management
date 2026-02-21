@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { addContact, updateContact, deleteContact, CONTACT_ROLES } from '@/lib/actions/contacts'
+import { addContact, updateContact, deleteContact } from '@/lib/actions/contacts'
+import { CONTACT_ROLES } from '@/lib/contact-roles'
 
 type Contact = {
   id: string

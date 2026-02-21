@@ -5,8 +5,6 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { DEFAULT_CHECKLIST_LABELS } from '@/lib/checklist-defaults'
 
-export { DEFAULT_CHECKLIST_LABELS }
-
 // ---- Get checklist items for a property ----
 // Returns custom items if configured, else the app-level defaults
 
@@ -65,12 +63,22 @@ export async function saveChecklistItems(propertyId: string, labels: string[]) {
 // ---- Reset to defaults ----
 
 export async function resetChecklistToDefaults(propertyId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) redirect('/auth/login')
 
-  await supabase.from('property_checklist_items').delete().eq('property_id', propertyId)
+    const { error } = await supabase
+      .from('property_checklist_items')
+      .delete()
+      .eq('property_id', propertyId)
 
-  revalidatePath(`/properties/${propertyId}`)
-  return { success: true }
+    if (error) return { error: error.message }
+
+    revalidatePath(`/properties/${propertyId}`)
+    return { success: true }
+  } catch (err: unknown) {
+    if (err instanceof Error && (err.message === 'NEXT_REDIRECT' || err.message === 'NEXT_NOT_FOUND')) throw err
+    return { error: err instanceof Error ? err.message : 'Failed to reset checklist' }
+  }
 }

@@ -143,37 +143,42 @@ export async function updatePropertyStatus(
   occupancy: OccupancyEnum,
   notes?: string
 ) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) redirect('/auth/login')
 
-  // Snapshot before
-  const { data: before } = await supabase
-    .from('property_status')
-    .select('*')
-    .eq('property_id', propertyId)
-    .single()
+    // Snapshot before
+    const { data: before } = await supabase
+      .from('property_status')
+      .select('*')
+      .eq('property_id', propertyId)
+      .single()
 
-  const { error } = await supabase
-    .from('property_status')
-    .upsert(
-      { property_id: propertyId, status, occupancy, notes: notes || null, updated_by: user.id, updated_at: new Date().toISOString() },
-      { onConflict: 'property_id' }
-    )
+    const { error } = await supabase
+      .from('property_status')
+      .upsert(
+        { property_id: propertyId, status, occupancy, notes: notes || null, updated_by: user.id, updated_at: new Date().toISOString() },
+        { onConflict: 'property_id' }
+      )
 
-  if (error) return { error: error.message }
+    if (error) return { error: error.message }
 
-  await supabase.from('audit_log').insert({
-    entity_type: 'property_status',
-    entity_id: propertyId,
-    action: before ? 'updated' : 'created',
-    changed_by: user.id,
-    before_data: before,
-    after_data: { status, occupancy, notes },
-  })
+    await supabase.from('audit_log').insert({
+      entity_type: 'property_status',
+      entity_id: propertyId,
+      action: before ? 'updated' : 'created',
+      changed_by: user.id,
+      before_data: before,
+      after_data: { status, occupancy, notes },
+    })
 
-  revalidatePath(`/properties/${propertyId}`)
-  revalidatePath('/properties')
-  revalidatePath('/dashboard')
-  return { success: true }
+    revalidatePath(`/properties/${propertyId}`)
+    revalidatePath('/properties')
+    revalidatePath('/dashboard')
+    return { success: true }
+  } catch (err: unknown) {
+    if (err instanceof Error && (err.message === 'NEXT_REDIRECT' || err.message === 'NEXT_NOT_FOUND')) throw err
+    return { error: err instanceof Error ? err.message : 'Failed to update status' }
+  }
 }

@@ -34,11 +34,6 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
     ? property.property_status[0]
     : property.property_status
 
-  const prop = property as typeof property & {
-    quick_notes?: string | null
-    ai_instructions?: string | null
-  }
-
   const today = new Date().toISOString().split('T')[0]
   const currentStay = stays?.find(s => s.start_date <= today && s.end_date >= today)
   const upcomingStays = stays?.filter(s => s.start_date > today) ?? []
@@ -82,7 +77,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         </div>
         <QuickNotesEditor
           propertyId={property.id}
-          initialNotes={prop.quick_notes ?? ''}
+          initialNotes={property.quick_notes ?? ''}
         />
       </div>
 
@@ -176,6 +171,9 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
               <Link href={`/stays/new?property_id=${property.id}`} className="btn-secondary text-sm w-full justify-center">
                 Schedule Stay
               </Link>
+              <Link href={`/properties/${property.id}/onboard`} className="btn-secondary text-sm w-full justify-center">
+                Property Onboarding
+              </Link>
               <DeletePropertyButton propertyId={property.id} propertyName={property.name} />
             </div>
           </div>
@@ -257,10 +255,10 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             </div>
           </div>
 
-          {/* Guest Checklist */}
+          {/* Cleaning / Inspection Checklist */}
           <div className="card p-5">
-            <h3 className="font-semibold mb-1 text-sm">Guest Checklist</h3>
-            <p className="text-xs text-gray-500 mb-4">Customize the checklist shown to guests for this property.</p>
+            <h3 className="font-semibold mb-1 text-sm">Cleaning / Inspection Checklist</h3>
+            <p className="text-xs text-gray-500 mb-4">Items for cleaning teams and property managers to verify between stays.</p>
             <ChecklistEditor
               propertyId={property.id}
               initialItems={checklistItems?.map(i => i.label) ?? []}
@@ -319,7 +317,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         </div>
         <AiInstructionsEditor
           propertyId={property.id}
-          initialInstructions={prop.ai_instructions ?? ''}
+          initialInstructions={property.ai_instructions ?? ''}
         />
       </div>
     </div>

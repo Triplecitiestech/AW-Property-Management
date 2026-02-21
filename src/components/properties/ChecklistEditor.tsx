@@ -43,11 +43,16 @@ export default function ChecklistEditor({
   }
 
   function handleReset() {
+    setError(null)
     startTransition(async () => {
-      await resetChecklistToDefaults(propertyId)
-      setItems(DEFAULT_CHECKLIST_LABELS)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      const result = await resetChecklistToDefaults(propertyId)
+      if (result?.error) {
+        setError(result.error)
+      } else {
+        setItems(DEFAULT_CHECKLIST_LABELS)
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      }
     })
   }
 

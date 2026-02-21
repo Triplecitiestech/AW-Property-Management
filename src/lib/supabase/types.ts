@@ -25,6 +25,8 @@ export interface Property {
   name: string
   address: string
   description: string | null
+  quick_notes: string | null
+  ai_instructions: string | null
   owner_id: string
   created_at: string
 }

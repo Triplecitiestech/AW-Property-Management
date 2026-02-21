@@ -27,25 +27,39 @@ export async function getChecklistItems(propertyId: string): Promise<string[]> {
 // ---- Save checklist items (replaces all existing items for property) ----
 
 export async function saveChecklistItems(propertyId: string, labels: string[]) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) redirect('/auth/login')
 
-  // Delete existing
-  await supabase.from('property_checklist_items').delete().eq('property_id', propertyId)
+    // Delete existing
+    const { error: deleteError } = await supabase
+      .from('property_checklist_items')
+      .delete()
+      .eq('property_id', propertyId)
 
-  // Insert new items
-  if (labels.length > 0) {
-    const items = labels
-      .map((label, index) => ({ property_id: propertyId, label: label.trim(), sort_order: index }))
-      .filter(item => item.label.length > 0)
+    if (deleteError) return { error: deleteError.message }
 
-    const { error } = await supabase.from('property_checklist_items').insert(items)
-    if (error) return { error: error.message }
+    // Insert new items
+    if (labels.length > 0) {
+      const items = labels
+        .map((label, index) => ({ property_id: propertyId, label: label.trim(), sort_order: index }))
+        .filter(item => item.label.length > 0)
+
+      const { error: insertError } = await supabase
+        .from('property_checklist_items')
+        .insert(items)
+
+      if (insertError) return { error: insertError.message }
+    }
+
+    revalidatePath(`/properties/${propertyId}`)
+    return { success: true }
+  } catch (err: unknown) {
+    // Let Next.js handle redirect/notFound — rethrow those
+    if (err instanceof Error && (err.message === 'NEXT_REDIRECT' || err.message === 'NEXT_NOT_FOUND')) throw err
+    return { error: err instanceof Error ? err.message : 'Failed to save checklist' }
   }
-
-  revalidatePath(`/properties/${propertyId}`)
-  return { success: true }
 }
 
 // ---- Reset to defaults ----

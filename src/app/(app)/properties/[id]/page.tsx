@@ -172,7 +172,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                 Schedule Stay
               </Link>
               <Link href={`/properties/${property.id}/onboard`} className="btn-secondary text-sm w-full justify-center">
-                Property Onboarding
+                Edit Setup
               </Link>
               <DeletePropertyButton propertyId={property.id} propertyName={property.name} />
             </div>

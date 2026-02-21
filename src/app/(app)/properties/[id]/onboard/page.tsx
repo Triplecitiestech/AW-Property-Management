@@ -12,7 +12,7 @@ export default async function OnboardPage({ params }: { params: Promise<{ id: st
   ] = await Promise.all([
     supabase
       .from('properties')
-      .select('id, name, address, quick_notes, ai_instructions')
+      .select('id, name, address, description, quick_notes, ai_instructions')
       .eq('id', id)
       .single(),
     supabase
@@ -24,18 +24,15 @@ export default async function OnboardPage({ params }: { params: Promise<{ id: st
 
   if (!property) notFound()
 
-  const prop = property as typeof property & {
-    quick_notes?: string | null
-    ai_instructions?: string | null
-  }
-
   return (
     <OnboardingWizard
       propertyId={id}
-      propertyName={property.name}
+      initialName={property.name}
+      initialAddress={property.address}
+      initialDescription={property.description ?? ''}
       initialChecklist={checklistItems?.map(i => i.label) ?? []}
-      initialNotes={prop.quick_notes ?? ''}
-      initialAiInstructions={prop.ai_instructions ?? ''}
+      initialNotes={property.quick_notes ?? ''}
+      initialAiInstructions={property.ai_instructions ?? ''}
     />
   )
 }

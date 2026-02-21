@@ -4,7 +4,12 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { addContact } from '@/lib/actions/contacts'
 import { saveChecklistItems } from '@/lib/actions/checklist'
-import { updatePropertyNotes, updateAiInstructions } from '@/lib/actions/properties'
+import {
+  createPropertyForWizard,
+  updateProperty,
+  updatePropertyNotes,
+  updateAiInstructions,
+} from '@/lib/actions/properties'
 import { CONTACT_ROLES } from '@/lib/contact-roles'
 import { DEFAULT_CHECKLIST_LABELS } from '@/lib/checklist-defaults'
 
@@ -24,13 +29,51 @@ const EMPTY_CONTACT: ContactDraft = {
 }
 
 const STEPS = [
-  { id: 'primary',   title: 'Primary Contact',     subtitle: 'Who manages this property?' },
-  { id: 'services',  title: 'Service Contacts',     subtitle: 'Cleaning, maintenance, landscaping, and more' },
-  { id: 'checklist', title: 'Cleaning Checklist',   subtitle: 'Items for your cleaning and inspection team' },
-  { id: 'notes',     title: 'Notes & AI Instructions', subtitle: 'Context for you and the AI assistant' },
+  { id: 'details',   title: 'Property Details',        subtitle: 'Name, address, and property information' },
+  { id: 'primary',   title: 'Primary Contact',          subtitle: 'Who manages this property?' },
+  { id: 'services',  title: 'Service Contacts',          subtitle: 'Cleaning, maintenance, landscaping, and more' },
+  { id: 'checklist', title: 'Cleaning Checklist',        subtitle: 'Items for your cleaning and inspection team' },
+  { id: 'notes',     title: 'Notes & AI Instructions',   subtitle: 'Context for you and the AI assistant' },
 ]
 
-// ─── Progress Bar ─────────────────────────────────────────────────────────────
+// ─── Shared Step Buttons ──────────────────────────────────────────────────────
+
+function StepButtons({
+  onSave,
+  onSkip,
+  isPending,
+  saveLabel,
+}: {
+  onSave: () => void
+  onSkip?: () => void
+  isPending: boolean
+  saveLabel: string
+}) {
+  return (
+    <div className="flex items-center justify-between pt-2">
+      {onSkip ? (
+        <button
+          type="button"
+          onClick={onSkip}
+          className="text-sm text-[#60608a] hover:text-white transition-colors"
+          disabled={isPending}
+        >
+          Skip this step →
+        </button>
+      ) : <div />}
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={isPending}
+        className="btn-primary text-sm"
+      >
+        {isPending ? 'Saving…' : saveLabel}
+      </button>
+    </div>
+  )
+}
+
+// ─── Progress Indicator ───────────────────────────────────────────────────────
 
 function StepIndicator({ current, total }: { current: number; total: number }) {
   return (
@@ -50,7 +93,229 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
   )
 }
 
-// ─── Step: Primary Contact ─────────────────────────────────────────────────────
+// ─── Step 0: Property Details ─────────────────────────────────────────────────
+
+function buildDescription(
+  bedrooms: string,
+  bathrooms: string,
+  maxGuests: string,
+  wifiName: string,
+  wifiPass: string,
+  amenities: string,
+  extra: string,
+): string {
+  const parts: string[] = []
+  const specs = [
+    bedrooms && `${bedrooms} bed`,
+    bathrooms && `${bathrooms} bath`,
+    maxGuests && `Max ${maxGuests} guests`,
+  ].filter(Boolean)
+  if (specs.length) parts.push(specs.join(' · '))
+  if (wifiName || wifiPass) {
+    parts.push(`WiFi: ${[wifiName, wifiPass].filter(Boolean).join(' / ')}`)
+  }
+  if (amenities.trim()) parts.push(`Amenities: ${amenities.trim()}`)
+  if (extra.trim()) parts.push(extra.trim())
+  return parts.join('\n\n')
+}
+
+function PropertyDetailsStep({
+  isNew,
+  propertyId,
+  initialName = '',
+  initialAddress = '',
+  initialDescription = '',
+  onSave,
+  onSkip,
+}: {
+  isNew: boolean
+  propertyId?: string
+  initialName?: string
+  initialAddress?: string
+  initialDescription?: string
+  onSave: (propertyId: string, name: string) => void
+  onSkip?: () => void
+}) {
+  const [name, setName] = useState(initialName)
+  const [address, setAddress] = useState(initialAddress)
+
+  // Create mode: structured property info fields
+  const [bedrooms, setBedrooms] = useState('')
+  const [bathrooms, setBathrooms] = useState('')
+  const [maxGuests, setMaxGuests] = useState('')
+  const [wifiName, setWifiName] = useState('')
+  const [wifiPass, setWifiPass] = useState('')
+  const [amenities, setAmenities] = useState('')
+  const [extra, setExtra] = useState('')
+
+  // Edit mode: full-text description
+  const [description, setDescription] = useState(initialDescription)
+
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  function handleSave() {
+    if (!name.trim()) { setError('Property name is required.'); return }
+    setError(null)
+    startTransition(async () => {
+      if (isNew) {
+        const desc = buildDescription(bedrooms, bathrooms, maxGuests, wifiName, wifiPass, amenities, extra)
+        const result = await createPropertyForWizard(name, address, desc || null)
+        if ('error' in result) { setError(result.error); return }
+        onSave(result.propertyId, name.trim())
+      } else {
+        const fd = new FormData()
+        fd.set('name', name)
+        fd.set('address', address)
+        fd.set('description', description)
+        const result = await updateProperty(propertyId!, fd)
+        if (result?.error) { setError(result.error); return }
+        onSave(propertyId!, name.trim())
+      }
+    })
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Name + Address — always shown */}
+      <div className="grid grid-cols-1 gap-3">
+        <div>
+          <label className="form-label text-xs">Property Name *</label>
+          <input
+            type="text"
+            className="form-input text-sm"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Lake Cabin, Downtown Suite…"
+            autoFocus
+          />
+        </div>
+        <div>
+          <label className="form-label text-xs">Address</label>
+          <input
+            type="text"
+            className="form-input text-sm"
+            value={address}
+            onChange={e => setAddress(e.target.value)}
+            placeholder="123 Main St, City, State ZIP"
+          />
+        </div>
+      </div>
+
+      {isNew ? (
+        /* Create mode: structured fields */
+        <>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="form-label text-xs">Bedrooms</label>
+              <input
+                type="number"
+                min="0"
+                className="form-input text-sm"
+                value={bedrooms}
+                onChange={e => setBedrooms(e.target.value)}
+                placeholder="3"
+              />
+            </div>
+            <div>
+              <label className="form-label text-xs">Bathrooms</label>
+              <input
+                type="number"
+                min="0"
+                step="0.5"
+                className="form-input text-sm"
+                value={bathrooms}
+                onChange={e => setBathrooms(e.target.value)}
+                placeholder="2"
+              />
+            </div>
+            <div>
+              <label className="form-label text-xs">Max Guests</label>
+              <input
+                type="number"
+                min="1"
+                className="form-input text-sm"
+                value={maxGuests}
+                onChange={e => setMaxGuests(e.target.value)}
+                placeholder="6"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="form-label text-xs">WiFi Network</label>
+              <input
+                type="text"
+                className="form-input text-sm"
+                value={wifiName}
+                onChange={e => setWifiName(e.target.value)}
+                placeholder="HomeNetwork"
+              />
+            </div>
+            <div>
+              <label className="form-label text-xs">WiFi Password</label>
+              <input
+                type="text"
+                className="form-input text-sm"
+                value={wifiPass}
+                onChange={e => setWifiPass(e.target.value)}
+                placeholder="password123"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="form-label text-xs">Amenities</label>
+            <input
+              type="text"
+              className="form-input text-sm"
+              value={amenities}
+              onChange={e => setAmenities(e.target.value)}
+              placeholder="Pool, hot tub, fire pit, BBQ, kayaks…"
+            />
+          </div>
+
+          <div>
+            <label className="form-label text-xs">Additional Details</label>
+            <textarea
+              className="form-input text-sm"
+              rows={3}
+              value={extra}
+              onChange={e => setExtra(e.target.value)}
+              placeholder="Anything else worth noting — style, location, unique features, parking…"
+            />
+          </div>
+        </>
+      ) : (
+        /* Edit mode: single description textarea (preserves existing content) */
+        <div>
+          <label className="form-label text-xs">Property Description</label>
+          <p className="text-[11px] text-[#60608a] mb-1.5">
+            Bedrooms, bathrooms, WiFi, amenities, and anything else relevant about this property.
+          </p>
+          <textarea
+            className="form-input text-sm"
+            rows={6}
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            placeholder={`3 bed · 2 bath · Max 6 guests\nWiFi: HomeNetwork / pass123\nAmenities: Pool, hot tub, fire pit`}
+          />
+        </div>
+      )}
+
+      {error && <p className="text-xs text-red-400">{error}</p>}
+      <StepButtons
+        onSave={handleSave}
+        onSkip={onSkip}
+        isPending={isPending}
+        saveLabel={isNew ? 'Create Property' : 'Save & Continue'}
+      />
+    </div>
+  )
+}
+
+// ─── Step 1: Primary Contact ───────────────────────────────────────────────────
 
 function PrimaryContactStep({
   propertyId,
@@ -141,7 +406,7 @@ function PrimaryContactStep({
   )
 }
 
-// ─── Step: Service Contacts ───────────────────────────────────────────────────
+// ─── Step 2: Service Contacts ─────────────────────────────────────────────────
 
 function ServiceContactsStep({
   propertyId,
@@ -197,11 +462,7 @@ function ServiceContactsStep({
           <div className="flex items-center justify-between">
             <span className="text-xs text-[#60608a] font-medium">Contact #{i + 1}</span>
             {contacts.length > 1 && (
-              <button
-                type="button"
-                onClick={() => removeRow(i)}
-                className="text-xs text-red-400 hover:text-red-300"
-              >
+              <button type="button" onClick={() => removeRow(i)} className="text-xs text-red-400 hover:text-red-300">
                 Remove
               </button>
             )}
@@ -263,11 +524,7 @@ function ServiceContactsStep({
         </div>
       ))}
 
-      <button
-        type="button"
-        onClick={addRow}
-        className="flex items-center gap-1.5 text-sm text-violet-400 hover:text-violet-300"
-      >
+      <button type="button" onClick={addRow} className="flex items-center gap-1.5 text-sm text-violet-400 hover:text-violet-300">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
@@ -281,7 +538,7 @@ function ServiceContactsStep({
   )
 }
 
-// ─── Step: Checklist ──────────────────────────────────────────────────────────
+// ─── Step 3: Cleaning Checklist ───────────────────────────────────────────────
 
 function ChecklistStep({
   propertyId,
@@ -341,11 +598,7 @@ function ChecklistStep({
           </div>
         ))}
       </div>
-      <button
-        type="button"
-        onClick={addItem}
-        className="flex items-center gap-1.5 text-sm text-violet-400 hover:text-violet-300"
-      >
+      <button type="button" onClick={addItem} className="flex items-center gap-1.5 text-sm text-violet-400 hover:text-violet-300">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
         </svg>
@@ -357,7 +610,7 @@ function ChecklistStep({
   )
 }
 
-// ─── Step: Notes & AI Instructions ────────────────────────────────────────────
+// ─── Step 4: Notes & AI Instructions ─────────────────────────────────────────
 
 function NotesStep({
   propertyId,
@@ -424,44 +677,17 @@ function NotesStep({
   )
 }
 
-// ─── Shared Buttons ───────────────────────────────────────────────────────────
-
-function StepButtons({
-  onSave,
-  onSkip,
-  isPending,
-  saveLabel,
-}: {
-  onSave: () => void
-  onSkip: () => void
-  isPending: boolean
-  saveLabel: string
-}) {
-  return (
-    <div className="flex items-center justify-between pt-2">
-      <button
-        type="button"
-        onClick={onSkip}
-        className="text-sm text-[#60608a] hover:text-white transition-colors"
-        disabled={isPending}
-      >
-        Skip this step →
-      </button>
-      <button
-        type="button"
-        onClick={onSave}
-        disabled={isPending}
-        className="btn-primary text-sm"
-      >
-        {isPending ? 'Saving…' : saveLabel}
-      </button>
-    </div>
-  )
-}
-
 // ─── Done Screen ──────────────────────────────────────────────────────────────
 
-function DoneScreen({ propertyId, propertyName }: { propertyId: string; propertyName: string }) {
+function DoneScreen({
+  propertyId,
+  propertyName,
+  isNew,
+}: {
+  propertyId: string
+  propertyName: string
+  isNew: boolean
+}) {
   return (
     <div className="text-center py-10 space-y-4">
       <div className="w-14 h-14 bg-emerald-950 rounded-full flex items-center justify-center mx-auto ring-1 ring-emerald-700/40">
@@ -470,15 +696,14 @@ function DoneScreen({ propertyId, propertyName }: { propertyId: string; property
         </svg>
       </div>
       <div>
-        <h2 className="text-lg font-semibold text-white">{propertyName} is set up!</h2>
+        <h2 className="text-lg font-semibold text-white">
+          {isNew ? `${propertyName} has been added!` : `${propertyName} is all set!`}
+        </h2>
         <p className="text-sm text-[#8080aa] mt-1">
           You can always update contacts, the checklist, and notes from the property page.
         </p>
       </div>
-      <Link
-        href={`/properties/${propertyId}`}
-        className="btn-primary inline-flex mx-auto"
-      >
+      <Link href={`/properties/${propertyId}`} className="btn-primary inline-flex mx-auto">
         Go to Property →
       </Link>
     </div>
@@ -488,44 +713,65 @@ function DoneScreen({ propertyId, propertyName }: { propertyId: string; property
 // ─── Main Wizard ──────────────────────────────────────────────────────────────
 
 export default function OnboardingWizard({
-  propertyId,
-  propertyName,
-  initialChecklist,
-  initialNotes,
-  initialAiInstructions,
+  isNew = false,
+  propertyId: propPropertyId,
+  initialName = '',
+  initialAddress = '',
+  initialDescription = '',
+  initialChecklist = [],
+  initialNotes = '',
+  initialAiInstructions = '',
 }: {
-  propertyId: string
-  propertyName: string
-  initialChecklist: string[]
-  initialNotes: string
-  initialAiInstructions: string
+  isNew?: boolean
+  propertyId?: string
+  initialName?: string
+  initialAddress?: string
+  initialDescription?: string
+  initialChecklist?: string[]
+  initialNotes?: string
+  initialAiInstructions?: string
 }) {
   const [step, setStep] = useState(0)
-  const done = step >= STEPS.length
+  const [resolvedPropertyId, setResolvedPropertyId] = useState<string | undefined>(propPropertyId)
+  const [resolvedName, setResolvedName] = useState(initialName)
 
+  const done = step >= STEPS.length
   const next = () => setStep(s => s + 1)
+
+  function handleDetailsSave(id: string, name: string) {
+    setResolvedPropertyId(id)
+    setResolvedName(name)
+    next()
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2 mb-1">
-          <Link
-            href={`/properties/${propertyId}`}
-            className="text-[#60608a] hover:text-white text-sm transition-colors"
-          >
-            ← {propertyName}
-          </Link>
+          {isNew ? (
+            <Link href="/properties" className="text-[#60608a] hover:text-white text-sm transition-colors">
+              ← All Properties
+            </Link>
+          ) : resolvedPropertyId ? (
+            <Link href={`/properties/${resolvedPropertyId}`} className="text-[#60608a] hover:text-white text-sm transition-colors">
+              ← {resolvedName || 'Property'}
+            </Link>
+          ) : null}
         </div>
-        <h1 className="text-xl font-bold text-white">Property Onboarding</h1>
+        <h1 className="text-xl font-bold text-white">
+          {isNew ? 'Add Property' : 'Edit Property Setup'}
+        </h1>
         <p className="text-sm text-[#8080aa] mt-0.5">
-          Set up contacts, checklist, and notes for this property. Every step is optional — skip anything you&apos;d like to fill in later.
+          {isNew
+            ? 'Get your property set up. Steps after the first are optional — skip anything to fill in later.'
+            : 'Update contacts, checklist, and notes for this property. Every step is optional — skip anything you\'d like to fill in later.'}
         </p>
       </div>
 
       <div className="card p-6">
         {done ? (
-          <DoneScreen propertyId={propertyId} propertyName={propertyName} />
+          <DoneScreen propertyId={resolvedPropertyId!} propertyName={resolvedName} isNew={isNew} />
         ) : (
           <>
             <StepIndicator current={step} total={STEPS.length} />
@@ -536,22 +782,33 @@ export default function OnboardingWizard({
             </div>
 
             {step === 0 && (
-              <PrimaryContactStep propertyId={propertyId} onNext={next} onSkip={next} />
+              <PropertyDetailsStep
+                isNew={isNew}
+                propertyId={resolvedPropertyId}
+                initialName={initialName}
+                initialAddress={initialAddress}
+                initialDescription={initialDescription}
+                onSave={handleDetailsSave}
+                onSkip={isNew ? undefined : next}
+              />
             )}
-            {step === 1 && (
-              <ServiceContactsStep propertyId={propertyId} onNext={next} onSkip={next} />
+            {step === 1 && resolvedPropertyId && (
+              <PrimaryContactStep propertyId={resolvedPropertyId} onNext={next} onSkip={next} />
             )}
-            {step === 2 && (
+            {step === 2 && resolvedPropertyId && (
+              <ServiceContactsStep propertyId={resolvedPropertyId} onNext={next} onSkip={next} />
+            )}
+            {step === 3 && resolvedPropertyId && (
               <ChecklistStep
-                propertyId={propertyId}
+                propertyId={resolvedPropertyId}
                 initialChecklist={initialChecklist}
                 onNext={next}
                 onSkip={next}
               />
             )}
-            {step === 3 && (
+            {step === 4 && resolvedPropertyId && (
               <NotesStep
-                propertyId={propertyId}
+                propertyId={resolvedPropertyId}
                 initialNotes={initialNotes}
                 initialAiInstructions={initialAiInstructions}
                 onNext={next}

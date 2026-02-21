@@ -101,6 +101,40 @@ export async function deleteProperty(id: string) {
   redirect('/properties')
 }
 
+// ---- Update Quick Notes ----
+
+export async function updatePropertyNotes(propertyId: string, quickNotes: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/login')
+
+  const { error } = await supabase.from('properties')
+    .update({ quick_notes: quickNotes.trim() || null })
+    .eq('id', propertyId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/properties/${propertyId}`)
+  return { success: true }
+}
+
+// ---- Update AI Instructions ----
+
+export async function updateAiInstructions(propertyId: string, aiInstructions: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/login')
+
+  const { error } = await supabase.from('properties')
+    .update({ ai_instructions: aiInstructions.trim() || null })
+    .eq('id', propertyId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/properties/${propertyId}`)
+  return { success: true }
+}
+
 // ---- Update Property Status ----
 
 export async function updatePropertyStatus(

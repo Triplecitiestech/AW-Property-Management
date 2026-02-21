@@ -4,9 +4,10 @@ export const dynamic = 'force-dynamic'
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { lookupUsernameEmail } from '@/lib/actions/auth'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
+  const [emailOrUsername, setEmailOrUsername] = useState('')
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [fullName, setFullName] = useState('')
@@ -21,13 +22,21 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      // createClient() called inside handler so it only runs in the browser
       const supabase = createClient()
+
       if (mode === 'login') {
+        // Resolve username → email when no @ is present
+        let email = emailOrUsername.trim()
+        if (!email.includes('@')) {
+          const found = await lookupUsernameEmail(email)
+          if (!found) throw new Error(`No account found for username "${email}"`)
+          email = found
+        }
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
         window.location.href = '/dashboard'
       } else {
+        const email = emailOrUsername.trim()
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -93,13 +102,15 @@ export default function LoginPage() {
               </div>
             )}
             <div>
-              <label className="form-label">Email</label>
+              <label className="form-label">
+                {mode === 'login' ? 'Email or Username' : 'Email'}
+              </label>
               <input
-                type="email"
+                type={mode === 'login' ? 'text' : 'email'}
                 className="form-input"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                value={emailOrUsername}
+                onChange={e => setEmailOrUsername(e.target.value)}
+                placeholder={mode === 'login' ? 'you@example.com or username' : 'you@example.com'}
                 required
                 autoComplete="email"
               />

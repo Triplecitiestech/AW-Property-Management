@@ -9,13 +9,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   // Ensure a profile row exists — handles the case where the DB trigger
   // didn't fire (e.g. user signed up before the schema was deployed).
-  const serviceClient = createServiceClient()
-  await serviceClient.from('profiles').upsert({
-    id: user.id,
-    role: (user.user_metadata?.role as string) || 'owner',
-    full_name: (user.user_metadata?.full_name as string) || user.email || '',
-    email: user.email || '',
-  }, { onConflict: 'id', ignoreDuplicates: true })
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      const serviceClient = createServiceClient()
+      await serviceClient.from('profiles').upsert({
+        id: user.id,
+        role: (user.user_metadata?.role as string) || 'owner',
+        full_name: (user.user_metadata?.full_name as string) || user.email || '',
+        email: user.email || '',
+      }, { onConflict: 'id', ignoreDuplicates: true })
+    } catch { /* non-fatal */ }
+  }
 
   return (
     <div className="flex min-h-screen">

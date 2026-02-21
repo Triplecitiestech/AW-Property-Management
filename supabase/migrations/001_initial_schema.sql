@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   id              UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   role            user_role NOT NULL DEFAULT 'manager',
   full_name       TEXT NOT NULL DEFAULT '',
-  telegram_chat_id TEXT,
+  phone_number TEXT,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

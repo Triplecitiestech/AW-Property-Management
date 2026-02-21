@@ -1,8 +1,8 @@
 import type { PropertyStatusEnum, TicketPriority } from '@/lib/supabase/types'
 
 // ============================================================
-// Telegram Command Parser
-// Supported formats:
+// SMS Command Parser
+// Supported formats (text these to the Twilio number):
 //   status: [Property Name] | [status value]
 //   ticket: [Property Name] | [title] | [priority?]
 //   stay: [Property Name] | [Guest Name] | [YYYY-MM-DD] to [YYYY-MM-DD]
@@ -37,19 +37,15 @@ const PRIORITY_MAP: Record<string, TicketPriority> = {
 
 function parseDate(raw: string): string | null {
   const trimmed = raw.trim()
-  // Try YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed
-  // Try "Tomorrow"
   if (/^tomorrow$/i.test(trimmed)) {
     const d = new Date()
     d.setDate(d.getDate() + 1)
     return d.toISOString().split('T')[0]
   }
-  // Try "Today"
   if (/^today$/i.test(trimmed)) {
     return new Date().toISOString().split('T')[0]
   }
-  // Try MM/DD/YYYY
   const mdyMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
   if (mdyMatch) {
     const [, m, d, y] = mdyMatch
@@ -59,9 +55,7 @@ function parseDate(raw: string): string | null {
 }
 
 export function parseCommand(text: string): ParsedCommand {
-  const lower = text.trim().toLowerCase()
-
-  // Status command: "status: Property Name | clean" or "Property: Name | Needs cleaning"
+  // Status command: "status: Property Name | clean"
   const statusMatch = text.match(/^(?:status|property)\s*:\s*(.+?)\s*\|\s*(.+?)(?:\s*\|\s*(.+))?$/i)
   if (statusMatch) {
     const propertyName = statusMatch[1].trim()
@@ -73,7 +67,6 @@ export function parseCommand(text: string): ParsedCommand {
   }
 
   // Ticket command: "ticket: Property Name | title | priority"
-  // Also: "create maintenance ticket: sink leak at City Loft, high priority"
   const ticketMatch = text.match(/^ticket\s*:\s*(.+?)\s*\|\s*(.+?)(?:\s*\|\s*(\w+))?$/i)
   if (ticketMatch) {
     const propertyName = ticketMatch[1].trim()
@@ -113,23 +106,24 @@ export function parseCommand(text: string): ParsedCommand {
 
 export function helpMessage(): string {
   return [
-    '🏠 *AW Property Management Bot*',
+    'AW Property Management — SMS Commands',
     '',
-    '*Supported commands:*',
+    'Update property status:',
+    '  status: Lake Cabin | needs cleaning',
+    '  status: City Loft | clean',
     '',
-    '*Update property status:*',
-    '`status: Lake Cabin | needs cleaning`',
-    '`status: City Loft | clean`',
+    'Status values: clean, needs cleaning,',
+    '  needs maintenance, needs groceries',
     '',
-    '*Status values:* clean, needs cleaning, needs maintenance, needs groceries',
+    'Create a ticket:',
+    '  ticket: Lake Cabin | Sink is leaking | high',
+    '  Create maintenance ticket: sink leak',
+    '    at City Loft, high priority',
     '',
-    '*Create a ticket:*',
-    '`ticket: Lake Cabin | Sink is leaking | high`',
-    '`Create maintenance ticket: sink leak at City Loft, high priority`',
+    'Create a stay:',
+    '  stay: Mountain Retreat | Jordan Smith',
+    '    | 2024-06-01 to 2024-06-07',
     '',
-    '*Create a stay:*',
-    '`stay: Mountain Retreat | Jordan Smith | 2024-06-01 to 2024-06-07`',
-    '',
-    'Send /help to see this message again.',
+    'Text HELP to see this again.',
   ].join('\n')
 }

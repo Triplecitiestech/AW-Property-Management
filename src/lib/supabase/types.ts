@@ -16,7 +16,7 @@ export interface Profile {
   id: string
   role: UserRole
   full_name: string
-  telegram_chat_id: string | null
+  phone_number: string | null
   created_at: string
 }
 

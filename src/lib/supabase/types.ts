@@ -4,13 +4,15 @@
 // ============================================================
 
 export type UserRole = 'owner' | 'manager'
+export type OrgRole = 'owner' | 'admin' | 'member'
+export type PropertyRole = 'manager' | 'viewer'
 export type PropertyStatusEnum = 'clean' | 'needs_cleaning' | 'needs_maintenance' | 'needs_groceries'
 export type OccupancyEnum = 'occupied' | 'unoccupied'
 export type TicketCategory = 'maintenance' | 'cleaning' | 'supplies' | 'other'
 export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent'
 export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
 export type AuditAction = 'created' | 'updated' | 'deleted'
-export type AuditEntity = 'property' | 'property_status' | 'stay' | 'service_request' | 'service_request_comment' | 'guest_report'
+export type AuditEntity = 'property' | 'property_status' | 'stay' | 'service_request' | 'service_request_comment' | 'guest_report' | 'org_member' | 'property_access'
 
 export interface Profile {
   id: string
@@ -20,12 +22,52 @@ export interface Profile {
   created_at: string
 }
 
+export interface Organization {
+  id: string
+  name: string
+  created_at: string
+}
+
+export interface OrgMember {
+  org_id: string
+  user_id: string
+  role: OrgRole
+  invited_by: string | null
+  joined_at: string
+  profiles?: { full_name: string; email: string | null }
+}
+
+export interface PropertyAccess {
+  property_id: string
+  user_id: string
+  role: PropertyRole
+  granted_by: string | null
+  created_at: string
+  profiles?: { full_name: string; email: string | null }
+}
+
+export interface Invitation {
+  id: string
+  token: string
+  org_id: string | null
+  property_id: string | null
+  role: string
+  invited_by: string | null
+  email: string | null
+  expires_at: string
+  accepted_at: string | null
+  created_at: string
+}
+
 export interface Property {
   id: string
   name: string
   address: string
   description: string | null
+  quick_notes: string | null
+  ai_instructions: string | null
   owner_id: string
+  org_id: string | null
   created_at: string
 }
 

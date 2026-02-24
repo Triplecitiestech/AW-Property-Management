@@ -22,11 +22,8 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install Supabase CLI
-        run: npm install -g supabase@latest
-
-      - name: Run deploy.sql against production
-        run: |
-          supabase db push --db-url "${{ secrets.SUPABASE_DB_URL }}"
+      - name: Run migration via Supabase Management API
+        run: node scripts/run-migration.mjs
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ilooxnlkovwbxymwieaj

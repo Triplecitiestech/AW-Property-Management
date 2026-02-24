@@ -65,6 +65,6 @@ jobs:
       - name: Deploy to Vercel
         id: deploy
         run: |
-          URL=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          URL=$(vercel deploy --prod --token="$VERCEL_TOKEN")
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Deployed: $URL"

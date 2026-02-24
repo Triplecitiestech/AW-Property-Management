@@ -1,7 +1,13 @@
 /**
- * Runs the multi-tenant migration against Supabase using the Management API.
- * Requires SUPABASE_ACCESS_TOKEN (personal access token from supabase.com/dashboard/account/tokens).
+ * Runs supabase/deploy.sql against Supabase using the Management API.
+ *
+ * deploy.sql is the FULL idempotent schema (CREATE TABLE IF NOT EXISTS, etc.)
+ * and is safe to re-run against an existing database.
+ *
+ * Requires SUPABASE_ACCESS_TOKEN (personal access token from
+ * https://supabase.com/dashboard/account/tokens).
  */
+
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -17,10 +23,77 @@ if (!TOKEN) {
   process.exit(1);
 }
 
-const migrationSQL = readFileSync(
-  join(__dirname, '../supabase/migrations/20260221_multi_tenant.sql'),
-  'utf-8'
-);
+const sql = readFileSync(join(__dirname, '../supabase/deploy.sql'), 'utf-8');
+
+/**
+ * Split SQL into individual statements while correctly handling:
+ *   - Dollar-quoted strings  ($$...$$, $BODY$...$BODY$)
+ *   - Single-quoted strings  ('...')
+ *   - Line comments          (-- ...)
+ *   - Block comments         (/* ... *\/)
+ *
+ * Semicolons that appear inside any of the above are NOT treated as
+ * statement terminators — which is what breaks a naive split('/;/').
+ */
+function splitStatements(sql) {
+  const statements = [];
+  let i = 0;
+  let start = 0;
+
+  while (i < sql.length) {
+    // ── Line comment ────────────────────────────────────────────────────────
+    if (sql[i] === '-' && sql[i + 1] === '-') {
+      while (i < sql.length && sql[i] !== '\n') i++;
+      continue;
+    }
+
+    // ── Block comment ───────────────────────────────────────────────────────
+    if (sql[i] === '/' && sql[i + 1] === '*') {
+      i += 2;
+      while (i < sql.length && !(sql[i] === '*' && sql[i + 1] === '/')) i++;
+      i += 2;
+      continue;
+    }
+
+    // ── Single-quoted string ────────────────────────────────────────────────
+    if (sql[i] === "'") {
+      i++;
+      while (i < sql.length) {
+        if (sql[i] === "'" && sql[i + 1] === "'") { i += 2; continue; } // escaped ''
+        if (sql[i] === "'") { i++; break; }
+        i++;
+      }
+      continue;
+    }
+
+    // ── Dollar-quoted string: $tag$...$tag$ (tag may be empty: $$...$$) ────
+    if (sql[i] === '$') {
+      let j = i + 1;
+      while (j < sql.length && sql[j] !== '$' && /[A-Za-z0-9_]/.test(sql[j])) j++;
+      if (j < sql.length && sql[j] === '$') {
+        const tag = sql.slice(i, j + 1); // e.g. "$$" or "$BODY$"
+        i = j + 1;
+        const closeIdx = sql.indexOf(tag, i);
+        i = closeIdx !== -1 ? closeIdx + tag.length : sql.length;
+        continue;
+      }
+    }
+
+    // ── Statement terminator ────────────────────────────────────────────────
+    if (sql[i] === ';') {
+      const stmt = sql.slice(start, i + 1).trim();
+      if (stmt && stmt !== ';') statements.push(stmt);
+      start = i + 1;
+    }
+
+    i++;
+  }
+
+  const tail = sql.slice(start).trim();
+  if (tail) statements.push(tail);
+
+  return statements;
+}
 
 async function runSQL(query) {
   const res = await fetch(
@@ -34,57 +107,55 @@ async function runSQL(query) {
       body: JSON.stringify({ query }),
     }
   );
-
   const text = await res.text();
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}: ${text}`);
-  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${text}`);
   return text ? JSON.parse(text) : null;
 }
 
 async function main() {
-  console.log(`Running migration on project: ${PROJECT_REF}`);
+  console.log(`Project: ${PROJECT_REF}`);
+  console.log('Running supabase/deploy.sql (full idempotent schema)...\n');
 
-  // Split the migration into individual statements so we get per-statement errors
-  // Filter out empty statements and comments-only blocks
-  const statements = migrationSQL
-    .split(/;\s*\n/)
-    .map((s) => s.trim())
-    .filter((s) => s && !s.startsWith('--'));
+  const statements = splitStatements(sql).filter(s => {
+    // Drop comment-only or whitespace-only fragments
+    const stripped = s.replace(/--[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '').trim();
+    return stripped.length > 0;
+  });
 
-  let succeeded = 0;
+  console.log(`${statements.length} statements to execute\n`);
+
+  let ok = 0;
   let skipped = 0;
 
   for (const stmt of statements) {
-    if (!stmt) continue;
-    const preview = stmt.slice(0, 60).replace(/\n/g, ' ');
+    const preview = stmt.replace(/\s+/g, ' ').slice(0, 72);
     try {
-      await runSQL(stmt + ';');
-      console.log(`  OK: ${preview}…`);
-      succeeded++;
+      await runSQL(stmt);
+      console.log(`  OK:   ${preview}`);
+      ok++;
     } catch (err) {
       const msg = err.message;
-      // These are all safe "already exists" conditions — migration is idempotent
+      // All safe "already applied" conditions — the schema is idempotent
       if (
         msg.includes('already exists') ||
         msg.includes('duplicate key') ||
         msg.includes('already an attribute') ||
-        msg.includes('invalid input value for enum') // ADD VALUE IF NOT EXISTS already added
+        msg.includes('invalid input value for enum')
       ) {
-        console.log(`  SKIP (already applied): ${preview}…`);
+        console.log(`  SKIP: ${preview}`);
         skipped++;
       } else {
-        console.error(`  FAIL: ${preview}…`);
-        console.error(`        ${msg}`);
+        console.error(`\n  FAIL: ${preview}`);
+        console.error(`        ${msg}\n`);
         process.exit(1);
       }
     }
   }
 
-  console.log(`\nMigration complete: ${succeeded} applied, ${skipped} skipped.`);
+  console.log(`\nDone: ${ok} applied, ${skipped} already existed.`);
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error('Migration failed:', err.message);
   process.exit(1);
 });

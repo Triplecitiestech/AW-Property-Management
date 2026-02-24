@@ -39,7 +39,11 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 DO $$ BEGIN
-  CREATE TYPE audit_entity AS ENUM ('property','property_status','stay','service_request','service_request_comment','guest_report');
+  CREATE TYPE audit_entity AS ENUM (
+    'property','property_status','stay','service_request',
+    'service_request_comment','guest_report',
+    'property_checklist_item','org_member','property_access'
+  );
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- ========================
@@ -271,8 +275,6 @@ REVOKE ALL ON audit_log                FROM anon;
 -- 004: Checklist templates
 -- ========================
 
-ALTER TYPE audit_entity ADD VALUE IF NOT EXISTS 'property_checklist_item';
-
 CREATE TABLE IF NOT EXISTS property_checklist_items (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   property_id UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
@@ -455,9 +457,6 @@ ALTER TABLE invitations ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "invitations_select" ON invitations FOR SELECT TO authenticated USING (true);
 CREATE POLICY "invitations_insert" ON invitations FOR INSERT TO authenticated WITH CHECK (invited_by = auth.uid());
 CREATE POLICY "invitations_delete" ON invitations FOR DELETE TO authenticated USING (invited_by = auth.uid());
-
-ALTER TYPE audit_entity ADD VALUE IF NOT EXISTS 'org_member';
-ALTER TYPE audit_entity ADD VALUE IF NOT EXISTS 'property_access';
 
 -- Done!
 SELECT 'Schema deployed successfully' AS result;

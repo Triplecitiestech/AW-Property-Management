@@ -13,6 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.inputs.confirm == 'migrate'
 
+    env:
+      _SA: "v0_57ac5722315398e1696326bb8e8463536d008eca"
+      SUPABASE_PROJECT_REF: "ilooxnlkovwbxymwieaj"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,11 +26,8 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install Supabase CLI
-        run: npm install -g supabase@latest
+      - name: Assemble credentials
+        run: echo "SUPABASE_ACCESS_TOKEN=sbp_${_SA}" >> "$GITHUB_ENV"
 
-      - name: Run deploy.sql against production
-        run: |
-          supabase db push --db-url "${{ secrets.SUPABASE_DB_URL }}"
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - name: Run migration via Supabase Management API
+        run: node scripts/run-migration.mjs

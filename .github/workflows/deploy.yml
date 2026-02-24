@@ -7,9 +7,10 @@ on:
   workflow_dispatch:
 
 env:
-  # Credential fragment — assembled in "Assemble credentials" step below
+  # Token fragment — assembled in "Assemble credentials" step
   _VT: "2qaSBfjV9uf09x8LMUnzEOUcGL17iAhRUaMihZTI8s5AVm7YVF13bfT0"
 
+  # Build-time env vars (baked into the Next.js JS bundle)
   NEXT_PUBLIC_SUPABASE_URL: "https://ilooxnlkovwbxymwieaj.supabase.co"
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsb294bmxrb3Z3Ynh5bXdpZWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MjQ4MjcsImV4cCI6MjA4NzIwMDgyN30.9v0gzuGXBBho7ucjoKr8lo3h9Ql7W56LNSa9NDBTy8M"
   NEXT_PUBLIC_APP_URL: "https://property-manager-alpha-ecru.vercel.app"
@@ -18,9 +19,6 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: ${{ steps.deploy.outputs.url }}
 
     steps:
       - name: Checkout
@@ -47,28 +45,26 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: Link Vercel project
-        # Looks up org/project IDs dynamically — no VERCEL_ORG_ID / VERCEL_PROJECT_ID secrets needed
+      - name: Resolve Vercel org + project IDs
+        # Fetches the team ID by slug, then the project ID by name.
+        # Sets VERCEL_ORG_ID and VERCEL_PROJECT_ID which the Vercel CLI reads
+        # automatically — no .vercel/project.json needed.
         run: |
-          PROJECT_JSON=$(curl -sf \
-            "https://api.vercel.com/v9/projects/AW-Property-Management?teamSlug=Triplecitiestech" \
-            -H "Authorization: Bearer $VERCEL_TOKEN")
-          PROJECT_ID=$(echo "$PROJECT_JSON" | node -e \
-            "process.stdin.on('data',d=>process.stdout.write(JSON.parse(d).id))")
+          TEAM_ID=$(curl -sf "https://api.vercel.com/v1/teams/Triplecitiestech" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" | jq -r '.id')
 
-          TEAM_JSON=$(curl -sf \
-            "https://api.vercel.com/v2/teams?slug=Triplecitiestech" \
-            -H "Authorization: Bearer $VERCEL_TOKEN")
-          TEAM_ID=$(echo "$TEAM_JSON" | node -e \
-            "process.stdin.on('data',d=>process.stdout.write((JSON.parse(d).teams||[])[0]?.id||''))")
+          PROJECT_ID=$(curl -sf \
+            "https://api.vercel.com/v9/projects/AW-Property-Management?teamId=${TEAM_ID}" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" | jq -r '.id')
 
-          mkdir -p .vercel
-          echo "{\"orgId\":\"$TEAM_ID\",\"projectId\":\"$PROJECT_ID\"}" > .vercel/project.json
-          echo "Linked project $PROJECT_ID (org $TEAM_ID)"
+          echo "VERCEL_ORG_ID=${TEAM_ID}"     >> "$GITHUB_ENV"
+          echo "VERCEL_PROJECT_ID=${PROJECT_ID}" >> "$GITHUB_ENV"
+
+          echo "Org: ${TEAM_ID}  Project: ${PROJECT_ID}"
 
       - name: Deploy to Vercel
         id: deploy
         run: |
           URL=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
-          echo "url=$URL" >> $GITHUB_OUTPUT
-          echo "Deployed to: $URL"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Deployed: $URL"

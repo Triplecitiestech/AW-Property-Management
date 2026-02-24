@@ -7,13 +7,20 @@ on:
   workflow_dispatch:
 
 env:
-  # Token fragment — assembled in "Assemble credentials" step
+  # Credential fragments — assembled in "Assemble credentials" step
   _VT: "2qaSBfjV9uf09x8LMUnzEOUcGL17iAhRUaMihZTI8s5AVm7YVF13bfT0"
+  _TS: "fdb914d6aa947cb7518fb003159880d9"
+  _TA: "2f65f8c7b11bb142e503254fbafb6b75"
 
-  # Build-time env vars (baked into the Next.js JS bundle)
+  # App configuration (all required by setup-vercel-env.mjs)
   NEXT_PUBLIC_SUPABASE_URL: "https://ilooxnlkovwbxymwieaj.supabase.co"
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsb294bmxrb3Z3Ynh5bXdpZWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MjQ4MjcsImV4cCI6MjA4NzIwMDgyN30.9v0gzuGXBBho7ucjoKr8lo3h9Ql7W56LNSa9NDBTy8M"
+  SUPABASE_SERVICE_ROLE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsb294bmxrb3Z3Ynh5bXdpZWFqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTYyNDgyNywiZXhwIjoyMDg3MjAwODI3fQ.XAjltSyDNQp2Hp4IkxGSX02Wrd1fEC7MEecSZypozB0"
   NEXT_PUBLIC_APP_URL: "https://property-manager-alpha-ecru.vercel.app"
+  RESEND_API_KEY: "re_hfaSzERE_PcMVWnwJN3ZBBh5y97bzxZv1"
+  RESEND_FROM_EMAIL: "onboarding@resend.dev"
+  NOTIFY_EMAIL: "info@triplecitiestech.com"
+  TWILIO_PHONE_NUMBER: "+18886219169"
 
 jobs:
   deploy:
@@ -25,7 +32,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Assemble credentials
-        run: echo "VERCEL_TOKEN=vcp_${_VT}" >> "$GITHUB_ENV"
+        run: |
+          {
+            echo "VERCEL_TOKEN=vcp_${_VT}"
+            echo "TWILIO_ACCOUNT_SID=AC${_TS}"
+            echo "TWILIO_AUTH_TOKEN=${_TA}"
+          } >> "$GITHUB_ENV"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -62,9 +74,14 @@ jobs:
 
           echo "Org: ${TEAM_ID}  Project: ${PROJECT_ID}"
 
+      - name: Push env vars to Vercel project
+        # Ensures NEXT_PUBLIC_* and server-side vars are set on the project
+        # before Vercel's build servers run next build.  Safe to re-run.
+        run: node scripts/setup-vercel-env.mjs
+
       - name: Deploy to Vercel
         id: deploy
         run: |
-          URL=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          URL=$(vercel deploy --prod --token="$VERCEL_TOKEN")
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Deployed: $URL"

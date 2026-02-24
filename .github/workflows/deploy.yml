@@ -52,14 +52,11 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
-      - name: Build
-        run: npm run build
-
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
       - name: Resolve Vercel org + project IDs
-        # Uses teamSlug query param to look up the project in one call.
+        # Uses teamSlug query param to look up the project in one API call.
         # Sets VERCEL_ORG_ID and VERCEL_PROJECT_ID for the Vercel CLI.
         run: |
           set -euo pipefail
@@ -77,19 +74,29 @@ jobs:
             exit 1
           fi
 
-          echo "VERCEL_ORG_ID=${TEAM_ID}"     >> "$GITHUB_ENV"
+          echo "VERCEL_ORG_ID=${TEAM_ID}"       >> "$GITHUB_ENV"
           echo "VERCEL_PROJECT_ID=${PROJECT_ID}" >> "$GITHUB_ENV"
 
           echo "Org: ${TEAM_ID}  Project: ${PROJECT_ID}"
 
       - name: Push env vars to Vercel project
-        # Ensures NEXT_PUBLIC_* and server-side vars are set on the project
-        # before Vercel's build servers run next build.  Safe to re-run.
+        # Upserts all NEXT_PUBLIC_* and server-side vars on the Vercel project.
+        # vercel build (next step) pulls these so NEXT_PUBLIC vars are baked
+        # into the JS bundle correctly.
         run: node scripts/setup-vercel-env.mjs
 
-      - name: Deploy to Vercel
+      - name: Build (vercel build — env vars baked in from Vercel project)
+        # vercel build pulls env vars from the Vercel project (just set above),
+        # runs next build locally, and writes output to .vercel/output/.
+        # Using --prebuilt on the deploy step means Vercel never rebuilds remotely,
+        # so the NEXT_PUBLIC_* values are guaranteed to be correct.
+        run: vercel build --prod --token="$VERCEL_TOKEN" --yes
+
+      - name: Deploy prebuilt output to Vercel
+        # Uploads .vercel/output/ as-is. No Vercel-side rebuild.
+        # The deployed app is exactly what vercel build produced above.
         id: deploy
         run: |
-          URL=$(vercel deploy --prod --token="$VERCEL_TOKEN")
+          URL=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Deployed: $URL"

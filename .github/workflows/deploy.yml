@@ -62,12 +62,28 @@ jobs:
         # Sets VERCEL_ORG_ID and VERCEL_PROJECT_ID which the Vercel CLI reads
         # automatically — no .vercel/project.json needed.
         run: |
-          TEAM_ID=$(curl -sf "https://api.vercel.com/v1/teams/Triplecitiestech" \
-            -H "Authorization: Bearer $VERCEL_TOKEN" | jq -r '.id')
+          set -euo pipefail
 
-          PROJECT_ID=$(curl -sf \
+          echo "Fetching team info for Triplecitiestech..."
+          TEAM_RESP=$(curl -sf "https://api.vercel.com/v2/teams?slug=Triplecitiestech" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+          TEAM_ID=$(echo "$TEAM_RESP" | jq -r '.id // empty')
+
+          if [ -z "$TEAM_ID" ]; then
+            echo "::error::Failed to resolve Vercel team ID. Response: $TEAM_RESP"
+            exit 1
+          fi
+
+          echo "Fetching project info for AW-Property-Management..."
+          PROJ_RESP=$(curl -sf \
             "https://api.vercel.com/v9/projects/AW-Property-Management?teamId=${TEAM_ID}" \
-            -H "Authorization: Bearer $VERCEL_TOKEN" | jq -r '.id')
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+          PROJECT_ID=$(echo "$PROJ_RESP" | jq -r '.id // empty')
+
+          if [ -z "$PROJECT_ID" ]; then
+            echo "::error::Failed to resolve Vercel project ID. Response: $PROJ_RESP"
+            exit 1
+          fi
 
           echo "VERCEL_ORG_ID=${TEAM_ID}"     >> "$GITHUB_ENV"
           echo "VERCEL_PROJECT_ID=${PROJECT_ID}" >> "$GITHUB_ENV"

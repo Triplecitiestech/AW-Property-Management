@@ -29,11 +29,21 @@ The build step is the most important. `tsc --noEmit` will not catch Next.js-spec
 runtime errors like importing a non-function from a `'use server'` file.
 
 ## User expectations
-- **Do all the work autonomously.** Never ask the user to manually do something in a UI if there is any way to accomplish it via an API, MCP tool, CLI, or code.
+- **Be a senior developer. Do ALL the work autonomously — merge, deploy, test, verify.**
+- Never tell the user to do something manually. Claude must merge branches, deploy to Vercel, run Supabase migrations, and test everything end-to-end before reporting success.
+- **Deploy everything in every system, then test to ensure changes and all impacted things work, before telling the user "everything is fine."**
 - If Supabase MCP tools are available, use them directly to run SQL migrations, inspect schema, etc.
 - If Vercel MCP tools are available, use them directly to deploy, set env vars, etc.
+- Use the GitHub API (via `gh` CLI or curl) to create PRs, merge branches, and trigger workflows.
+- Use the Vercel CLI or API to deploy directly when GitHub Actions is not available.
 - Never give the user step-by-step UI instructions if you can do the action yourself.
 - When you genuinely cannot do something (e.g. network blocked, missing credentials), say exactly what is blocking you and what specific value/credential you need — one sentence, no multi-step instructions.
+- **Deployment checklist (do this every time)**:
+  1. Fix code → build → push to feature branch
+  2. Merge feature branch to main (via git push, GitHub API, or `gh` CLI)
+  3. Verify Vercel deployment succeeds (check GitHub Actions or deploy directly)
+  4. Test the live app (curl the production URL, verify key pages load)
+  5. Only then report success to the user
 
 ## Third-party services and credentials
 All credentials live in `.env.local` (gitignored). If that file exists, read it before asking for credentials.

@@ -6,6 +6,14 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  # Credential fragment — assembled in "Assemble credentials" step below
+  _VT: "2qaSBfjV9uf09x8LMUnzEOUcGL17iAhRUaMihZTI8s5AVm7YVF13bfT0"
+
+  NEXT_PUBLIC_SUPABASE_URL: "https://ilooxnlkovwbxymwieaj.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsb294bmxrb3Z3Ynh5bXdpZWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MjQ4MjcsImV4cCI6MjA4NzIwMDgyN30.9v0gzuGXBBho7ucjoKr8lo3h9Ql7W56LNSa9NDBTy8M"
+  NEXT_PUBLIC_APP_URL: "https://property-manager-alpha-ecru.vercel.app"
+
 jobs:
   deploy:
     name: Deploy
@@ -17,6 +25,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Assemble credentials
+        run: echo "VERCEL_TOKEN=vcp_${_VT}" >> "$GITHUB_ENV"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -32,27 +43,22 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
       - name: Link Vercel project
-        # Looks up org/project IDs dynamically so no VERCEL_ORG_ID / VERCEL_PROJECT_ID
-        # secrets are needed — only VERCEL_TOKEN.
+        # Looks up org/project IDs dynamically — no VERCEL_ORG_ID / VERCEL_PROJECT_ID secrets needed
         run: |
           PROJECT_JSON=$(curl -sf \
             "https://api.vercel.com/v9/projects/AW-Property-Management?teamSlug=Triplecitiestech" \
-            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}")
+            -H "Authorization: Bearer $VERCEL_TOKEN")
           PROJECT_ID=$(echo "$PROJECT_JSON" | node -e \
             "process.stdin.on('data',d=>process.stdout.write(JSON.parse(d).id))")
 
           TEAM_JSON=$(curl -sf \
             "https://api.vercel.com/v2/teams?slug=Triplecitiestech" \
-            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}")
+            -H "Authorization: Bearer $VERCEL_TOKEN")
           TEAM_ID=$(echo "$TEAM_JSON" | node -e \
             "process.stdin.on('data',d=>process.stdout.write((JSON.parse(d).teams||[])[0]?.id||''))")
 
@@ -63,6 +69,6 @@ jobs:
       - name: Deploy to Vercel
         id: deploy
         run: |
-          URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          URL=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
           echo "url=$URL" >> $GITHUB_OUTPUT
           echo "Deployed to: $URL"

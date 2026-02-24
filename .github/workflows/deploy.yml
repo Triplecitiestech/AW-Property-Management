@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 'claude/**'
   workflow_dispatch:
 
 env:
@@ -58,30 +59,21 @@ jobs:
         run: npm install -g vercel@latest
 
       - name: Resolve Vercel org + project IDs
-        # Fetches the team ID by slug, then the project ID by name.
-        # Sets VERCEL_ORG_ID and VERCEL_PROJECT_ID which the Vercel CLI reads
-        # automatically — no .vercel/project.json needed.
+        # Uses teamSlug query param to look up the project in one call.
+        # Sets VERCEL_ORG_ID and VERCEL_PROJECT_ID for the Vercel CLI.
         run: |
           set -euo pipefail
 
-          echo "Fetching team info for Triplecitiestech..."
-          TEAM_RESP=$(curl -sf "https://api.vercel.com/v2/teams?slug=Triplecitiestech" \
-            -H "Authorization: Bearer $VERCEL_TOKEN")
-          TEAM_ID=$(echo "$TEAM_RESP" | jq -r '.id // empty')
-
-          if [ -z "$TEAM_ID" ]; then
-            echo "::error::Failed to resolve Vercel team ID. Response: $TEAM_RESP"
-            exit 1
-          fi
-
-          echo "Fetching project info for AW-Property-Management..."
+          echo "Fetching project info for Triplecitiestech/AW-Property-Management..."
           PROJ_RESP=$(curl -sf \
-            "https://api.vercel.com/v9/projects/AW-Property-Management?teamId=${TEAM_ID}" \
+            "https://api.vercel.com/v9/projects/AW-Property-Management?teamSlug=Triplecitiestech" \
             -H "Authorization: Bearer $VERCEL_TOKEN")
-          PROJECT_ID=$(echo "$PROJ_RESP" | jq -r '.id // empty')
 
-          if [ -z "$PROJECT_ID" ]; then
-            echo "::error::Failed to resolve Vercel project ID. Response: $PROJ_RESP"
+          PROJECT_ID=$(echo "$PROJ_RESP" | jq -r '.id // empty')
+          TEAM_ID=$(echo "$PROJ_RESP" | jq -r '.accountId // empty')
+
+          if [ -z "$PROJECT_ID" ] || [ -z "$TEAM_ID" ]; then
+            echo "::error::Failed to resolve Vercel IDs. Response: $PROJ_RESP"
             exit 1
           fi
 

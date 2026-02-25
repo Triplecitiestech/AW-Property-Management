@@ -53,6 +53,15 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    href: '/welcome',
+    label: 'Getting Started',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+  },
 ]
 
 export default function Sidebar() {
@@ -83,8 +92,8 @@ export default function Sidebar() {
             </svg>
           </div>
           <div>
-            <p className="font-bold text-white text-sm tracking-wide">AW Properties</p>
-            <p className="text-xs text-[#4a6080]">Operations Hub</p>
+            <p className="font-bold text-white text-sm tracking-wide">SmartSum <span className="text-teal-400">AI</span></p>
+            <p className="text-xs text-[#4a6080]">Property Management</p>
           </div>
         </div>
       </div>
@@ -157,7 +166,7 @@ export default function Sidebar() {
                 d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
           </div>
-          <span className="font-bold text-white text-sm">AW Properties</span>
+          <span className="font-bold text-white text-sm">SmartSum AI</span>
         </div>
       </header>
 

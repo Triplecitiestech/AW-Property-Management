@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'AW Property Management',
-  description: 'Property operations dashboard',
+  title: 'SmartSum AI — Property Management',
+  description: 'AI-powered property management for short-term rental hosts.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

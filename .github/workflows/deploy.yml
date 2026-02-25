@@ -235,14 +235,14 @@ jobs:
 
           echo "Auth response: $AUTH"
 
-          # Should contain an error about invalid credentials (not a network failure)
-          if echo "$AUTH" | jq -e '.error' > /dev/null 2>&1; then
-            ERR=$(echo "$AUTH" | jq -r '.error // .msg // "unknown"')
+          # Supabase returns various error fields depending on version:
+          # Old: {"error": "invalid_grant", "error_description": "..."}
+          # New: {"code": 400, "error_code": "invalid_grant", "msg": "..."}
+          # Check for ANY of these error indicators in the JSON response.
+          if echo "$AUTH" | jq -e 'type == "object" and (.error or .error_description or .msg or .error_code or .code)' > /dev/null 2>&1; then
+            ERR=$(echo "$AUTH" | jq -r '.error // .error_description // .msg // .error_code // .code // "error_response"')
             echo "✓ Supabase auth endpoint working — returned expected error: $ERR"
-          elif echo "$AUTH" | jq -e '.error_description' > /dev/null 2>&1; then
-            ERR=$(echo "$AUTH" | jq -r '.error_description')
-            echo "✓ Supabase auth endpoint working — returned: $ERR"
           else
-            echo "::error::Unexpected auth response (may indicate Supabase is down): $AUTH"
+            echo "::error::Unexpected auth response (may indicate Supabase is down or token is wrong): $AUTH"
             exit 1
           fi

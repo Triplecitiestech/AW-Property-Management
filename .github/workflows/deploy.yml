@@ -94,7 +94,8 @@ jobs:
 
       - name: Deploy prebuilt output to Vercel
         # Uploads .vercel/output/ as-is. No Vercel-side rebuild.
-        # The deployed app is exactly what vercel build produced above.
+        # vercel.json has ignoreCommand:exit 1 to block Vercel's GitHub
+        # integration from auto-deploying stale code and overriding this.
         id: deploy
         run: |
           URL=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")

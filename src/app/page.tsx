@@ -31,15 +31,8 @@ export default async function Home() {
             style={{backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '60px 60px'}} />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full
-                          border border-violet-500/30 bg-violet-500/10 text-violet-300 text-sm font-medium mb-8">
-            <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-            Now live — $10 per property/month
-          </div>
-
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-[1.05]">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center">
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-[1.05]">
             Property management,{' '}
             <span className="bg-gradient-to-r from-violet-400 via-violet-300 to-teal-400 bg-clip-text text-transparent">
               powered by AI
@@ -77,15 +70,15 @@ export default async function Home() {
                 </div>
               </div>
               {/* Dashboard preview */}
-              <div className="p-6">
-                <div className="flex gap-4 mb-6">
+              <div className="p-4 sm:p-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                   {[
                     { label: 'Properties', value: '12', color: 'text-violet-400' },
                     { label: 'Active Stays', value: '4', color: 'text-teal-400' },
                     { label: 'Open Tickets', value: '2', color: 'text-amber-400' },
                     { label: 'Team Members', value: '5', color: 'text-emerald-400' },
                   ].map(s => (
-                    <div key={s.label} className="flex-1 rounded-xl bg-[#1a2436] border border-[#2a3d58] p-4">
+                    <div key={s.label} className="rounded-xl bg-[#1a2436] border border-[#2a3d58] p-3 sm:p-4">
                       <p className="text-xs text-[#6480a0] font-medium">{s.label}</p>
                       <p className={`text-2xl font-bold mt-1 ${s.color}`}>{s.value}</p>
                     </div>
@@ -281,10 +274,10 @@ export default async function Home() {
                 One simple plan
               </div>
               <div className="mb-8">
-                <div className="flex items-end justify-center gap-1">
+                <div className="flex flex-wrap items-end justify-center gap-1">
                   <span className="text-xl text-[#8aa0be] font-medium mb-2">$</span>
-                  <span className="text-7xl font-extrabold text-white">10</span>
-                  <span className="text-xl text-[#8aa0be] font-medium mb-2">/property/mo</span>
+                  <span className="text-6xl sm:text-7xl font-extrabold text-white">10</span>
+                  <span className="text-lg sm:text-xl text-[#8aa0be] font-medium mb-2">/property/mo</span>
                 </div>
                 <p className="text-[#8aa0be] mt-2">Billed monthly · Cancel anytime</p>
               </div>

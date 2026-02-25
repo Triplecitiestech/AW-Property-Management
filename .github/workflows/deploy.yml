@@ -62,11 +62,16 @@ jobs:
           set -o pipefail
           node scripts/run-migration.mjs 2>&1 | tee /tmp/migration-output.txt
           STATUS=${PIPESTATUS[0]}
-          # Write output to Step Summary so it's visible without log access
+          # Write full output to Step Summary (visible in Actions UI)
           echo "## Supabase Migration Output" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/migration-output.txt >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+          # Also emit as an error annotation (accessible via GitHub API without log access)
+          if [ $STATUS -ne 0 ]; then
+            TAIL=$(tail -5 /tmp/migration-output.txt | tr '\n' ' ')
+            echo "::error title=Migration Failed::$TAIL"
+          fi
           exit $STATUS
 
       - name: Type check

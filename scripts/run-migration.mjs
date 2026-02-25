@@ -11,6 +11,7 @@
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import https from 'https';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -99,21 +100,67 @@ function splitStatements(sql) {
   return statements;
 }
 
-async function runSQL(query) {
-  const res = await fetch(
-    `https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${TOKEN}`,
-        'Content-Type': 'application/json',
+async function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/** POST to Supabase Management API using Node.js https module (avoids undici/fetch quirks). */
+function httpsPost(url, headers, body) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const bodyBuf = Buffer.from(body, 'utf-8');
+    const req = https.request(
+      {
+        hostname: parsed.hostname,
+        path: parsed.pathname + parsed.search,
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Length': bodyBuf.length,
+        },
+        timeout: 30_000,
       },
-      body: JSON.stringify({ query }),
+      res => {
+        const chunks = [];
+        res.on('data', c => chunks.push(c));
+        res.on('end', () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf-8') }));
+      }
+    );
+    req.on('timeout', () => { req.destroy(); reject(new Error('Request timed out after 30s')); });
+    req.on('error', reject);
+    req.write(bodyBuf);
+    req.end();
+  });
+}
+
+async function runSQL(query, retries = 3) {
+  let lastErr;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const { status, body: text } = await httpsPost(
+        `https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query`,
+        {
+          Authorization: `Bearer ${TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        JSON.stringify({ query })
+      );
+      if (status < 200 || status >= 300) throw new Error(`HTTP ${status}: ${text}`);
+      return text ? JSON.parse(text) : null;
+    } catch (err) {
+      lastErr = err;
+      const isNetworkError = err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' ||
+        err.code === 'ETIMEDOUT' || err.message.includes('timed out');
+      if (isNetworkError && attempt < retries) {
+        const wait = attempt * 2000;
+        console.log(`  Network error on attempt ${attempt}, retrying in ${wait/1000}s: ${err.message}`);
+        await sleep(wait);
+        continue;
+      }
+      throw lastErr;
     }
-  );
-  const text = await res.text();
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${text}`);
-  return text ? JSON.parse(text) : null;
+  }
+  throw lastErr;
 }
 
 async function main() {

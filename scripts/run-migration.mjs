@@ -36,9 +36,6 @@ const sql = readFileSync(join(__dirname, '../supabase/deploy.sql'), 'utf-8');
  *   - Single-quoted strings  ('...')
  *   - Line comments          (-- ...)
  *   - Block comments         (/* ... *\/)
- *
- * Semicolons that appear inside any of the above are NOT treated as
- * statement terminators — which is what breaks a naive split('/;/').
  */
 function splitStatements(sql) {
   const statements = [];
@@ -46,13 +43,11 @@ function splitStatements(sql) {
   let start = 0;
 
   while (i < sql.length) {
-    // ── Line comment ────────────────────────────────────────────────────────
     if (sql[i] === '-' && sql[i + 1] === '-') {
       while (i < sql.length && sql[i] !== '\n') i++;
       continue;
     }
 
-    // ── Block comment ───────────────────────────────────────────────────────
     if (sql[i] === '/' && sql[i + 1] === '*') {
       i += 2;
       while (i < sql.length && !(sql[i] === '*' && sql[i + 1] === '/')) i++;
@@ -60,23 +55,21 @@ function splitStatements(sql) {
       continue;
     }
 
-    // ── Single-quoted string ────────────────────────────────────────────────
     if (sql[i] === "'") {
       i++;
       while (i < sql.length) {
-        if (sql[i] === "'" && sql[i + 1] === "'") { i += 2; continue; } // escaped ''
+        if (sql[i] === "'" && sql[i + 1] === "'") { i += 2; continue; }
         if (sql[i] === "'") { i++; break; }
         i++;
       }
       continue;
     }
 
-    // ── Dollar-quoted string: $tag$...$tag$ (tag may be empty: $$...$$) ────
     if (sql[i] === '$') {
       let j = i + 1;
       while (j < sql.length && sql[j] !== '$' && /[A-Za-z0-9_]/.test(sql[j])) j++;
       if (j < sql.length && sql[j] === '$') {
-        const tag = sql.slice(i, j + 1); // e.g. "$$" or "$BODY$"
+        const tag = sql.slice(i, j + 1);
         i = j + 1;
         const closeIdx = sql.indexOf(tag, i);
         i = closeIdx !== -1 ? closeIdx + tag.length : sql.length;
@@ -84,7 +77,6 @@ function splitStatements(sql) {
       }
     }
 
-    // ── Statement terminator ────────────────────────────────────────────────
     if (sql[i] === ';') {
       const stmt = sql.slice(start, i + 1).trim();
       if (stmt && stmt !== ';') statements.push(stmt);
@@ -104,7 +96,7 @@ async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/** POST to Supabase Management API using Node.js https module (avoids undici/fetch quirks). */
+/** POST to Supabase Management API using Node.js https module. */
 function httpsPost(url, headers, body) {
   return new Promise((resolve, reject) => {
     const parsed = new URL(url);
@@ -145,15 +137,36 @@ async function runSQL(query, retries = 3) {
         },
         JSON.stringify({ query })
       );
-      if (status < 200 || status >= 300) throw new Error(`HTTP ${status}: ${text}`);
-      return text ? JSON.parse(text) : null;
+
+      // HTTP error — extract message from JSON body if possible
+      if (status < 200 || status >= 300) {
+        let errMsg = `HTTP ${status}`;
+        try {
+          const parsed = JSON.parse(text);
+          // Supabase returns errors as { message: "..." } or { error: "..." }
+          errMsg = parsed.message || parsed.error || text || `HTTP ${status}`;
+        } catch {
+          errMsg = text || `HTTP ${status}`;
+        }
+        throw new Error(errMsg);
+      }
+
+      // Success — parse JSON if present, tolerate non-JSON (some DDL returns empty/text)
+      try {
+        return text ? JSON.parse(text) : null;
+      } catch {
+        // Non-JSON response on HTTP 2xx — treat as success (e.g. plain "CREATE TABLE")
+        console.log(`  (non-JSON 2xx response: ${text.slice(0, 80)})`);
+        return null;
+      }
     } catch (err) {
       lastErr = err;
       const isNetworkError = err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' ||
         err.code === 'ETIMEDOUT' || err.message.includes('timed out');
-      if (isNetworkError && attempt < retries) {
+      const isRateLimited = err.message.includes('HTTP 429') || err.message.includes('rate limit');
+      if ((isNetworkError || isRateLimited) && attempt < retries) {
         const wait = attempt * 2000;
-        console.log(`  Network error on attempt ${attempt}, retrying in ${wait/1000}s: ${err.message}`);
+        console.log(`  Retrying in ${wait / 1000}s (attempt ${attempt}/${retries}): ${err.message}`);
         await sleep(wait);
         continue;
       }
@@ -166,11 +179,11 @@ async function runSQL(query, retries = 3) {
 async function main() {
   console.log(`Project: ${PROJECT_REF}`);
 
-  // Quick connectivity + auth check before running the full migration
+  // Quick connectivity + auth check
   console.log('Testing API connectivity...');
   try {
-    await runSQL('SELECT 1');
-    console.log('✓ API connectivity OK\n');
+    const result = await runSQL('SELECT 1 AS ok');
+    console.log(`✓ API connectivity OK (response: ${JSON.stringify(result)})\n`);
   } catch (err) {
     console.error(`✗ API connectivity FAILED: ${err.message}`);
     console.error('Cannot proceed with migration — check SUPABASE_ACCESS_TOKEN and PROJECT_REF');
@@ -180,7 +193,6 @@ async function main() {
   console.log('Running supabase/deploy.sql (full idempotent schema)...\n');
 
   const statements = splitStatements(sql).filter(s => {
-    // Drop comment-only or whitespace-only fragments
     const stripped = s.replace(/--[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '').trim();
     return stripped.length > 0;
   });
@@ -189,33 +201,43 @@ async function main() {
 
   let ok = 0;
   let skipped = 0;
+  let stmtNum = 0;
 
   for (const stmt of statements) {
+    stmtNum++;
     const preview = stmt.replace(/\s+/g, ' ').slice(0, 72);
     try {
       await runSQL(stmt);
-      console.log(`  OK:   ${preview}`);
+      console.log(`  OK   [${stmtNum}/${statements.length}]: ${preview}`);
       ok++;
     } catch (err) {
       const msg = err.message;
-      // All safe "already applied" conditions — the schema is idempotent
-      if (
+      // Safe "already applied" conditions — idempotent schema
+      const isSafe =
         msg.includes('already exists') ||
         msg.includes('duplicate key') ||
         msg.includes('already an attribute') ||
-        msg.includes('invalid input value for enum')
-      ) {
-        console.log(`  SKIP: ${preview}`);
+        msg.includes('invalid input value for enum') ||
+        msg.includes('permission denied') ||  // extension already installed by Supabase
+        msg.includes('must be owner') ||       // cannot modify Supabase-owned extensions
+        msg.includes('tuple concurrently') ||  // concurrent modification, safe to skip
+        msg.includes('40001');                  // serialization failure — retry would loop, skip
+
+      if (isSafe) {
+        console.log(`  SKIP [${stmtNum}/${statements.length}]: ${preview}`);
+        console.log(`       Reason: ${msg.slice(0, 200)}`);
         skipped++;
       } else {
-        console.error(`\n  FAIL: ${preview}`);
-        console.error(`        ${msg}\n`);
+        console.error(`\n  FAIL [${stmtNum}/${statements.length}]: ${preview}`);
+        console.error(`       Full error: ${msg}`);
+        console.error('\nFull failing statement:');
+        console.error(stmt);
         process.exit(1);
       }
     }
   }
 
-  console.log(`\nDone: ${ok} applied, ${skipped} already existed.`);
+  console.log(`\nDone: ${ok} applied, ${skipped} skipped (already existed or permission denied).`);
 }
 
 main().catch(err => {

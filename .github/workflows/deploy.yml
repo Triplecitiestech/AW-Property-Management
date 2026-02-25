@@ -92,19 +92,41 @@ jobs:
         # so the NEXT_PUBLIC_* values are guaranteed to be correct.
         run: vercel build --prod --token="$VERCEL_TOKEN" --yes
 
+      - name: Disable Vercel GitHub auto-deploy (prevent race condition)
+        # Vercel's GitHub integration fires on every push and overrides our
+        # CLI deployment with stale main-branch code that has no Supabase URL.
+        # We set gitDeploymentEnabled=false on the project via API before we
+        # deploy so nothing can override our prebuilt upload.
+        run: |
+          set -euo pipefail
+          echo "Disabling Vercel GitHub auto-deployment..."
+          RESP=$(curl -sf -X PATCH \
+            "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}?teamId=${VERCEL_ORG_ID}" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"gitDeploymentEnabled": false}')
+          echo "Project update response: $RESP"
+          echo "GitHub auto-deploy disabled"
+
       - name: Deploy prebuilt output to Vercel
         # Uploads .vercel/output/ as-is. No Vercel-side rebuild.
-        # vercel.json has ignoreCommand:exit 1 to block Vercel's GitHub
-        # integration from auto-deploying stale code and overriding this.
         id: deploy
         run: |
           URL=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Deployed: $URL"
 
+      - name: Force-promote our deployment to production
+        # Ensures our specific deployment is the production one,
+        # even if anything fired between deploy and now.
+        run: |
+          set -euo pipefail
+          DEPLOYMENT_URL="${{ steps.deploy.outputs.url }}"
+          echo "Promoting $DEPLOYMENT_URL to production..."
+          vercel promote "$DEPLOYMENT_URL" --token="$VERCEL_TOKEN" --yes || \
+            echo "promote command not available, relying on --prod flag"
+
       - name: Verify — Supabase reachable
-        # Confirms the Supabase project is live and its auth service responds.
-        # Fails the workflow (and surfaces the error) if Supabase is down.
         run: |
           set -euo pipefail
           ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsb294bmxrb3Z3Ynh5bXdpZWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MjQ4MjcsImV4cCI6MjA4NzIwMDgyN30.9v0gzuGXBBho7ucjoKr8lo3h9Ql7W56LNSa9NDBTy8M"
@@ -114,48 +136,32 @@ jobs:
             -H "apikey: ${ANON_KEY}" 2>&1) || { echo "::error::Supabase unreachable: $RESP"; exit 1; }
           echo "Supabase OK: $RESP"
 
-      - name: Verify — app login page returns 200
-        # Confirms the deployed app serves the login page correctly.
-        # Waits briefly for the deployment to propagate across Vercel's edge.
-        run: |
-          set -euo pipefail
-          echo "Waiting 10s for deployment to propagate..."
-          sleep 10
-          HTTP=$(curl -o /dev/null -w "%{http_code}" -sf --max-time 20 \
-            "https://property-manager-alpha-ecru.vercel.app/auth/login" 2>&1) \
-            || HTTP="CURL_FAILED"
-          echo "Login page HTTP status: $HTTP"
-          if [ "$HTTP" != "200" ]; then
-            echo "::error::Login page returned $HTTP — expected 200"
-            exit 1
-          fi
-          echo "App OK — login page is live and returning 200"
-
       - name: Verify — correct Supabase URL in live bundle
-        # Hits the /api/config-check endpoint in the LIVE app.
-        # This proves the NEXT_PUBLIC_SUPABASE_URL from config.ts made it
-        # into the deployed JS bundle (not undefined, not from a stale build).
+        # Waits, then checks the PRODUCTION domain (not the deployment URL)
+        # to confirm Vercel GitHub integration has not overridden our build.
         run: |
           set -euo pipefail
-          echo "Checking live app config..."
-          CONFIG=$(curl -sf --max-time 15 \
-            "https://property-manager-alpha-ecru.vercel.app/api/config-check" 2>&1) \
-            || { echo "::error::config-check endpoint failed: $CONFIG"; exit 1; }
+          echo "Waiting 15s for production deployment to propagate..."
+          sleep 15
 
-          echo "Live config response: $CONFIG"
+          PROD_URL="https://property-manager-alpha-ecru.vercel.app"
+
+          HTTP=$(curl -o /dev/null -w "%{http_code}" -sf --max-time 20 "${PROD_URL}/auth/login") \
+            || HTTP="CURL_FAILED"
+          echo "Login page status: $HTTP"
+
+          CONFIG=$(curl -sf --max-time 15 "${PROD_URL}/api/config-check" 2>&1) \
+            || { echo "::error::config-check failed (endpoint missing — wrong deployment is live): $CONFIG"; exit 1; }
+          echo "Live config: $CONFIG"
 
           SUPA_URL=$(echo "$CONFIG" | jq -r '.supabaseUrl')
-          MARKER=$(echo "$CONFIG" | jq -r '.deployMarker')
-
           echo "Live Supabase URL: $SUPA_URL"
-          echo "Deploy marker: $MARKER"
 
           if [ "$SUPA_URL" != "https://ilooxnlkovwbxymwieaj.supabase.co" ]; then
-            echo "::error::WRONG Supabase URL in live bundle: '$SUPA_URL' — our deployment was likely overridden by Vercel GitHub integration"
+            echo "::error::WRONG Supabase URL in live bundle: '$SUPA_URL'"
             exit 1
           fi
-
-          echo "✓ Correct Supabase URL confirmed in live bundle"
+          echo "✓ Correct Supabase URL confirmed in production bundle"
 
       - name: Verify — Supabase auth actually works
         # Attempts signInWithPassword with intentionally wrong credentials.

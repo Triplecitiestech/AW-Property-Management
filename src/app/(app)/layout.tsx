@@ -14,12 +14,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       const serviceClient = createServiceClient()
       // Upsert with update so the profile always exists even if the DB trigger
       // didn't fire (e.g. user signed up before the schema was deployed).
-      await serviceClient.from('profiles').upsert({
+      const upsertData: Record<string, unknown> = {
         id: user.id,
         role: (user.user_metadata?.role as string) || 'manager',
         full_name: (user.user_metadata?.full_name as string) || user.email || '',
         email: user.email || '',
-      }, { onConflict: 'id' })
+      }
+      if (user.user_metadata?.phone_number) {
+        upsertData.phone_number = user.user_metadata.phone_number as string
+      }
+      await serviceClient.from('profiles').upsert(upsertData, { onConflict: 'id' })
     } catch { /* non-fatal */ }
   }
 

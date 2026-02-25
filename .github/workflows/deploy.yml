@@ -30,6 +30,7 @@ env:
   RESEND_FROM_EMAIL: "onboarding@resend.dev"
   NOTIFY_EMAIL: "info@triplecitiestech.com"
   TWILIO_PHONE_NUMBER: "+18886219169"
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
 jobs:
   deploy:

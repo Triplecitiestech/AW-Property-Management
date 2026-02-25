@@ -10,6 +10,7 @@
     "smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.48.1",
     "next": "^16.1.6",

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { OrgRole, PropertyRole } from '@/lib/supabase/types'
+import { sendWelcomeEmail } from '@/lib/email/resend'
 
 // ─── Internal: Get or create the current user's primary org ──────────────────
 // Used by property-creation to ensure an org always exists.
@@ -57,6 +58,16 @@ export async function getOrCreateUserOrg(): Promise<string | null> {
       user_id: user.id,
       role: 'owner',
     })
+
+    // Send welcome email to new user (fire-and-forget)
+    if (user.email) {
+      const twilioPhone = process.env.TWILIO_PHONE_NUMBER ?? ''
+      sendWelcomeEmail({
+        to: user.email,
+        name: profile?.full_name || user.email,
+        twilioPhone,
+      }).catch(console.error)
+    }
 
     return org.id
   } catch {

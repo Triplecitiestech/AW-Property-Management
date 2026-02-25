@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -40,7 +41,7 @@ export default function LoginPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: fullName, role: 'owner' } },
+          options: { data: { full_name: fullName, role: 'owner', phone_number: phone.trim() || null } },
         })
         if (error) throw error
         setMessage('Check your email to confirm your account, then log in.')
@@ -89,17 +90,32 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
-              <div>
-                <label className="form-label">Full Name</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={fullName}
-                  onChange={e => setFullName(e.target.value)}
-                  placeholder="Alex Williams"
-                  required
-                />
-              </div>
+              <>
+                <div>
+                  <label className="form-label">Full Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    placeholder="Alex Williams"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Phone Number</label>
+                  <p className="text-[11px] text-[#60608a] mb-1.5">
+                    Used for your AI Property Manager — text this number to manage your properties.
+                  </p>
+                  <input
+                    type="tel"
+                    className="form-input"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    placeholder="+1 555-000-0000"
+                  />
+                </div>
+              </>
             )}
             <div>
               <label className="form-label">

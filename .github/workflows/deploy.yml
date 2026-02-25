@@ -80,6 +80,17 @@ jobs:
           fi
           exit $STATUS
 
+      - name: Update Supabase auth Site URL
+        # Ensures the confirmation/magic-link emails point to production, not localhost.
+        run: |
+          HTTP=$(curl -s -o /tmp/auth_patch.json -w "%{http_code}" -X PATCH \
+            "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/auth" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"site_url":"https://aw-property-management.vercel.app","uri_allow_list":"https://aw-property-management.vercel.app/**,https://aw-property-management.vercel.app/auth/callback"}')
+          echo "HTTP: $HTTP  Response: $(cat /tmp/auth_patch.json | head -c 200)"
+          if [ "$HTTP" = "200" ]; then echo "✓ Supabase auth Site URL updated"; else echo "Warning: could not update auth config (HTTP $HTTP)"; fi
+
       - name: Type check
         run: npx tsc --noEmit
 

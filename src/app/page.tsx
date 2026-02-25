@@ -8,7 +8,20 @@ export const metadata = {
   description: 'AI-powered property management for short-term rental hosts. Manage properties, guests, tickets, and teams — all in one place. $10/property/month.',
 }
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string; next?: string }>
+}) {
+  const params = await searchParams
+
+  // Supabase auth emails link to /?code=… when Site URL lacks /auth/callback.
+  // Forward to the proper callback route so the code is exchanged correctly.
+  if (params.code) {
+    const qs = new URLSearchParams({ code: params.code, ...(params.next ? { next: params.next } : {}) })
+    redirect(`/auth/callback?${qs}`)
+  }
+
   // Redirect logged-in users
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

@@ -458,5 +458,63 @@ CREATE POLICY "invitations_select" ON invitations FOR SELECT TO authenticated US
 CREATE POLICY "invitations_insert" ON invitations FOR INSERT TO authenticated WITH CHECK (invited_by = auth.uid());
 CREATE POLICY "invitations_delete" ON invitations FOR DELETE TO authenticated USING (invited_by = auth.uid());
 
+-- ========================
+-- 007: Tighten remaining RLS
+-- ========================
+
+-- service_request_comments: scope to property access (was is_owner_or_manager — global leak)
+DROP POLICY IF EXISTS "comments_select" ON service_request_comments;
+DROP POLICY IF EXISTS "comments_insert" ON service_request_comments;
+DROP POLICY IF EXISTS "comments_update" ON service_request_comments;
+DROP POLICY IF EXISTS "comments_delete" ON service_request_comments;
+CREATE POLICY "comments_select" ON service_request_comments FOR SELECT TO authenticated USING (
+  EXISTS (SELECT 1 FROM service_requests sr WHERE sr.id = request_id AND can_access_property(sr.property_id))
+);
+CREATE POLICY "comments_insert" ON service_request_comments FOR INSERT TO authenticated WITH CHECK (
+  EXISTS (SELECT 1 FROM service_requests sr WHERE sr.id = request_id AND can_access_property(sr.property_id))
+);
+CREATE POLICY "comments_update" ON service_request_comments FOR UPDATE TO authenticated
+  USING   (author_id = auth.uid() OR EXISTS (SELECT 1 FROM service_requests sr WHERE sr.id = request_id AND is_property_admin(sr.property_id)))
+  WITH CHECK (author_id = auth.uid() OR EXISTS (SELECT 1 FROM service_requests sr WHERE sr.id = request_id AND is_property_admin(sr.property_id)));
+CREATE POLICY "comments_delete" ON service_request_comments FOR DELETE TO authenticated USING (
+  author_id = auth.uid() OR EXISTS (SELECT 1 FROM service_requests sr WHERE sr.id = request_id AND is_property_admin(sr.property_id))
+);
+
+-- guest_reports: scope to property access via stay (was is_owner_or_manager — global leak)
+DROP POLICY IF EXISTS "guest_reports_select"      ON guest_reports;
+DROP POLICY IF EXISTS "guest_reports_insert_auth" ON guest_reports;
+CREATE POLICY "guest_reports_select" ON guest_reports FOR SELECT TO authenticated USING (
+  EXISTS (SELECT 1 FROM stays s WHERE s.id = stay_id AND can_access_property(s.property_id))
+);
+CREATE POLICY "guest_reports_insert_auth" ON guest_reports FOR INSERT TO authenticated WITH CHECK (
+  EXISTS (SELECT 1 FROM stays s WHERE s.id = stay_id AND can_access_property(s.property_id))
+);
+
+-- audit_log: scope to own entries + accessible properties (was is_owner_or_manager — global leak)
+DROP POLICY IF EXISTS "audit_log_select" ON audit_log;
+DROP POLICY IF EXISTS "audit_log_insert" ON audit_log;
+CREATE POLICY "audit_log_select" ON audit_log FOR SELECT TO authenticated USING (
+  changed_by = auth.uid()
+  OR (entity_type = 'property' AND can_access_property(entity_id))
+  OR EXISTS (SELECT 1 FROM stays          s  WHERE s.id  = entity_id AND can_access_property(s.property_id))
+  OR EXISTS (SELECT 1 FROM service_requests sr WHERE sr.id = entity_id AND can_access_property(sr.property_id))
+  OR EXISTS (SELECT 1 FROM property_status  ps WHERE ps.id = entity_id AND can_access_property(ps.property_id))
+);
+CREATE POLICY "audit_log_insert" ON audit_log FOR INSERT TO authenticated WITH CHECK (true);
+
+-- org_members: add missing UPDATE policy (needed for role changes)
+DROP POLICY IF EXISTS "org_members_update" ON org_members;
+CREATE POLICY "org_members_update" ON org_members FOR UPDATE TO authenticated
+  USING   (EXISTS (SELECT 1 FROM org_members om WHERE om.org_id = org_id AND om.user_id = auth.uid() AND om.role IN ('owner', 'admin')))
+  WITH CHECK (EXISTS (SELECT 1 FROM org_members om WHERE om.org_id = org_id AND om.user_id = auth.uid() AND om.role IN ('owner', 'admin')));
+
+-- Make organizations policies idempotent (drop before re-create)
+DROP POLICY IF EXISTS "organizations_select" ON organizations;
+DROP POLICY IF EXISTS "organizations_insert" ON organizations;
+DROP POLICY IF EXISTS "organizations_update" ON organizations;
+CREATE POLICY "organizations_select" ON organizations FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM org_members om WHERE om.org_id = id AND om.user_id = auth.uid()));
+CREATE POLICY "organizations_insert" ON organizations FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "organizations_update" ON organizations FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM org_members om WHERE om.org_id = id AND om.user_id = auth.uid() AND om.role IN ('owner', 'admin')));
+
 -- Done!
 SELECT 'Schema deployed successfully' AS result;

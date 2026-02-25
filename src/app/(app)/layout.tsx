@@ -12,12 +12,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
     try {
       const serviceClient = createServiceClient()
+      // Upsert with update so the profile always exists even if the DB trigger
+      // didn't fire (e.g. user signed up before the schema was deployed).
       await serviceClient.from('profiles').upsert({
         id: user.id,
-        role: (user.user_metadata?.role as string) || 'owner',
+        role: (user.user_metadata?.role as string) || 'manager',
         full_name: (user.user_metadata?.full_name as string) || user.email || '',
         email: user.email || '',
-      }, { onConflict: 'id', ignoreDuplicates: true })
+      }, { onConflict: 'id' })
     } catch { /* non-fatal */ }
   }
 

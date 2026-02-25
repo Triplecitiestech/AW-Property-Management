@@ -59,14 +59,6 @@ jobs:
         # property_access, invitations) and all other schema changes are
         # always present before the app is deployed.
         run: |
-          # Connectivity diagnostic — reported via annotation
-          echo "=== Connectivity check ==="
-          SUPA_MGMT=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://api.supabase.com/v1/projects || echo "CURL_FAILED")
-          SUPA_PROJ=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "https://ilooxnlkovwbxymwieaj.supabase.co/auth/v1/health" -H "apikey: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}" || echo "CURL_FAILED")
-          echo "api.supabase.com HTTP: $SUPA_MGMT"
-          echo "project.supabase.co HTTP: $SUPA_PROJ"
-          echo "::notice title=Connectivity::api.supabase.com=$SUPA_MGMT project.supabase.co=$SUPA_PROJ"
-
           set -o pipefail
           node scripts/run-migration.mjs 2>&1 | tee /tmp/migration-output.txt
           STATUS=${PIPESTATUS[0]}

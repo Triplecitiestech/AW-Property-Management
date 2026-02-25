@@ -84,45 +84,47 @@ All credentials live in `.env.local` (gitignored). If that file exists, read it 
 - Tailwind CSS
 - TypeScript strict mode
 
-## Current state (as of 2026-02-23)
-The app is a multi-tenant property management SaaS. Here is what has been built:
+## Current state (as of 2026-02-25)
+The app is a **fully deployed** multi-tenant property management SaaS.
 
-### Multi-tenant architecture (fully implemented, migration not yet run in production)
-- `organizations` table — one org per customer
-- `org_members` table — users belonging to an org (roles: owner/admin/member)
-- `property_access` table — cross-org property sharing (roles: manager/viewer)
-- `invitations` table — token-based invite links (org-wide or property-specific)
-- `can_access_property(prop_id)` and `is_property_admin(prop_id)` DB functions used by all RLS policies
-- New properties automatically assigned to an org via `getOrCreateUserOrg()` in `src/lib/actions/organizations.ts`
-- Migration file: `supabase/migrations/20260221_multi_tenant.sql`
-- **STATUS: Migration NOT yet run in production Supabase — must be run before the app works**
+### App is live ✅
+- Production URL: `https://aw-property-management.vercel.app`
+- CI run #21 passed all 17 steps (migration ✓, build ✓, deploy ✓, verification ✓)
+- `deploy.yml` triggers on push to `main` OR `claude/**` branches — both deploy to production
 
-### Settings & invites (fully implemented)
+### Multi-tenant architecture ✅ FULLY DEPLOYED
+- `organizations`, `org_members`, `property_access`, `invitations` tables exist in production Supabase
+- `can_access_property(prop_id)` and `is_property_admin(prop_id)` DB functions live
+- Properties auto-assigned to an org via `getOrCreateUserOrg()` on creation
+- `deploy.yml` runs `supabase/deploy.sql` (full idempotent schema) as part of every deploy — schema is always in sync
+
+### Migration notes
+- `run-migration.mjs` uses Node.js `https` module (NOT undici `fetch`) — undici had TLS issues with `api.supabase.com`
+- `api.supabase.com` must be reachable from the GitHub Actions runner (confirmed working in run #21)
+
+### Sign-up flow ✅ IMPLEMENTED
+- Login page at `/auth/login` has a toggle between Login and Sign Up modes
+- Sign up creates a Supabase auth user + profile + org automatically
+
+### Settings & invites ✅
 - `/settings` — org name editing, team member management, invite link generation
 - `/invite/[token]` — public invite acceptance page
-- Components: `src/components/settings/OrgSettings.tsx`
-- Server actions: `src/lib/actions/organizations.ts`
 
-### Property onboarding wizard (fully implemented)
+### Property onboarding wizard ✅
 - Triggered when clicking "Add Property" — multi-step wizard
 - Steps: Property Details → Primary Contact → Service Contacts → Checklist → Notes/AI
-- Edit mode: accessible via "Edit Setup" button on property detail page
-- Components: `src/components/properties/OnboardingWizard.tsx`
 
 ### UI
 - Dark navy-slate theme (body `#0f1829`, card `#1a2436`, borders `#2a3d58`)
 - Sidebar includes: Dashboard, Properties, Stays, Tickets, Settings
 
 ### Deployment
-- GitHub Actions: `.github/workflows/deploy.yml` (auto-deploy to Vercel on push to main)
-- GitHub Actions: `.github/workflows/migrate.yml` (manual migration runner)
-- **STATUS: Vercel project exists but env vars not yet configured — app not live yet**
+- GitHub Actions: `.github/workflows/deploy.yml` (auto-deploy + auto-migrate on push to `main` OR `claude/**`)
+- Git proxy only allows pushing to `claude/` branches — use the feature branch, not main
 
 ## What still needs to be done
-1. **Run the Supabase migration** — execute `supabase/migrations/20260221_multi_tenant.sql` in production
-2. **Configure Vercel env vars** — set all required env vars on the Vercel project
-3. **Merge branch to main** — merge `claude/multi-agent-workflow-setup-hU5iv` into `main` so GitHub Actions deploys
-4. **Add a sign-up flow** — the login page has no sign-up form; new tenants can't self-register yet
+- Nothing critical. The app is fully functional.
+- **v2 ideas**: photo uploads on tickets/guest reports, recurring tasks, weekly email digest, QR codes per property
 
 ## Project structure
 ```

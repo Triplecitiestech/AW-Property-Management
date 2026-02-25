@@ -129,3 +129,59 @@ jobs:
             exit 1
           fi
           echo "App OK — login page is live and returning 200"
+
+      - name: Verify — correct Supabase URL in live bundle
+        # Hits the /api/config-check endpoint in the LIVE app.
+        # This proves the NEXT_PUBLIC_SUPABASE_URL from config.ts made it
+        # into the deployed JS bundle (not undefined, not from a stale build).
+        run: |
+          set -euo pipefail
+          echo "Checking live app config..."
+          CONFIG=$(curl -sf --max-time 15 \
+            "https://property-manager-alpha-ecru.vercel.app/api/config-check" 2>&1) \
+            || { echo "::error::config-check endpoint failed: $CONFIG"; exit 1; }
+
+          echo "Live config response: $CONFIG"
+
+          SUPA_URL=$(echo "$CONFIG" | jq -r '.supabaseUrl')
+          MARKER=$(echo "$CONFIG" | jq -r '.deployMarker')
+
+          echo "Live Supabase URL: $SUPA_URL"
+          echo "Deploy marker: $MARKER"
+
+          if [ "$SUPA_URL" != "https://ilooxnlkovwbxymwieaj.supabase.co" ]; then
+            echo "::error::WRONG Supabase URL in live bundle: '$SUPA_URL' — our deployment was likely overridden by Vercel GitHub integration"
+            exit 1
+          fi
+
+          echo "✓ Correct Supabase URL confirmed in live bundle"
+
+      - name: Verify — Supabase auth actually works
+        # Attempts signInWithPassword with intentionally wrong credentials.
+        # Correct response: {"code":400,"error_description":"Invalid login credentials",...}
+        # Wrong response:   network error / connection refused / empty body
+        # This proves the auth endpoint is reachable from the internet, not just CI.
+        run: |
+          set -euo pipefail
+          ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsb294bmxrb3Z3Ynh5bXdpZWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MjQ4MjcsImV4cCI6MjA4NzIwMDgyN30.9v0gzuGXBBho7ucjoKr8lo3h9Ql7W56LNSa9NDBTy8M"
+
+          echo "Attempting Supabase auth with wrong credentials..."
+          AUTH=$(curl -s --max-time 15 -X POST \
+            "https://ilooxnlkovwbxymwieaj.supabase.co/auth/v1/token?grant_type=password" \
+            -H "apikey: ${ANON_KEY}" \
+            -H "Content-Type: application/json" \
+            -d '{"email":"ci-probe@example.com","password":"wrong-password-probe-12345"}')
+
+          echo "Auth response: $AUTH"
+
+          # Should contain an error about invalid credentials (not a network failure)
+          if echo "$AUTH" | jq -e '.error' > /dev/null 2>&1; then
+            ERR=$(echo "$AUTH" | jq -r '.error // .msg // "unknown"')
+            echo "✓ Supabase auth endpoint working — returned expected error: $ERR"
+          elif echo "$AUTH" | jq -e '.error_description' > /dev/null 2>&1; then
+            ERR=$(echo "$AUTH" | jq -r '.error_description')
+            echo "✓ Supabase auth endpoint working — returned: $ERR"
+          else
+            echo "::error::Unexpected auth response (may indicate Supabase is down): $AUTH"
+            exit 1
+          fi

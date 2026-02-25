@@ -75,17 +75,32 @@ function StepButtons({
 
 // ─── Progress Indicator ───────────────────────────────────────────────────────
 
-function StepIndicator({ current, total }: { current: number; total: number }) {
+function StepIndicator({
+  current,
+  total,
+  maxReached,
+  onStepClick,
+}: {
+  current: number
+  total: number
+  maxReached: number
+  onStepClick: (step: number) => void
+}) {
   return (
     <div className="flex items-center gap-2 mb-6">
-      {Array.from({ length: total }).map((_, i) => (
-        <div
-          key={i}
-          className={`h-1.5 flex-1 rounded-full transition-colors ${
-            i < current ? 'bg-violet-500' : i === current ? 'bg-violet-400' : 'bg-[#262638]'
-          }`}
-        />
-      ))}
+      {Array.from({ length: total }).map((_, i) => {
+        const clickable = i <= maxReached && i !== current
+        return (
+          <div
+            key={i}
+            onClick={clickable ? () => onStepClick(i) : undefined}
+            title={clickable ? STEPS[i].title : undefined}
+            className={`h-1.5 flex-1 rounded-full transition-all ${
+              i < current ? 'bg-violet-500' : i === current ? 'bg-violet-400' : 'bg-[#262638]'
+            } ${clickable ? 'cursor-pointer hover:opacity-70' : ''}`}
+          />
+        )
+      })}
       <span className="text-xs text-[#60608a] ml-1 flex-shrink-0">
         {current + 1} / {total}
       </span>
@@ -732,11 +747,23 @@ export default function OnboardingWizard({
   initialAiInstructions?: string
 }) {
   const [step, setStep] = useState(0)
+  // For edit mode all steps are accessible; for new, start at 0 and expand as we progress
+  const [maxReached, setMaxReached] = useState(isNew ? 0 : STEPS.length - 1)
   const [resolvedPropertyId, setResolvedPropertyId] = useState<string | undefined>(propPropertyId)
   const [resolvedName, setResolvedName] = useState(initialName)
 
   const done = step >= STEPS.length
-  const next = () => setStep(s => s + 1)
+  const next = () => {
+    const nextStep = step + 1
+    setStep(nextStep)
+    setMaxReached(prev => Math.max(prev, nextStep))
+  }
+
+  function handleStepClick(targetStep: number) {
+    // Don't allow jumping past step 0 if no property exists yet
+    if (targetStep > 0 && !resolvedPropertyId) return
+    setStep(targetStep)
+  }
 
   function handleDetailsSave(id: string, name: string) {
     setResolvedPropertyId(id)
@@ -774,7 +801,7 @@ export default function OnboardingWizard({
           <DoneScreen propertyId={resolvedPropertyId!} propertyName={resolvedName} isNew={isNew} />
         ) : (
           <>
-            <StepIndicator current={step} total={STEPS.length} />
+            <StepIndicator current={step} total={STEPS.length} maxReached={maxReached} onStepClick={handleStepClick} />
 
             <div className="mb-5">
               <h2 className="text-base font-semibold text-white">{STEPS[step].title}</h2>

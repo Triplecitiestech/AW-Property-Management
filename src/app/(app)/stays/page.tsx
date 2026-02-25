@@ -4,9 +4,9 @@ import Link from 'next/link'
 export default async function StaysPage({
   searchParams,
 }: {
-  searchParams: Promise<{ property_id?: string }>
+  searchParams: Promise<{ property_id?: string; q?: string }>
 }) {
-  const { property_id } = await searchParams
+  const { property_id, q } = await searchParams
   const supabase = await createClient()
 
   let query = supabase
@@ -14,9 +14,8 @@ export default async function StaysPage({
     .select('*, properties(name, id)')
     .order('start_date', { ascending: false })
 
-  if (property_id) {
-    query = query.eq('property_id', property_id)
-  }
+  if (property_id) query = query.eq('property_id', property_id)
+  if (q) query = query.ilike('guest_name', `%${q}%`)
 
   const { data: stays } = await query
   const { data: properties } = await supabase.from('properties').select('id, name').order('name')
@@ -44,19 +43,24 @@ export default async function StaysPage({
         </Link>
       </div>
 
-      {/* Filter */}
+      {/* Filters */}
       <div className="card p-4">
-        <form className="flex items-center gap-4">
-          <div className="flex-1">
-            <select name="property_id" className="form-select text-sm" defaultValue={property_id ?? ''}>
-              <option value="">All Properties</option>
-              {properties?.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
+        <form className="flex flex-wrap items-center gap-3">
+          <input
+            name="q"
+            type="search"
+            defaultValue={q ?? ''}
+            placeholder="Search guest name…"
+            className="form-input text-sm w-auto flex-1 min-w-[160px]"
+          />
+          <select name="property_id" className="form-select text-sm w-auto" defaultValue={property_id ?? ''}>
+            <option value="">All Properties</option>
+            {properties?.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
           <button type="submit" className="btn-secondary text-sm">Filter</button>
-          {property_id && <Link href="/stays" className="text-sm text-gray-500 hover:text-gray-700">Clear</Link>}
+          {(property_id || q) && <Link href="/stays" className="text-sm text-gray-500 hover:text-gray-700">Clear</Link>}
         </form>
       </div>
 

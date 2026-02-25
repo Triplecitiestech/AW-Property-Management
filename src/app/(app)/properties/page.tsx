@@ -5,13 +5,22 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`badge badge-${status}`}>{status.replace(/_/g, ' ')}</span>
 }
 
-export default async function PropertiesPage() {
+export default async function PropertiesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
+  const { q } = await searchParams
   const supabase = await createClient()
 
-  const { data: properties } = await supabase
+  let query = supabase
     .from('properties')
     .select('*, property_status(*)')
     .order('name')
+
+  if (q) query = query.ilike('name', `%${q}%`)
+
+  const { data: properties } = await query
 
   const { data: openTicketCounts } = await supabase
     .from('service_requests')
@@ -36,6 +45,21 @@ export default async function PropertiesPage() {
           </svg>
           Add Property
         </Link>
+      </div>
+
+      {/* Search */}
+      <div className="card p-4">
+        <form className="flex items-center gap-3">
+          <input
+            name="q"
+            type="search"
+            defaultValue={q ?? ''}
+            placeholder="Search properties…"
+            className="form-input text-sm flex-1"
+          />
+          <button type="submit" className="btn-secondary text-sm">Search</button>
+          {q && <Link href="/properties" className="text-sm text-gray-500 hover:text-gray-700">Clear</Link>}
+        </form>
       </div>
 
       <div className="grid gap-4">

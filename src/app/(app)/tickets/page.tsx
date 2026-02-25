@@ -12,7 +12,7 @@ function StatusBadge({ status }: { status: string }) {
 export default async function TicketsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ property_id?: string; status?: string; priority?: string }>
+  searchParams: Promise<{ property_id?: string; status?: string; priority?: string; q?: string }>
 }) {
   const filters = await searchParams
   const supabase = await createClient()
@@ -25,6 +25,7 @@ export default async function TicketsPage({
   if (filters.property_id) query = query.eq('property_id', filters.property_id)
   if (filters.status) query = query.eq('status', filters.status)
   if (filters.priority) query = query.eq('priority', filters.priority)
+  if (filters.q) query = query.ilike('title', `%${filters.q}%`)
 
   const { data: tickets } = await query
   const { data: properties } = await supabase.from('properties').select('id, name').order('name')
@@ -49,6 +50,13 @@ export default async function TicketsPage({
       {/* Filters */}
       <div className="card p-4">
         <form className="flex flex-wrap items-center gap-3">
+          <input
+            name="q"
+            type="search"
+            defaultValue={filters.q ?? ''}
+            placeholder="Search tickets…"
+            className="form-input text-sm w-auto flex-1 min-w-[160px]"
+          />
           <select name="property_id" className="form-select text-sm w-auto" defaultValue={filters.property_id ?? ''}>
             <option value="">All Properties</option>
             {properties?.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -68,7 +76,7 @@ export default async function TicketsPage({
             <option value="low">Low</option>
           </select>
           <button type="submit" className="btn-secondary text-sm">Apply</button>
-          {(filters.property_id || filters.status || filters.priority) && (
+          {(filters.property_id || filters.status || filters.priority || filters.q) && (
             <Link href="/tickets" className="text-sm text-gray-500 hover:text-gray-700">Clear</Link>
           )}
         </form>

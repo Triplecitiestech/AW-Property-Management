@@ -28,8 +28,8 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes (no auth required)
-  const publicPaths = ['/auth/login', '/auth/callback', '/guest', '/invite']
-  const isPublic = publicPaths.some(p => pathname.startsWith(p))
+  const publicPaths = ['/auth/login', '/auth/callback', '/guest', '/invite', '/pricing']
+  const isPublic = publicPaths.some(p => pathname.startsWith(p)) || pathname === '/'
 
   // Also allow API routes without auth (handled within route)
   const isApi = pathname.startsWith('/api/')

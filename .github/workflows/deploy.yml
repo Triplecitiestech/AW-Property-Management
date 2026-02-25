@@ -126,12 +126,19 @@ jobs:
       - name: Force-promote our deployment to production
         # Ensures our specific deployment is the production one,
         # even if anything fired between deploy and now.
+        # Also explicitly aliases the production domain so it is guaranteed
+        # to point to our deployment (in case it is a fixed alias).
         run: |
           set -euo pipefail
           DEPLOYMENT_URL="${{ steps.deploy.outputs.url }}"
           echo "Promoting $DEPLOYMENT_URL to production..."
           vercel promote "$DEPLOYMENT_URL" --token="$VERCEL_TOKEN" --yes || \
             echo "promote command not available, relying on --prod flag"
+
+          echo "Aliasing production domain to our deployment..."
+          vercel alias "$DEPLOYMENT_URL" "property-manager-alpha-ecru.vercel.app" \
+            --token="$VERCEL_TOKEN" --yes || \
+            echo "Warning: alias command failed (may not be needed if promote worked)"
 
       - name: Verify — Supabase reachable
         run: |
@@ -144,43 +151,58 @@ jobs:
           echo "Supabase OK: $RESP"
 
       - name: Verify — correct Supabase URL in live bundle
-        # Waits, then checks the PRODUCTION domain (not the deployment URL)
-        # to confirm Vercel GitHub integration has not overridden our build.
-        # Retries up to 3 times to account for CDN propagation delays.
+        # Checks BOTH the specific deployment URL (immediate) and the production
+        # domain alias (after propagation). This pinpoints whether the issue is
+        # in the deployment itself or in alias routing.
         run: |
           set -euo pipefail
-          echo "Waiting 20s for production deployment to propagate..."
-          sleep 20
-
+          DEPLOYMENT_URL="${{ steps.deploy.outputs.url }}"
           PROD_URL="https://property-manager-alpha-ecru.vercel.app"
+
+          # 1. Verify the specific deployment URL immediately (no alias routing)
+          echo "=== Checking deployment URL directly: $DEPLOYMENT_URL ==="
+          DEPLOY_CONFIG=$(curl -s --max-time 20 "${DEPLOYMENT_URL}/api/config-check" 2>&1) || DEPLOY_CONFIG=""
+          echo "Deployment config-check: $DEPLOY_CONFIG"
+          DEPLOY_SUPA=$(echo "$DEPLOY_CONFIG" | jq -r '.supabaseUrl // empty' 2>/dev/null || true)
+          if [ "$DEPLOY_SUPA" = "https://ilooxnlkovwbxymwieaj.supabase.co" ]; then
+            echo "✓ Correct Supabase URL confirmed in deployment itself"
+          else
+            echo "::error::WRONG URL in deployment: '$DEPLOY_SUPA' — the build itself is broken"
+            exit 1
+          fi
+
+          # 2. Verify the production alias (after propagation)
+          echo ""
+          echo "=== Checking production alias: $PROD_URL ==="
+          echo "Waiting 20s for production alias to propagate..."
+          sleep 20
 
           HTTP=$(curl -o /dev/null -w "%{http_code}" -s --max-time 20 "${PROD_URL}/auth/login") \
             || HTTP="CURL_FAILED"
           echo "Login page status: $HTTP"
 
-          # Retry config-check up to 3 times (30s apart) to allow CDN propagation
+          # Retry config-check on production domain up to 4 times (30s apart)
           SUPA_URL=""
-          for attempt in 1 2 3; do
-            echo "Config-check attempt $attempt..."
+          for attempt in 1 2 3 4; do
+            echo "Production config-check attempt $attempt..."
             CONFIG=$(curl -s --max-time 15 "${PROD_URL}/api/config-check" 2>&1) || CONFIG=""
             echo "Response: $CONFIG"
 
             SUPA_URL=$(echo "$CONFIG" | jq -r '.supabaseUrl // empty' 2>/dev/null || true)
             if [ "$SUPA_URL" = "https://ilooxnlkovwbxymwieaj.supabase.co" ]; then
-              echo "✓ Correct Supabase URL confirmed on attempt $attempt"
+              echo "✓ Correct Supabase URL confirmed on production alias (attempt $attempt)"
               break
             fi
 
-            if [ $attempt -lt 3 ]; then
+            if [ $attempt -lt 4 ]; then
               echo "Not yet — waiting 30s before retry..."
               sleep 30
             fi
           done
 
           if [ "$SUPA_URL" != "https://ilooxnlkovwbxymwieaj.supabase.co" ]; then
-            echo "::error::WRONG or missing Supabase URL in live bundle after 3 attempts: '$SUPA_URL'"
-            echo "::error::This usually means Vercel GitHub integration deployed stale main-branch code."
-            echo "::error::Check Vercel dashboard: the production deployment should be from our CLI, not GitHub integration."
+            echo "::error::WRONG or missing Supabase URL on production domain after 4 attempts: '$SUPA_URL'"
+            echo "::error::The deployment itself is correct (verified above) but production alias routing is stale."
             exit 1
           fi
 

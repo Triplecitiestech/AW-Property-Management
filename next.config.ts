@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
       allowedOrigins: [
         "localhost:3000",
         "property-manager-alpha-ecru.vercel.app",
+        "aw-property-management.vercel.app",
       ],
     },
   },

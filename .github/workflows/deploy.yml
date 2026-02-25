@@ -17,7 +17,7 @@ env:
   NEXT_PUBLIC_SUPABASE_URL: "https://ilooxnlkovwbxymwieaj.supabase.co"
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsb294bmxrb3Z3Ynh5bXdpZWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MjQ4MjcsImV4cCI6MjA4NzIwMDgyN30.9v0gzuGXBBho7ucjoKr8lo3h9Ql7W56LNSa9NDBTy8M"
   SUPABASE_SERVICE_ROLE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsb294bmxrb3Z3Ynh5bXdpZWFqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTYyNDgyNywiZXhwIjoyMDg3MjAwODI3fQ.XAjltSyDNQp2Hp4IkxGSX02Wrd1fEC7MEecSZypozB0"
-  NEXT_PUBLIC_APP_URL: "https://property-manager-alpha-ecru.vercel.app"
+  NEXT_PUBLIC_APP_URL: "https://aw-property-management.vercel.app"
   RESEND_API_KEY: "re_hfaSzERE_PcMVWnwJN3ZBBh5y97bzxZv1"
   RESEND_FROM_EMAIL: "onboarding@resend.dev"
   NOTIFY_EMAIL: "info@triplecitiestech.com"
@@ -136,30 +136,6 @@ jobs:
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Extracted deployment URL: $URL"
 
-      - name: Diagnose — print project domains and deployment URL
-        # Emits ::notice:: annotations so they are visible in the GitHub Actions UI
-        # even without log access. Helps debug alias routing issues.
-        run: |
-          DEPLOYMENT_URL="${{ steps.deploy.outputs.url }}"
-          echo "::notice::Deployment URL: $DEPLOYMENT_URL"
-
-          PROJ=$(curl -s \
-            "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}?teamId=${VERCEL_ORG_ID}" \
-            -H "Authorization: Bearer $VERCEL_TOKEN")
-
-          ALIASES=$(echo "$PROJ" | jq -r '[.alias // [] | .[].domain] | join(", ")' 2>/dev/null || echo "jq_error")
-          PROD_BRANCH=$(echo "$PROJ" | jq -r '.link.productionBranch // "unknown"' 2>/dev/null || echo "jq_error")
-          LATEST_DEPLOY=$(echo "$PROJ" | jq -r '.latestDeployments[0].url // "none"' 2>/dev/null || echo "jq_error")
-          echo "::notice::Project aliases: $ALIASES"
-          echo "::notice::Production branch: $PROD_BRANCH"
-          echo "::notice::Latest deployment URL: $LATEST_DEPLOY"
-
-          # Also look up the domain directly
-          DOMAIN_RESP=$(curl -s \
-            "https://api.vercel.com/v6/domains/property-manager-alpha-ecru.vercel.app?teamId=${VERCEL_ORG_ID}" \
-            -H "Authorization: Bearer $VERCEL_TOKEN")
-          echo "::notice::Domain lookup: $(echo "$DOMAIN_RESP" | jq -c '{projectId:.projectId,serviceType:.serviceType}' 2>/dev/null || echo 'parse_error')"
-
       - name: Force-promote our deployment to production
         # Ensures our specific deployment is the production one,
         # even if anything fired between deploy and now.
@@ -172,10 +148,8 @@ jobs:
           vercel promote "$DEPLOYMENT_URL" --token="$VERCEL_TOKEN" --yes || \
             echo "promote command not available, relying on --prod flag"
 
-          echo "Aliasing production domain to our deployment..."
-          vercel alias "$DEPLOYMENT_URL" "property-manager-alpha-ecru.vercel.app" \
-            --token="$VERCEL_TOKEN" --yes || \
-            echo "Warning: alias command failed (may not be needed if promote worked)"
+          echo "::notice::Production URL: https://aw-property-management.vercel.app"
+          echo "::notice::Deployment URL: $DEPLOYMENT_URL"
 
       - name: Verify — Supabase reachable
         run: |
@@ -194,7 +168,7 @@ jobs:
         run: |
           set -euo pipefail
           DEPLOYMENT_URL="${{ steps.deploy.outputs.url }}"
-          PROD_URL="https://property-manager-alpha-ecru.vercel.app"
+          PROD_URL="https://aw-property-management.vercel.app"
 
           # 1. Verify the specific deployment URL immediately (no alias routing)
           echo "=== Checking deployment URL directly: $DEPLOYMENT_URL ==="
@@ -214,7 +188,7 @@ jobs:
           echo "Waiting 20s for production alias to propagate..."
           sleep 20
 
-          HTTP=$(curl -o /dev/null -w "%{http_code}" -s --max-time 20 "${PROD_URL}/auth/login") \
+          HTTP=$(curl -o /dev/null -w "%{http_code}" -s --max-time 30 "${PROD_URL}/auth/login") \
             || HTTP="CURL_FAILED"
           echo "Login page status: $HTTP"
 

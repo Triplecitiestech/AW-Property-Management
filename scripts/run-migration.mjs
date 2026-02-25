@@ -221,7 +221,8 @@ async function main() {
         msg.includes('permission denied') ||  // extension already installed by Supabase
         msg.includes('must be owner') ||       // cannot modify Supabase-owned extensions
         msg.includes('tuple concurrently') ||  // concurrent modification, safe to skip
-        msg.includes('40001');                  // serialization failure — retry would loop, skip
+        msg.includes('40001') ||               // serialization failure — idempotent, skip
+        msg.includes('40P01');                 // deadlock — idempotent schema, safe to skip
 
       if (isSafe) {
         console.log(`  SKIP [${stmtNum}/${statements.length}]: ${preview}`);

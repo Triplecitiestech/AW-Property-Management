@@ -2,7 +2,7 @@ import MarketingNav from '@/components/marketing/MarketingNav'
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Pricing — SmartSum AI',
+  title: 'Pricing — Smart Sumai',
   description: 'Simple, transparent pricing for property managers. $10 per property per month. No hidden fees.',
 }
 
@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     q: 'Can I manage multiple properties?',
-    a: 'Absolutely. SmartSum AI is built for property managers with portfolios of any size. Add as many properties as you need — each is $10/month.',
+    a: 'Absolutely. Smart Sumai is built for property managers with portfolios of any size. Add as many properties as you need — each is $10/month.',
   },
   {
     q: 'Can I invite my team?',
@@ -187,14 +187,14 @@ export default function PricingPage() {
                 <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <span className="font-bold text-white">SmartSum <span className="text-teal-400">AI</span></span>
+            <span className="font-bold text-white">Smart <span className="text-teal-400">Sumai</span></span>
           </div>
           <div className="flex gap-6">
             <Link href="/" className="hover:text-white transition-colors">Home</Link>
             <Link href="/auth/login" className="hover:text-white transition-colors">Sign In</Link>
             <Link href="/auth/login?mode=signup" className="hover:text-white transition-colors">Sign Up</Link>
           </div>
-          <p>© {new Date().getFullYear()} SmartSum AI. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Smart Sumai. All rights reserved.</p>
         </div>
       </footer>
     </div>

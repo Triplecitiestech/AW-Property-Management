@@ -4,7 +4,7 @@ import MarketingNav from '@/components/marketing/MarketingNav'
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'SmartSum AI — Property Management Made Smart',
+  title: 'Smart Sumai — Property Management Made Smart',
   description: 'AI-powered property management for short-term rental hosts. Manage properties, guests, tickets, and teams — all in one place. $10/property/month.',
 }
 
@@ -46,7 +46,7 @@ export default async function Home() {
             </span>
           </h1>
           <p className="text-xl text-[#8aa0be] max-w-2xl mx-auto mb-10 leading-relaxed">
-            Run your short-term rentals without the chaos. SmartSum AI centralizes your properties,
+            Run your short-term rentals without the chaos. Smart Sumai centralizes your properties,
             guest stays, service tickets, and team — in one beautifully simple dashboard.
           </p>
 
@@ -341,7 +341,7 @@ export default async function Home() {
             Ready to simplify your<br />property operations?
           </h2>
           <p className="text-[#8aa0be] text-lg mb-10">
-            Join property managers who use SmartSum AI to save hours every week.
+            Join property managers who use Smart Sumai to save hours every week.
           </p>
           <Link href="/auth/login?mode=signup"
             className="inline-block px-10 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-violet-500
@@ -363,7 +363,7 @@ export default async function Home() {
                   <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <span className="font-bold text-white">SmartSum <span className="text-teal-400">AI</span></span>
+              <span className="font-bold text-white">Smart <span className="text-teal-400">Sumai</span></span>
             </div>
             <div className="flex items-center gap-6 text-sm text-[#4a6080]">
               <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
@@ -371,7 +371,7 @@ export default async function Home() {
               <Link href="/auth/login?mode=signup" className="hover:text-white transition-colors">Sign Up</Link>
             </div>
             <p className="text-sm text-[#4a6080]">
-              © {new Date().getFullYear()} SmartSum AI. All rights reserved.
+              © {new Date().getFullYear()} Smart Sumai. All rights reserved.
             </p>
           </div>
         </div>

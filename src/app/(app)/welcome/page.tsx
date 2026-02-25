@@ -69,7 +69,7 @@ const steps = [
     ),
     color: 'from-emerald-600 to-emerald-400',
     title: 'Track guest stays',
-    description: 'Log every check-in and check-out. SmartSum AI auto-generates a unique checklist link for each stay — send it to your guest before arrival.',
+    description: 'Log every check-in and check-out. Smart Sumai auto-generates a unique checklist link for each stay — send it to your guest before arrival.',
     bullets: [
       'Record guest name, check-in and check-out dates',
       'Get a sharable checklist link for the stay',
@@ -146,7 +146,7 @@ export default async function WelcomePage() {
           </div>
           <h1 className="text-3xl font-bold text-white">Welcome, {firstName}! 👋</h1>
           <p className="text-[#6480a0] mt-2 text-base">
-            You&apos;re all set. Here&apos;s how to get the most out of SmartSum AI — follow these steps and you&apos;ll be up and running in minutes.
+            You&apos;re all set. Here&apos;s how to get the most out of Smart Sumai — follow these steps and you&apos;ll be up and running in minutes.
           </p>
         </div>
         <Link

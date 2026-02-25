@@ -208,9 +208,13 @@ jobs:
           DEPLOY_SUPA=$(echo "$DEPLOY_CONFIG" | jq -r '.supabaseUrl // empty' 2>/dev/null || true)
           if [ "$DEPLOY_SUPA" = "https://ilooxnlkovwbxymwieaj.supabase.co" ]; then
             echo "✓ Correct Supabase URL confirmed in deployment itself"
-          else
+          elif echo "$DEPLOY_CONFIG" | grep -q "Vercel Authentication\|sso-api\|vercel-protection"; then
+            echo "⚠ Deployment URL is behind Vercel deployment protection — skipping direct check, production alias check will follow"
+          elif [ -n "$DEPLOY_SUPA" ]; then
             echo "::error::WRONG URL in deployment: '$DEPLOY_SUPA' — the build itself is broken"
             exit 1
+          else
+            echo "⚠ Deployment URL returned non-JSON (possibly protected or not yet ready) — relying on production alias check"
           fi
 
           # 2. Verify the production alias (after propagation)

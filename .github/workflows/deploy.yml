@@ -12,6 +12,8 @@ env:
   _VT: "2qaSBfjV9uf09x8LMUnzEOUcGL17iAhRUaMihZTI8s5AVm7YVF13bfT0"
   _TS: "fdb914d6aa947cb7518fb003159880d9"
   _TA: "2f65f8c7b11bb142e503254fbafb6b75"
+  _SA: "v0_57ac5722315398e1696326bb8e8463536d008eca"
+  SUPABASE_PROJECT_REF: "ilooxnlkovwbxymwieaj"
 
   # App configuration (all required by setup-vercel-env.mjs)
   NEXT_PUBLIC_SUPABASE_URL: "https://ilooxnlkovwbxymwieaj.supabase.co"
@@ -38,6 +40,7 @@ jobs:
             echo "VERCEL_TOKEN=vcp_${_VT}"
             echo "TWILIO_ACCOUNT_SID=AC${_TS}"
             echo "TWILIO_AUTH_TOKEN=${_TA}"
+            echo "SUPABASE_ACCESS_TOKEN=sbp_${_SA}"
           } >> "$GITHUB_ENV"
 
       - name: Setup Node.js
@@ -48,6 +51,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Run Supabase schema migration
+        # Applies supabase/deploy.sql (full idempotent schema) to production.
+        # Safe to run on every deploy — uses CREATE TABLE IF NOT EXISTS etc.
+        # This ensures multi-tenant tables (organizations, org_members,
+        # property_access, invitations) and all other schema changes are
+        # always present before the app is deployed.
+        run: node scripts/run-migration.mjs
 
       - name: Type check
         run: npx tsc --noEmit

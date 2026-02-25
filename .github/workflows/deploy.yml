@@ -136,6 +136,30 @@ jobs:
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Extracted deployment URL: $URL"
 
+      - name: Diagnose — print project domains and deployment URL
+        # Emits ::notice:: annotations so they are visible in the GitHub Actions UI
+        # even without log access. Helps debug alias routing issues.
+        run: |
+          DEPLOYMENT_URL="${{ steps.deploy.outputs.url }}"
+          echo "::notice::Deployment URL: $DEPLOYMENT_URL"
+
+          PROJ=$(curl -s \
+            "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}?teamId=${VERCEL_ORG_ID}" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+
+          ALIASES=$(echo "$PROJ" | jq -r '[.alias // [] | .[].domain] | join(", ")' 2>/dev/null || echo "jq_error")
+          PROD_BRANCH=$(echo "$PROJ" | jq -r '.link.productionBranch // "unknown"' 2>/dev/null || echo "jq_error")
+          LATEST_DEPLOY=$(echo "$PROJ" | jq -r '.latestDeployments[0].url // "none"' 2>/dev/null || echo "jq_error")
+          echo "::notice::Project aliases: $ALIASES"
+          echo "::notice::Production branch: $PROD_BRANCH"
+          echo "::notice::Latest deployment URL: $LATEST_DEPLOY"
+
+          # Also look up the domain directly
+          DOMAIN_RESP=$(curl -s \
+            "https://api.vercel.com/v6/domains/property-manager-alpha-ecru.vercel.app?teamId=${VERCEL_ORG_ID}" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+          echo "::notice::Domain lookup: $(echo "$DOMAIN_RESP" | jq -c '{projectId:.projectId,serviceType:.serviceType}' 2>/dev/null || echo 'parse_error')"
+
       - name: Force-promote our deployment to production
         # Ensures our specific deployment is the production one,
         # even if anything fired between deploy and now.

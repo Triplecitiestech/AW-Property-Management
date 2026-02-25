@@ -1,6 +1,9 @@
 /**
  * Runs supabase/deploy.sql against Supabase using the Management API.
  *
+ * Sends the entire schema as ONE query instead of 193 individual calls,
+ * which avoids Supabase API rate limits (ThrottlerException).
+ *
  * deploy.sql is the FULL idempotent schema (CREATE TABLE IF NOT EXISTS, etc.)
  * and is safe to re-run against an existing database.
  *
@@ -24,80 +27,17 @@ if (!TOKEN) {
   process.exit(1);
 }
 
-// Diagnostic: print token metadata without exposing value
 console.log(`Token: ${TOKEN.slice(0, 8)}...${TOKEN.slice(-4)} (length: ${TOKEN.length})`);
 console.log(`Project ref: ${PROJECT_REF}`);
 
 const sql = readFileSync(join(__dirname, '../supabase/deploy.sql'), 'utf-8');
-
-/**
- * Split SQL into individual statements while correctly handling:
- *   - Dollar-quoted strings  ($$...$$, $BODY$...$BODY$)
- *   - Single-quoted strings  ('...')
- *   - Line comments          (-- ...)
- *   - Block comments         (/* ... *\/)
- */
-function splitStatements(sql) {
-  const statements = [];
-  let i = 0;
-  let start = 0;
-
-  while (i < sql.length) {
-    if (sql[i] === '-' && sql[i + 1] === '-') {
-      while (i < sql.length && sql[i] !== '\n') i++;
-      continue;
-    }
-
-    if (sql[i] === '/' && sql[i + 1] === '*') {
-      i += 2;
-      while (i < sql.length && !(sql[i] === '*' && sql[i + 1] === '/')) i++;
-      i += 2;
-      continue;
-    }
-
-    if (sql[i] === "'") {
-      i++;
-      while (i < sql.length) {
-        if (sql[i] === "'" && sql[i + 1] === "'") { i += 2; continue; }
-        if (sql[i] === "'") { i++; break; }
-        i++;
-      }
-      continue;
-    }
-
-    if (sql[i] === '$') {
-      let j = i + 1;
-      while (j < sql.length && sql[j] !== '$' && /[A-Za-z0-9_]/.test(sql[j])) j++;
-      if (j < sql.length && sql[j] === '$') {
-        const tag = sql.slice(i, j + 1);
-        i = j + 1;
-        const closeIdx = sql.indexOf(tag, i);
-        i = closeIdx !== -1 ? closeIdx + tag.length : sql.length;
-        continue;
-      }
-    }
-
-    if (sql[i] === ';') {
-      const stmt = sql.slice(start, i + 1).trim();
-      if (stmt && stmt !== ';') statements.push(stmt);
-      start = i + 1;
-    }
-
-    i++;
-  }
-
-  const tail = sql.slice(start).trim();
-  if (tail) statements.push(tail);
-
-  return statements;
-}
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /** POST to Supabase Management API using Node.js https module. */
-function httpsPost(url, headers, body) {
+function httpsPost(url, headers, body, timeoutMs = 120_000) {
   return new Promise((resolve, reject) => {
     const parsed = new URL(url);
     const bodyBuf = Buffer.from(body, 'utf-8');
@@ -110,7 +50,7 @@ function httpsPost(url, headers, body) {
           ...headers,
           'Content-Length': bodyBuf.length,
         },
-        timeout: 30_000,
+        timeout: timeoutMs,
       },
       res => {
         const chunks = [];
@@ -118,14 +58,14 @@ function httpsPost(url, headers, body) {
         res.on('end', () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf-8') }));
       }
     );
-    req.on('timeout', () => { req.destroy(); reject(new Error('Request timed out after 30s')); });
+    req.on('timeout', () => { req.destroy(); reject(new Error(`Request timed out after ${timeoutMs / 1000}s`)); });
     req.on('error', reject);
     req.write(bodyBuf);
     req.end();
   });
 }
 
-async function runSQL(query, retries = 5) {
+async function runSQL(query, { timeoutMs = 120_000, retries = 4 } = {}) {
   let lastErr;
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -135,15 +75,14 @@ async function runSQL(query, retries = 5) {
           Authorization: `Bearer ${TOKEN}`,
           'Content-Type': 'application/json',
         },
-        JSON.stringify({ query })
+        JSON.stringify({ query }),
+        timeoutMs,
       );
 
-      // HTTP error — extract message from JSON body if possible
       if (status < 200 || status >= 300) {
         let errMsg = `HTTP ${status}`;
         try {
           const parsed = JSON.parse(text);
-          // Supabase returns errors as { message: "..." } or { error: "..." }
           errMsg = parsed.message || parsed.error || text || `HTTP ${status}`;
         } catch {
           errMsg = text || `HTTP ${status}`;
@@ -151,22 +90,20 @@ async function runSQL(query, retries = 5) {
         throw new Error(errMsg);
       }
 
-      // Success — parse JSON if present, tolerate non-JSON (some DDL returns empty/text)
       try {
         return text ? JSON.parse(text) : null;
       } catch {
-        // Non-JSON response on HTTP 2xx — treat as success (e.g. plain "CREATE TABLE")
-        console.log(`  (non-JSON 2xx response: ${text.slice(0, 80)})`);
-        return null;
+        return null; // non-JSON 2xx — DDL success
       }
     } catch (err) {
       lastErr = err;
-      const isNetworkError = err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' ||
-        err.code === 'ETIMEDOUT' || err.message.includes('timed out');
-      const isRateLimited = err.message.includes('HTTP 429') || err.message.includes('rate limit') ||
+      const isRetryable =
+        err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' ||
+        err.code === 'ETIMEDOUT' || err.message.includes('timed out') ||
+        err.message.includes('HTTP 429') || err.message.includes('rate limit') ||
         err.message.includes('ThrottlerException') || err.message.includes('Too Many Requests');
-      if ((isNetworkError || isRateLimited) && attempt < retries) {
-        const wait = isRateLimited ? attempt * 5000 : attempt * 2000;
+      if (isRetryable && attempt < retries) {
+        const wait = attempt * 5000;
         console.log(`  Retrying in ${wait / 1000}s (attempt ${attempt}/${retries}): ${err.message}`);
         await sleep(wait);
         continue;
@@ -183,7 +120,7 @@ async function main() {
   // Quick connectivity + auth check
   console.log('Testing API connectivity...');
   try {
-    const result = await runSQL('SELECT 1 AS ok');
+    const result = await runSQL('SELECT 1 AS ok', { timeoutMs: 30_000 });
     console.log(`✓ API connectivity OK (response: ${JSON.stringify(result)})\n`);
   } catch (err) {
     console.error(`✗ API connectivity FAILED: ${err.message}`);
@@ -191,56 +128,16 @@ async function main() {
     process.exit(1);
   }
 
-  console.log('Running supabase/deploy.sql (full idempotent schema)...\n');
+  console.log('Running supabase/deploy.sql as a single query (avoids rate limits)...');
+  console.log(`SQL size: ${(sql.length / 1024).toFixed(1)} KB\n`);
 
-  const statements = splitStatements(sql).filter(s => {
-    const stripped = s.replace(/--[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '').trim();
-    return stripped.length > 0;
-  });
-
-  console.log(`${statements.length} statements to execute\n`);
-
-  let ok = 0;
-  let skipped = 0;
-  let stmtNum = 0;
-
-  for (const stmt of statements) {
-    stmtNum++;
-    const preview = stmt.replace(/\s+/g, ' ').slice(0, 72);
-    try {
-      await runSQL(stmt);
-      console.log(`  OK   [${stmtNum}/${statements.length}]: ${preview}`);
-      ok++;
-      await sleep(150); // avoid Supabase API rate limits across 193 statements
-    } catch (err) {
-      const msg = err.message;
-      // Safe "already applied" conditions — idempotent schema
-      const isSafe =
-        msg.includes('already exists') ||
-        msg.includes('duplicate key') ||
-        msg.includes('already an attribute') ||
-        msg.includes('invalid input value for enum') ||
-        msg.includes('permission denied') ||  // extension already installed by Supabase
-        msg.includes('must be owner') ||       // cannot modify Supabase-owned extensions
-        msg.includes('tuple concurrently') ||  // concurrent modification, safe to skip
-        msg.includes('40001') ||               // serialization failure — idempotent, skip
-        msg.includes('40P01');                 // deadlock — idempotent schema, safe to skip
-
-      if (isSafe) {
-        console.log(`  SKIP [${stmtNum}/${statements.length}]: ${preview}`);
-        console.log(`       Reason: ${msg.slice(0, 200)}`);
-        skipped++;
-      } else {
-        console.error(`\n  FAIL [${stmtNum}/${statements.length}]: ${preview}`);
-        console.error(`       Full error: ${msg}`);
-        console.error('\nFull failing statement:');
-        console.error(stmt);
-        process.exit(1);
-      }
-    }
+  try {
+    await runSQL(sql, { timeoutMs: 120_000 });
+    console.log('✓ Schema migration applied successfully.');
+  } catch (err) {
+    console.error('✗ Migration failed:', err.message);
+    process.exit(1);
   }
-
-  console.log(`\nDone: ${ok} applied, ${skipped} skipped (already existed or permission denied).`);
 }
 
 main().catch(err => {

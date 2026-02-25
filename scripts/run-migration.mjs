@@ -125,7 +125,7 @@ function httpsPost(url, headers, body) {
   });
 }
 
-async function runSQL(query, retries = 3) {
+async function runSQL(query, retries = 5) {
   let lastErr;
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -163,9 +163,10 @@ async function runSQL(query, retries = 3) {
       lastErr = err;
       const isNetworkError = err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' ||
         err.code === 'ETIMEDOUT' || err.message.includes('timed out');
-      const isRateLimited = err.message.includes('HTTP 429') || err.message.includes('rate limit');
+      const isRateLimited = err.message.includes('HTTP 429') || err.message.includes('rate limit') ||
+        err.message.includes('ThrottlerException') || err.message.includes('Too Many Requests');
       if ((isNetworkError || isRateLimited) && attempt < retries) {
-        const wait = attempt * 2000;
+        const wait = isRateLimited ? attempt * 5000 : attempt * 2000;
         console.log(`  Retrying in ${wait / 1000}s (attempt ${attempt}/${retries}): ${err.message}`);
         await sleep(wait);
         continue;
@@ -210,6 +211,7 @@ async function main() {
       await runSQL(stmt);
       console.log(`  OK   [${stmtNum}/${statements.length}]: ${preview}`);
       ok++;
+      await sleep(150); // avoid Supabase API rate limits across 193 statements
     } catch (err) {
       const msg = err.message;
       // Safe "already applied" conditions — idempotent schema

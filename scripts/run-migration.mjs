@@ -23,6 +23,10 @@ if (!TOKEN) {
   process.exit(1);
 }
 
+// Diagnostic: print token metadata without exposing value
+console.log(`Token: ${TOKEN.slice(0, 8)}...${TOKEN.slice(-4)} (length: ${TOKEN.length})`);
+console.log(`Project ref: ${PROJECT_REF}`);
+
 const sql = readFileSync(join(__dirname, '../supabase/deploy.sql'), 'utf-8');
 
 /**
@@ -114,6 +118,18 @@ async function runSQL(query) {
 
 async function main() {
   console.log(`Project: ${PROJECT_REF}`);
+
+  // Quick connectivity + auth check before running the full migration
+  console.log('Testing API connectivity...');
+  try {
+    await runSQL('SELECT 1');
+    console.log('✓ API connectivity OK\n');
+  } catch (err) {
+    console.error(`✗ API connectivity FAILED: ${err.message}`);
+    console.error('Cannot proceed with migration — check SUPABASE_ACCESS_TOKEN and PROJECT_REF');
+    process.exit(1);
+  }
+
   console.log('Running supabase/deploy.sql (full idempotent schema)...\n');
 
   const statements = splitStatements(sql).filter(s => {

@@ -58,7 +58,16 @@ jobs:
         # This ensures multi-tenant tables (organizations, org_members,
         # property_access, invitations) and all other schema changes are
         # always present before the app is deployed.
-        run: node scripts/run-migration.mjs
+        run: |
+          set -o pipefail
+          node scripts/run-migration.mjs 2>&1 | tee /tmp/migration-output.txt
+          STATUS=${PIPESTATUS[0]}
+          # Write output to Step Summary so it's visible without log access
+          echo "## Supabase Migration Output" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/migration-output.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          exit $STATUS
 
       - name: Type check
         run: npx tsc --noEmit

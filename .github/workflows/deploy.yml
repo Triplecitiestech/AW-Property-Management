@@ -6,6 +6,12 @@ on:
       - main
       - 'claude/**'
   workflow_dispatch:
+# Prevents two runs from modifying Supabase DB or Vercel simultaneously.
+# The latest push cancels any still-queued run (cancel-in-progress: true),
+# but lets an already-running deployment finish (it's already mid-deploy).
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   # Credential fragments — assembled in "Assemble credentials" step

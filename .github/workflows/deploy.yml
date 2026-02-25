@@ -117,11 +117,24 @@ jobs:
 
       - name: Deploy prebuilt output to Vercel
         # Uploads .vercel/output/ as-is. No Vercel-side rebuild.
+        # vercel deploy outputs multiple lines; we extract the *.vercel.app URL.
         id: deploy
         run: |
-          URL=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          set -euo pipefail
+          echo "Running vercel deploy --prebuilt --prod..."
+          DEPLOY_OUT=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" 2>&1)
+          echo "Full deploy output:"
+          echo "$DEPLOY_OUT"
+
+          # Extract the deployment URL — the last https://*.vercel.app line
+          URL=$(echo "$DEPLOY_OUT" | grep -oE 'https://[a-z0-9-]+\.vercel\.app[^ ]*' | tail -1)
+          if [ -z "$URL" ]; then
+            echo "::error::Could not extract deployment URL from vercel deploy output"
+            exit 1
+          fi
+
           echo "url=$URL" >> "$GITHUB_OUTPUT"
-          echo "Deployed: $URL"
+          echo "Extracted deployment URL: $URL"
 
       - name: Force-promote our deployment to production
         # Ensures our specific deployment is the production one,

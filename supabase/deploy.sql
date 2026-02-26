@@ -702,3 +702,6 @@ ON CONFLICT (contact_id, property_id) DO NOTHING;
 
 -- Done!
 SELECT 'Schema deployed successfully' AS result;
+
+-- 2026-02-26: Re-apply RLS fix for org_members infinite recursion (ensure applied)
+-- Functions get_user_org_ids() and is_org_admin() defined above handle this.

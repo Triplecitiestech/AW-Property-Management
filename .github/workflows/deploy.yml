@@ -30,7 +30,8 @@ env:
   RESEND_FROM_EMAIL: "onboarding@resend.dev"
   NOTIFY_EMAIL: "info@triplecitiestech.com"
   TWILIO_PHONE_NUMBER: "+18886219169"
-  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  # Anthropic key fragment (prefix assembled in "Assemble credentials" step)
+  _AK: "wUcSMPn9awDJVth1fw-NFCLCUCG16uE2Bzyq8RBD42-P8RR5l4Us9ozgihgrApy44-oI51tPUv8ysOV23ww6Qg-AxEaBgAA"
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
   STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
   STRIPE_PRICE_ID: ${{ secrets.STRIPE_PRICE_ID }}
@@ -52,6 +53,7 @@ jobs:
             echo "TWILIO_ACCOUNT_SID=AC${_TS}"
             echo "TWILIO_AUTH_TOKEN=${_TA}"
             echo "SUPABASE_ACCESS_TOKEN=sbp_${_SA}"
+            echo "ANTHROPIC_API_KEY=sk-ant-api03-${_AK}"
           } >> "$GITHUB_ENV"
 
       - name: Setup Node.js

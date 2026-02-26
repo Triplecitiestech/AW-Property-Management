@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { handleAiSms } from '@/lib/sms/ai-handler'
 
+export const maxDuration = 30 // seconds — Anthropic API can take a few seconds
+
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()

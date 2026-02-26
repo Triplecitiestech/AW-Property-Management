@@ -187,10 +187,12 @@ export async function handleAiSms(params: {
     step = 'parseResponse'
     const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
 
-    // Strip any accidental markdown code fences
-    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
+    // Extract JSON robustly: find first { and last } to handle any preamble/postamble
+    const start = raw.indexOf('{')
+    const end = raw.lastIndexOf('}')
+    const jsonStr = start !== -1 && end > start ? raw.slice(start, end + 1) : raw
 
-    const parsed = JSON.parse(cleaned) as AiSmsAction
+    const parsed = JSON.parse(jsonStr) as AiSmsAction
     return parsed
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)

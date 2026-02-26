@@ -620,7 +620,9 @@ CREATE POLICY "properties_insert" ON properties FOR INSERT TO authenticated WITH
 -- recursion. Same with organizations policies that queried org_members directly.
 -- Fix: SECURITY DEFINER helper functions that bypass RLS.
 
-CREATE OR REPLACE FUNCTION get_user_org_ids()
+-- Drop and recreate to allow changing return type (SETOF UUID → UUID[])
+DROP FUNCTION IF EXISTS get_user_org_ids() CASCADE;
+CREATE FUNCTION get_user_org_ids()
 RETURNS UUID[] LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT ARRAY(SELECT org_id FROM org_members WHERE user_id = auth.uid());
 $$;
@@ -719,7 +721,9 @@ SELECT 'Schema deployed successfully' AS result;
 -- The functions are SECURITY DEFINER so they bypass RLS when querying org_members,
 -- preventing the infinite recursion that breaks settings and properties pages.
 
-CREATE OR REPLACE FUNCTION get_user_org_ids()
+-- Drop and recreate to allow changing return type (SETOF UUID → UUID[])
+DROP FUNCTION IF EXISTS get_user_org_ids() CASCADE;
+CREATE FUNCTION get_user_org_ids()
 RETURNS UUID[] LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT ARRAY(SELECT org_id FROM org_members WHERE user_id = auth.uid());
 $$;

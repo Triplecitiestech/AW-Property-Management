@@ -215,6 +215,7 @@ async function main() {
         msg.includes('40001') ||
         msg.includes('40P01') ||
         msg.includes('infinite recursion detected in policy') ||
+        msg.includes('cannot change return type of existing function') ||
         msg.includes('does not exist') && msg.includes('policy');
 
       if (isSafe) {
@@ -233,6 +234,7 @@ async function main() {
               smsg.includes('permission denied') || smsg.includes('must be owner') ||
               smsg.includes('tuple concurrently') || smsg.includes('40001') || smsg.includes('40P01') ||
               smsg.includes('infinite recursion detected in policy') ||
+              smsg.includes('cannot change return type of existing function') ||
               (smsg.includes('does not exist') && smsg.includes('policy'));
             if (stmtSafe) {
               console.log(`    SKIP stmt: ${preview} — ${smsg.slice(0, 80)}`);

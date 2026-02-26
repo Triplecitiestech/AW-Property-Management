@@ -204,20 +204,35 @@ jobs:
         # Safe to run on every deploy — Vercel returns 409 if already added (we treat that as success).
         # This triggers SSL certificate provisioning if not already done.
         run: |
+          set -euo pipefail
+          echo "VERCEL_PROJECT_ID=${VERCEL_PROJECT_ID}"
+          echo "VERCEL_ORG_ID=${VERCEL_ORG_ID}"
+
           for DOMAIN in "smartsumai.com" "www.smartsumai.com"; do
-            echo "Adding $DOMAIN..."
-            HTTP=$(curl -s -o /tmp/domain_resp_${DOMAIN}.json -w "%{http_code}" -X POST \
+            echo "--- Adding $DOMAIN ---"
+            HTTP=$(curl -s -o /tmp/domain_resp.json -w "%{http_code}" -X POST \
               "https://api.vercel.com/v10/projects/${VERCEL_PROJECT_ID}/domains?teamId=${VERCEL_ORG_ID}" \
               -H "Authorization: Bearer $VERCEL_TOKEN" \
               -H "Content-Type: application/json" \
               -d "{\"name\":\"${DOMAIN}\"}")
-            RESP=$(cat /tmp/domain_resp_${DOMAIN}.json)
-            echo "$DOMAIN → HTTP $HTTP: $RESP"
-            if [ "$HTTP" = "200" ] || [ "$HTTP" = "409" ]; then
-              echo "✓ $DOMAIN configured (200=added, 409=already exists)"
+            RESP=$(cat /tmp/domain_resp.json)
+            echo "$DOMAIN → HTTP $HTTP"
+            echo "Response: $RESP"
+            if [ "$HTTP" = "200" ]; then
+              echo "✓ $DOMAIN added successfully"
+            elif [ "$HTTP" = "409" ]; then
+              echo "✓ $DOMAIN already exists on project"
             else
-              echo "Warning: unexpected response for $DOMAIN (HTTP $HTTP) — may need manual DNS verification"
+              echo "Warning: unexpected HTTP $HTTP for $DOMAIN"
             fi
+
+            echo "--- Checking $DOMAIN verification status ---"
+            VHTTP=$(curl -s -o /tmp/domain_verify.json -w "%{http_code}" \
+              "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/domains/${DOMAIN}?teamId=${VERCEL_ORG_ID}" \
+              -H "Authorization: Bearer $VERCEL_TOKEN")
+            VRESP=$(cat /tmp/domain_verify.json)
+            echo "$DOMAIN verify → HTTP $VHTTP"
+            echo "Verify response: $VRESP"
           done
 
       - name: Verify — Supabase reachable

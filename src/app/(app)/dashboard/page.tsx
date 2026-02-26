@@ -94,15 +94,15 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Open Tickets */}
+        {/* Open Work Orders */}
         <div className="card">
           <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-base font-semibold">Open Tickets</h2>
-            <Link href="/tickets" className="text-sm text-blue-600 hover:underline">View all</Link>
+            <h2 className="text-base font-semibold">Open Work Orders</h2>
+            <Link href="/work-orders" className="text-sm text-blue-600 hover:underline">View all</Link>
           </div>
           <div className="divide-y divide-gray-100">
             {openTickets?.slice(0, 6).map(ticket => (
-              <Link key={ticket.id} href={`/tickets/${ticket.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
+              <Link key={ticket.id} href={`/work-orders/${ticket.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
                 <div className="min-w-0">
                   <p className="font-medium text-sm text-gray-900 truncate">{ticket.title}</p>
                   <p className="text-xs text-gray-400">{(ticket.properties as unknown as {name:string}|null)?.name}</p>
@@ -115,8 +115,8 @@ export default async function DashboardPage() {
             ))}
             {(!openTickets || openTickets.length === 0) && (
               <div className="px-5 py-8 text-center text-sm text-gray-400">
-                No open tickets.{' '}
-                <Link href="/tickets/new" className="text-blue-600 hover:underline">Create one</Link>
+                No open work orders.{' '}
+                <Link href="/work-orders/new" className="text-blue-600 hover:underline">Create one</Link>
               </div>
             )}
           </div>

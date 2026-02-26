@@ -11,6 +11,7 @@ export type OccupancyEnum = 'occupied' | 'unoccupied'
 export type TicketCategory = 'maintenance' | 'cleaning' | 'supplies' | 'other'
 export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent'
 export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
+export type StayType = 'short_term' | 'long_term'
 export type AuditAction = 'created' | 'updated' | 'deleted'
 export type AuditEntity = 'property' | 'property_status' | 'stay' | 'service_request' | 'service_request_comment' | 'guest_report' | 'org_member' | 'property_access'
 
@@ -68,6 +69,15 @@ export interface Property {
   quick_notes: string | null
   ai_instructions: string | null
   ai_summary: string | null
+  wifi_name: string | null
+  wifi_password: string | null
+  door_code: string | null
+  gate_code: string | null
+  parking_info: string | null
+  trash_schedule: string | null
+  check_in_time: string | null
+  check_out_time: string | null
+  house_rules: string | null
   owner_id: string
   org_id: string | null
   created_at: string
@@ -95,6 +105,7 @@ export interface Stay {
   wifi_password: string | null
   door_code: string | null
   host_instructions: string | null
+  stay_type: StayType
   guest_link_token: string
   created_by: string | null
   created_at: string

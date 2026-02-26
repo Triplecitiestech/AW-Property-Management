@@ -60,7 +60,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
           </div>
         </div>
         <div className="flex gap-2 flex-shrink-0">
-          <Link href={`/tickets/new?property_id=${property.id}`} className="btn-secondary text-sm hidden sm:inline-flex">New Ticket</Link>
+          <Link href={`/work-orders/new?property_id=${property.id}`} className="btn-secondary text-sm hidden sm:inline-flex">New Work Order</Link>
           <Link href={`/stays/new?property_id=${property.id}`} className="btn-primary text-sm">Add Stay</Link>
         </div>
       </div>
@@ -170,7 +170,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
           <div className="card p-5">
             <h3 className="font-semibold mb-3 text-sm text-white">Quick Actions</h3>
             <div className="space-y-2">
-              <Link href={`/tickets/new?property_id=${property.id}`} className="btn-secondary text-sm w-full justify-center">Create Ticket</Link>
+              <Link href={`/work-orders/new?property_id=${property.id}`} className="btn-secondary text-sm w-full justify-center">New Work Order</Link>
               <Link href={`/stays/new?property_id=${property.id}`} className="btn-secondary text-sm w-full justify-center">Schedule Stay</Link>
               <Link href={`/properties/${property.id}/onboard`} className="btn-secondary text-sm w-full justify-center">Edit Setup</Link>
               <DeletePropertyButton propertyId={property.id} propertyName={property.name} />
@@ -181,18 +181,18 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         {/* Right Column */}
         <div className="lg:col-span-2 space-y-5">
 
-          {/* Open Tickets */}
+          {/* Open Work Orders */}
           <div className="card">
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#1e2d42]">
-              <h3 className="font-semibold text-sm text-white">Open Tickets</h3>
+              <h3 className="font-semibold text-sm text-white">Open Work Orders</h3>
               <div className="flex items-center gap-3">
-                <Link href={`/tickets/new?property_id=${property.id}`} className="text-xs text-violet-400 hover:text-violet-300 transition-colors">+ New</Link>
-                <Link href={`/tickets?property_id=${property.id}`} className="text-xs text-[#6480a0] hover:text-white transition-colors">View all →</Link>
+                <Link href={`/work-orders/new?property_id=${property.id}`} className="text-xs text-violet-400 hover:text-violet-300 transition-colors">+ New</Link>
+                <Link href={`/work-orders?property_id=${property.id}`} className="text-xs text-[#6480a0] hover:text-white transition-colors">View all →</Link>
               </div>
             </div>
             <div className="divide-y divide-[#1e2d42]">
               {tickets?.map(ticket => (
-                <Link key={ticket.id} href={`/tickets/${ticket.id}`}
+                <Link key={ticket.id} href={`/work-orders/${ticket.id}`}
                       className="flex items-center justify-between px-5 py-3 hover:bg-[#1a2436] transition-colors group">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-white truncate group-hover:text-violet-300 transition-colors">{ticket.title}</p>
@@ -206,8 +206,8 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
               ))}
               {(!tickets || tickets.length === 0) && (
                 <div className="px-5 py-8 text-center">
-                  <p className="text-sm text-[#6480a0]">No open tickets.</p>
-                  <Link href={`/tickets/new?property_id=${property.id}`} className="text-xs text-violet-400 hover:text-violet-300 mt-1 inline-block">Create one →</Link>
+                  <p className="text-sm text-[#6480a0]">No open work orders.</p>
+                  <Link href={`/work-orders/new?property_id=${property.id}`} className="text-xs text-violet-400 hover:text-violet-300 mt-1 inline-block">Create one →</Link>
                 </div>
               )}
             </div>

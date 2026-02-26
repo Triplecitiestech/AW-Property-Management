@@ -160,9 +160,9 @@ export async function createTicket(formData: FormData) {
     }
   }
 
-  revalidatePath('/tickets')
+  revalidatePath('/work-orders')
   revalidatePath('/dashboard')
-  redirect(`/tickets/${ticket.id}`)
+  redirect(`/work-orders/${ticket.id}`)
 }
 
 // ---- Update Ticket Status ----
@@ -203,8 +203,8 @@ export async function updateTicketStatus(id: string, newStatus: TicketStatus) {
     newStatus,
   }).catch(console.error)
 
-  revalidatePath(`/tickets/${id}`)
-  revalidatePath('/tickets')
+  revalidatePath(`/work-orders/${id}`)
+  revalidatePath('/work-orders')
   revalidatePath('/dashboard')
   return { success: true }
 }
@@ -302,8 +302,8 @@ export async function updateTicket(id: string, formData: FormData) {
     }
   }
 
-  revalidatePath(`/tickets/${id}`)
-  revalidatePath('/tickets')
+  revalidatePath(`/work-orders/${id}`)
+  revalidatePath('/work-orders')
   return { success: true }
 }
 
@@ -332,7 +332,7 @@ export async function addTicketComment(requestId: string, content: string) {
     after_data: { request_id: requestId, content: content.trim() },
   })
 
-  revalidatePath(`/tickets/${requestId}`)
+  revalidatePath(`/work-orders/${requestId}`)
   return { success: true, comment }
 }
 
@@ -356,7 +356,7 @@ export async function deleteTicket(id: string) {
     before_data: before,
   })
 
-  revalidatePath('/tickets')
+  revalidatePath('/work-orders')
   revalidatePath('/dashboard')
-  redirect('/tickets')
+  redirect('/work-orders')
 }

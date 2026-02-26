@@ -29,7 +29,7 @@ export async function sendAssigneeEmail(params: {
   const resend = getResend()
   if (!resend) return
   const { to, assigneeName, ticketId, title, propertyName, category, priority, description, dueDate } = params
-  const ticketUrl = `${getAPP_URL()}/tickets/${ticketId}`
+  const ticketUrl = `${getAPP_URL()}/work-orders/${ticketId}`
   return resend.emails.send({
     from: getFROM(),
     to,
@@ -74,7 +74,7 @@ export async function sendNewTicketEmail(params: {
   const to = getNotifyEmails()
   if (!to.length) return
   const { ticketId, title, propertyName, category, priority, description } = params
-  const ticketUrl = `${getAPP_URL()}/tickets/${ticketId}`
+  const ticketUrl = `${getAPP_URL()}/work-orders/${ticketId}`
   return resend.emails.send({
     from: getFROM(),
     to,
@@ -97,7 +97,7 @@ export async function sendTicketStatusChangedEmail(params: {
   const to = getNotifyEmails()
   if (!to.length) return
   const { ticketId, title, propertyName, oldStatus, newStatus } = params
-  const ticketUrl = `${getAPP_URL()}/tickets/${ticketId}`
+  const ticketUrl = `${getAPP_URL()}/work-orders/${ticketId}`
   return resend.emails.send({
     from: getFROM(),
     to,
@@ -140,7 +140,7 @@ export async function sendContactTicketEmail(params: {
   const resend = getResend()
   if (!resend) return
   const { to, contactName, ticketId, title, propertyName, category, priority, description } = params
-  const ticketUrl = `${getAPP_URL()}/tickets/${ticketId}`
+  const ticketUrl = `${getAPP_URL()}/work-orders/${ticketId}`
   return resend.emails.send({
     from: getFROM(),
     to,

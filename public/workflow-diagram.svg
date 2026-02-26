@@ -1,0 +1,307 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 920" width="1100" height="920" font-family="'Inter', -apple-system, sans-serif">
+  <defs>
+    <linearGradient id="headerGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#0891b2"/>
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f1829"/>
+      <stop offset="100%" stop-color="#0a1020"/>
+    </linearGradient>
+    <linearGradient id="laneGrad1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e1040" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0f0820" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="laneGrad2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a1e30" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#051018" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="laneGrad3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f2010" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#071408" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="laneGrad4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#201808" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#140f04" stop-opacity="0.4"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.5"/>
+    </filter>
+    <marker id="arrowViolet" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#8b5cf6"/>
+    </marker>
+    <marker id="arrowCyan" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#06b6d4"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#10b981"/>
+    </marker>
+    <marker id="arrowAmber" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#f59e0b"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1100" height="920" fill="url(#bgGrad)" rx="16"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="1100" height="72" fill="url(#headerGrad)" rx="16"/>
+  <rect x="0" y="56" width="1100" height="16" fill="url(#headerGrad)"/>
+  <text x="550" y="28" text-anchor="middle" fill="white" font-size="18" font-weight="700" letter-spacing="0.5">Smart</text>
+  <text x="608" y="28" text-anchor="middle" fill="#67e8f9" font-size="18" font-weight="700" letter-spacing="0.5">Sumai</text>
+  <text x="550" y="52" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-size="12" letter-spacing="1.5">PROPERTY MANAGEMENT WORKFLOW</text>
+
+  <!-- Lane headers -->
+  <!-- PM Lane -->
+  <rect x="20" y="82" width="255" height="36" fill="#4c1d95" rx="8" opacity="0.9"/>
+  <text x="147" y="105" text-anchor="middle" fill="#ddd6fe" font-size="12" font-weight="600">🏠  Property Manager</text>
+
+  <!-- System Lane -->
+  <rect x="285" y="82" width="255" height="36" fill="#164e63" rx="8" opacity="0.9"/>
+  <text x="412" y="105" text-anchor="middle" fill="#a5f3fc" font-size="12" font-weight="600">⚡  SmartSumai System</text>
+
+  <!-- Worker Lane -->
+  <rect x="550" y="82" width="255" height="36" fill="#14532d" rx="8" opacity="0.9"/>
+  <text x="677" y="105" text-anchor="middle" fill="#86efac" font-size="12" font-weight="600">🔧  Maintenance Worker</text>
+
+  <!-- Tenant Lane -->
+  <rect x="815" y="82" width="265" height="36" fill="#78350f" rx="8" opacity="0.9"/>
+  <text x="947" y="105" text-anchor="middle" fill="#fde68a" font-size="12" font-weight="600">🏡  Tenant / Guest</text>
+
+  <!-- Lane backgrounds -->
+  <rect x="20" y="118" width="255" height="778" fill="url(#laneGrad1)" rx="8" opacity="0.4"/>
+  <rect x="285" y="118" width="255" height="778" fill="url(#laneGrad2)" rx="8" opacity="0.4"/>
+  <rect x="550" y="118" width="255" height="778" fill="url(#laneGrad3)" rx="8" opacity="0.4"/>
+  <rect x="815" y="118" width="265" height="778" fill="url(#laneGrad4)" rx="8" opacity="0.4"/>
+
+  <!-- Lane dividers -->
+  <line x1="277" y1="118" x2="277" y2="896" stroke="#2a3d58" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="542" y1="118" x2="542" y2="896" stroke="#2a3d58" stroke-width="1" stroke-dasharray="4,4"/>
+  <line x1="807" y1="118" x2="807" y2="896" stroke="#2a3d58" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 1: Property Setup                  -->
+  <!-- ═══════════════════════════════════════════ -->
+  <text x="550" y="150" text-anchor="middle" fill="#4a5568" font-size="10" letter-spacing="2" font-weight="600">── PROPERTY SETUP ──────────────────────────────────────────────────────────────</text>
+
+  <!-- Box: Add Property -->
+  <rect x="35" y="158" width="225" height="52" rx="10" fill="#1e1040" stroke="#7c3aed" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="147" y="178" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Add a Property</text>
+  <text x="147" y="196" text-anchor="middle" fill="#6b7280" font-size="10">Name, address, access info,</text>
+  <text x="147" y="208" text-anchor="middle" fill="#6b7280" font-size="10">contacts, checklist</text>
+
+  <!-- Arrow PM → System -->
+  <line x1="260" y1="184" x2="298" y2="184" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrowViolet)"/>
+
+  <!-- Box: Property Created -->
+  <rect x="300" y="158" width="225" height="52" rx="10" fill="#0a1e30" stroke="#06b6d4" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="412" y="178" text-anchor="middle" fill="#67e8f9" font-size="11" font-weight="600">Property Stored</text>
+  <text x="412" y="196" text-anchor="middle" fill="#6b7280" font-size="10">DB record, org assigned,</text>
+  <text x="412" y="208" text-anchor="middle" fill="#6b7280" font-size="10">checklist seeded</text>
+
+  <!-- Box: Tenant receives access info -->
+  <rect x="830" y="158" width="235" height="52" rx="10" fill="#201808" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="947" y="178" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">Tenant Portal Ready</text>
+  <text x="947" y="196" text-anchor="middle" fill="#6b7280" font-size="10">WiFi, door code, rules,</text>
+  <text x="947" y="208" text-anchor="middle" fill="#6b7280" font-size="10">auto-shared on invite</text>
+
+  <!-- Arrow System → Tenant -->
+  <line x1="525" y1="184" x2="828" y2="184" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrowCyan)"/>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 2: PM Work Order Flow              -->
+  <!-- ═══════════════════════════════════════════ -->
+  <text x="550" y="242" text-anchor="middle" fill="#4a5568" font-size="10" letter-spacing="2" font-weight="600">── PM-INITIATED WORK ORDER ─────────────────────────────────────────────────────</text>
+
+  <!-- Box: Schedule Work Order -->
+  <rect x="35" y="250" width="225" height="52" rx="10" fill="#1e1040" stroke="#7c3aed" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="147" y="270" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Create Work Order</text>
+  <text x="147" y="288" text-anchor="middle" fill="#6b7280" font-size="10">Title, category, priority,</text>
+  <text x="147" y="300" text-anchor="middle" fill="#6b7280" font-size="10">due date, contact</text>
+
+  <!-- Arrow PM → System -->
+  <line x1="260" y1="276" x2="298" y2="276" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrowViolet)"/>
+
+  <!-- Box: AI Routes -->
+  <rect x="300" y="250" width="225" height="52" rx="10" fill="#0a1e30" stroke="#06b6d4" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="412" y="270" text-anchor="middle" fill="#67e8f9" font-size="11" font-weight="600">AI Auto-assigns Contact</text>
+  <text x="412" y="288" text-anchor="middle" fill="#6b7280" font-size="10">Matches category → best</text>
+  <text x="412" y="300" text-anchor="middle" fill="#6b7280" font-size="10">contact, sends email/SMS</text>
+
+  <!-- Arrow System → Worker -->
+  <line x1="525" y1="276" x2="563" y2="276" stroke="#06b6d4" stroke-width="1.5" marker-end="url(#arrowCyan)"/>
+
+  <!-- Box: Worker Notified -->
+  <rect x="565" y="250" width="225" height="52" rx="10" fill="#0f2010" stroke="#10b981" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="677" y="270" text-anchor="middle" fill="#6ee7b7" font-size="11" font-weight="600">Worker Notified</text>
+  <text x="677" y="288" text-anchor="middle" fill="#6b7280" font-size="10">Receives email + SMS with</text>
+  <text x="677" y="300" text-anchor="middle" fill="#6b7280" font-size="10">job details and property</text>
+
+  <!-- Arrow Worker down to Completes -->
+  <line x1="677" y1="302" x2="677" y2="330" stroke="#10b981" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+
+  <!-- Box: Worker Marks Complete -->
+  <rect x="565" y="332" width="225" height="52" rx="10" fill="#0f2010" stroke="#10b981" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="677" y="352" text-anchor="middle" fill="#6ee7b7" font-size="11" font-weight="600">Worker Marks Complete</text>
+  <text x="677" y="370" text-anchor="middle" fill="#6b7280" font-size="10">Posts comment, changes</text>
+  <text x="677" y="382" text-anchor="middle" fill="#6b7280" font-size="10">status → "Resolved"</text>
+
+  <!-- Arrow Worker → System (status update) -->
+  <line x1="565" y1="358" x2="527" y2="358" stroke="#10b981" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+
+  <!-- Box: Status Updated -->
+  <rect x="300" y="332" width="225" height="52" rx="10" fill="#0a1e30" stroke="#06b6d4" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="412" y="352" text-anchor="middle" fill="#67e8f9" font-size="11" font-weight="600">Status Updated</text>
+  <text x="412" y="370" text-anchor="middle" fill="#6b7280" font-size="10">Audit log entry, PM</text>
+  <text x="412" y="382" text-anchor="middle" fill="#6b7280" font-size="10">email notification sent</text>
+
+  <!-- Arrow System → PM (notification) -->
+  <line x1="300" y1="358" x2="262" y2="358" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrowViolet)"/>
+
+  <!-- Box: PM sees resolution -->
+  <rect x="35" y="332" width="225" height="52" rx="10" fill="#1e1040" stroke="#7c3aed" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="147" y="352" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">PM Notified ✓</text>
+  <text x="147" y="370" text-anchor="middle" fill="#6b7280" font-size="10">Dashboard shows resolved,</text>
+  <text x="147" y="382" text-anchor="middle" fill="#6b7280" font-size="10">email confirmation received</text>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 3: Tenant Work Order Flow          -->
+  <!-- ═══════════════════════════════════════════ -->
+  <text x="550" y="418" text-anchor="middle" fill="#4a5568" font-size="10" letter-spacing="2" font-weight="600">── TENANT-INITIATED WORK ORDER ─────────────────────────────────────────────────</text>
+
+  <!-- Box: Tenant submits -->
+  <rect x="830" y="426" width="235" height="52" rx="10" fill="#201808" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="947" y="446" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">Tenant Submits Issue</text>
+  <text x="947" y="464" text-anchor="middle" fill="#6b7280" font-size="10">Via SMS text or guest portal</text>
+  <text x="947" y="476" text-anchor="middle" fill="#6b7280" font-size="10">"MAINTENANCE: leaky faucet"</text>
+
+  <!-- Arrow Tenant → System -->
+  <line x1="830" y1="452" x2="527" y2="452" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrowAmber)"/>
+
+  <!-- Box: System creates draft -->
+  <rect x="300" y="426" width="225" height="52" rx="10" fill="#0a1e30" stroke="#06b6d4" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="412" y="446" text-anchor="middle" fill="#67e8f9" font-size="11" font-weight="600">Work Order Created</text>
+  <text x="412" y="464" text-anchor="middle" fill="#6b7280" font-size="10">Status: Open, sent to PM</text>
+  <text x="412" y="476" text-anchor="middle" fill="#6b7280" font-size="10">for approval</text>
+
+  <!-- Arrow System → PM -->
+  <line x1="300" y1="452" x2="262" y2="452" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrowViolet)"/>
+
+  <!-- Box: PM reviews -->
+  <rect x="35" y="426" width="225" height="52" rx="10" fill="#1e1040" stroke="#7c3aed" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="147" y="446" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">PM Reviews &amp; Approves</text>
+  <text x="147" y="464" text-anchor="middle" fill="#6b7280" font-size="10">Sets priority, assigns contact,</text>
+  <text x="147" y="476" text-anchor="middle" fill="#6b7280" font-size="10">adjusts due date</text>
+
+  <!-- Arrow PM → System (approved) -->
+  <line x1="260" y1="478" x2="298" y2="496" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrowViolet)"/>
+
+  <!-- Box: System dispatches -->
+  <rect x="300" y="500" width="225" height="52" rx="10" fill="#0a1e30" stroke="#06b6d4" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="412" y="520" text-anchor="middle" fill="#67e8f9" font-size="11" font-weight="600">AI Routes to Worker</text>
+  <text x="412" y="538" text-anchor="middle" fill="#6b7280" font-size="10">Best contact selected,</text>
+  <text x="412" y="550" text-anchor="middle" fill="#6b7280" font-size="10">SMS + email dispatched</text>
+
+  <!-- Arrow System → Worker -->
+  <line x1="525" y1="526" x2="563" y2="526" stroke="#06b6d4" stroke-width="1.5" marker-end="url(#arrowCyan)"/>
+
+  <!-- Box: Worker accepts -->
+  <rect x="565" y="500" width="225" height="52" rx="10" fill="#0f2010" stroke="#10b981" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="677" y="520" text-anchor="middle" fill="#6ee7b7" font-size="11" font-weight="600">Worker Accepts &amp; Resolves</text>
+  <text x="677" y="538" text-anchor="middle" fill="#6b7280" font-size="10">Updates status → In Progress</text>
+  <text x="677" y="550" text-anchor="middle" fill="#6b7280" font-size="10">then → Resolved</text>
+
+  <!-- Arrow Worker → Tenant (notification) -->
+  <line x1="790" y1="526" x2="828" y2="526" stroke="#10b981" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+
+  <!-- Box: Tenant notified -->
+  <rect x="830" y="500" width="235" height="52" rx="10" fill="#201808" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="947" y="520" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">Tenant Notified ✓</text>
+  <text x="947" y="538" text-anchor="middle" fill="#6b7280" font-size="10">SMS confirmation received,</text>
+  <text x="947" y="550" text-anchor="middle" fill="#6b7280" font-size="10">issue resolved</text>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SECTION 4: Stays & Access                  -->
+  <!-- ═══════════════════════════════════════════ -->
+  <text x="550" y="590" text-anchor="middle" fill="#4a5568" font-size="10" letter-spacing="2" font-weight="600">── STAYS &amp; TENANT ACCESS ───────────────────────────────────────────────────────</text>
+
+  <!-- Box: PM schedules stay -->
+  <rect x="35" y="598" width="225" height="52" rx="10" fill="#1e1040" stroke="#7c3aed" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="147" y="618" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">Schedule a Stay</text>
+  <text x="147" y="636" text-anchor="middle" fill="#6b7280" font-size="10">Short-term guest or</text>
+  <text x="147" y="648" text-anchor="middle" fill="#6b7280" font-size="10">long-term tenant</text>
+
+  <!-- Arrow PM → System -->
+  <line x1="260" y1="624" x2="298" y2="624" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrowViolet)"/>
+
+  <!-- Box: System generates link -->
+  <rect x="300" y="598" width="225" height="52" rx="10" fill="#0a1e30" stroke="#06b6d4" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="412" y="618" text-anchor="middle" fill="#67e8f9" font-size="11" font-weight="600">Guest Link Generated</text>
+  <text x="412" y="636" text-anchor="middle" fill="#6b7280" font-size="10">Unique secure token, email</text>
+  <text x="412" y="648" text-anchor="middle" fill="#6b7280" font-size="10">sent with access details</text>
+
+  <!-- Arrow System → Tenant -->
+  <line x1="525" y1="624" x2="828" y2="624" stroke="#06b6d4" stroke-width="1.5" marker-end="url(#arrowCyan)"/>
+
+  <!-- Box: Tenant receives -->
+  <rect x="830" y="598" width="235" height="52" rx="10" fill="#201808" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="947" y="618" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">Tenant Receives Access</text>
+  <text x="947" y="636" text-anchor="middle" fill="#6b7280" font-size="10">WiFi, door code, check-in</text>
+  <text x="947" y="648" text-anchor="middle" fill="#6b7280" font-size="10">time, house rules, rules</text>
+
+  <!-- Box: Guest submits report -->
+  <rect x="830" y="664" width="235" height="52" rx="10" fill="#201808" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="947" y="684" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="600">Guest Submits Report</text>
+  <text x="947" y="702" text-anchor="middle" fill="#6b7280" font-size="10">Arrival checklist, notes,</text>
+  <text x="947" y="714" text-anchor="middle" fill="#6b7280" font-size="10">any damage observed</text>
+
+  <!-- Arrow Tenant down -->
+  <line x1="947" y1="650" x2="947" y2="662" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrowAmber)"/>
+
+  <!-- Arrow Report → System -->
+  <line x1="830" y1="690" x2="527" y2="690" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrowAmber)"/>
+
+  <!-- Box: System logs report -->
+  <rect x="300" y="664" width="225" height="52" rx="10" fill="#0a1e30" stroke="#06b6d4" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="412" y="684" text-anchor="middle" fill="#67e8f9" font-size="11" font-weight="600">Report Logged</text>
+  <text x="412" y="702" text-anchor="middle" fill="#6b7280" font-size="10">PM notified, damage flags</text>
+  <text x="412" y="714" text-anchor="middle" fill="#6b7280" font-size="10">visible in dashboard</text>
+
+  <!-- Arrow System → PM -->
+  <line x1="300" y1="690" x2="262" y2="690" stroke="#8b5cf6" stroke-width="1.5" marker-end="url(#arrowViolet)"/>
+
+  <!-- Box: PM reviews -->
+  <rect x="35" y="664" width="225" height="52" rx="10" fill="#1e1040" stroke="#7c3aed" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="147" y="684" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="600">PM Reviews Report</text>
+  <text x="147" y="702" text-anchor="middle" fill="#6b7280" font-size="10">Flags issues, creates work</text>
+  <text x="147" y="714" text-anchor="middle" fill="#6b7280" font-size="10">orders if needed</text>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- LEGEND                                     -->
+  <!-- ═══════════════════════════════════════════ -->
+  <rect x="20" y="740" width="1060" height="80" rx="10" fill="#0d1424" stroke="#1e2d42" stroke-width="1"/>
+  <text x="550" y="760" text-anchor="middle" fill="#4a6080" font-size="10" letter-spacing="1.5" font-weight="600">LEGEND</text>
+
+  <!-- Legend items -->
+  <line x1="40" y1="780" x2="80" y2="780" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrowViolet)"/>
+  <text x="88" y="784" fill="#a78bfa" font-size="10">PM action</text>
+
+  <line x1="200" y1="780" x2="240" y2="780" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrowCyan)"/>
+  <text x="248" y="784" fill="#67e8f9" font-size="10">System processes</text>
+
+  <line x1="390" y1="780" x2="430" y2="780" stroke="#10b981" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <text x="438" y="784" fill="#6ee7b7" font-size="10">Worker action</text>
+
+  <line x1="570" y1="780" x2="610" y2="780" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrowAmber)"/>
+  <text x="618" y="784" fill="#fde68a" font-size="10">Tenant action</text>
+
+  <line x1="730" y1="780" x2="770" y2="780" stroke="#4a6080" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#arrowCyan)"/>
+  <text x="778" y="784" fill="#4a6080" font-size="10">Auto / async notification</text>
+
+  <!-- Footer -->
+  <text x="550" y="810" text-anchor="middle" fill="#4a6080" font-size="11">smartsumai.com  ·  AI-powered property management for professional landlords</text>
+</svg>

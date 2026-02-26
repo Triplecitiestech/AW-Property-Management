@@ -41,15 +41,23 @@ export default async function NewStayPage({
             </select>
           </div>
 
+          <div>
+            <label className="form-label" htmlFor="stay_type">Stay Type *</label>
+            <select id="stay_type" name="stay_type" className="form-select" required defaultValue="short_term">
+              <option value="short_term">Short-term Guest (Airbnb, vacation rental)</option>
+              <option value="long_term">Long-term Tenant (month-to-month, annual lease)</option>
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="form-label" htmlFor="guest_name">Guest Name *</label>
+              <label className="form-label" htmlFor="guest_name">Name *</label>
               <input id="guest_name" name="guest_name" type="text" className="form-input" required placeholder="Jordan Smith" />
             </div>
             <div>
-              <label className="form-label" htmlFor="guest_email">Guest Email</label>
+              <label className="form-label" htmlFor="guest_email">Email</label>
               <input id="guest_email" name="guest_email" type="email" className="form-input" placeholder="guest@example.com" />
-              <p className="text-xs text-gray-400 mt-1">Guest link will be emailed if provided</p>
+              <p className="text-xs text-gray-400 mt-1">Access link will be emailed if provided</p>
             </div>
           </div>
 

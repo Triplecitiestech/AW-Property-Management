@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
         } else {
           reply += `\nNo ${contactRole} contact on file for this property.`
         }
-        reply += `\n${appUrl}/tickets/${ticket.id}`
+        reply += `\n${appUrl}/work-orders/${ticket.id}`
         return twiml(reply)
       }
 

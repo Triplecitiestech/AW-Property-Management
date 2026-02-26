@@ -735,6 +735,25 @@ DROP POLICY IF EXISTS "error_logs_select" ON error_logs;
 CREATE POLICY "error_logs_insert" ON error_logs FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "error_logs_select" ON error_logs FOR SELECT TO authenticated USING (user_id = auth.uid());
 
+-- ========================
+-- 012: Property access info + stay type
+-- ========================
+
+-- Property-level access info (shared with tenants/guests on invitation)
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS wifi_name       TEXT;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS wifi_password   TEXT;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS door_code       TEXT;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS gate_code       TEXT;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS parking_info    TEXT;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS trash_schedule  TEXT;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS check_in_time   TEXT;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS check_out_time  TEXT;
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS house_rules     TEXT;
+
+-- Stay type: short_term (guests/Airbnb) vs long_term (tenants/renters)
+ALTER TABLE stays ADD COLUMN IF NOT EXISTS stay_type TEXT NOT NULL DEFAULT 'short_term'
+  CHECK (stay_type IN ('short_term', 'long_term'));
+
 -- Done!
 SELECT 'Schema deployed successfully' AS result;
 

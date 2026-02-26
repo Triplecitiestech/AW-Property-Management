@@ -9,7 +9,7 @@ export const metadata = {
 const features = [
   { category: 'Properties', items: ['Unlimited property profiles', 'Custom checklists per property', 'Property status tracking (clean / needs service / occupied)', 'AI-powered notes & instructions', 'Property contacts & service provider directory'] },
   { category: 'Guests & Stays', items: ['Unlimited stay tracking', 'Auto-generated guest checklist links', 'Guest report submission (no app required)', 'Check-in / check-out logging'] },
-  { category: 'Service Tickets', items: ['Unlimited tickets', 'Priority levels (urgent / high / medium / low)', 'Categories: maintenance, cleaning, supplies, other', 'Ticket comments & internal notes', 'Full audit trail & history'] },
+  { category: 'Work Orders', items: ['Unlimited work orders', 'Priority levels (urgent / high / medium / low)', 'Categories: maintenance, cleaning, supplies, other', 'Comments, status updates & audit trail', 'AI auto-assigns best contact for each job'] },
   { category: 'Team', items: ['Unlimited team members', 'Invite by link', 'Role-based access (owner / admin / member)', 'Property-level permissions', 'Team activity log'] },
   { category: 'Notifications', items: ['Email alerts for new tickets', 'Status change notifications', 'Guest report alerts', 'Configurable notification recipients'] },
 ]
@@ -141,6 +141,26 @@ export default function PricingPage() {
                 </ul>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ─────────────────────────────────────────────── */}
+      <section className="py-24 border-t border-white/5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-3">How it works</h2>
+            <p className="text-[#6480a0] text-lg max-w-2xl mx-auto">
+              From adding a property to resolving a work order — see the complete workflow at a glance.
+            </p>
+          </div>
+          <div className="rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
+            <img
+              src="/workflow-diagram.svg"
+              alt="SmartSumai workflow diagram — property manager, system, maintenance worker, and tenant flow"
+              className="w-full h-auto"
+              loading="lazy"
+            />
           </div>
         </div>
       </section>

@@ -87,15 +87,15 @@ const steps = [
       </svg>
     ),
     color: 'from-rose-600 to-rose-400',
-    title: 'Manage service tickets',
-    description: 'Create tickets for anything that needs attention — maintenance, cleaning, restocking. Assign priorities and track resolution from start to finish.',
+    title: 'Manage work orders',
+    description: 'Create work orders for anything that needs attention — maintenance, cleaning, restocking. Assign priorities and track resolution from start to finish.',
     bullets: [
-      'Ticket categories: maintenance, cleaning, supplies, other',
+      'Categories: maintenance, cleaning, supplies, other',
       'Priority levels: urgent, high, medium, low',
       'Add comments, update status, view full audit trail',
     ],
-    action: { label: 'Create a Ticket →', href: '/tickets/new' },
-    tip: 'Tip: Your team gets email notifications automatically when a ticket is created or updated.',
+    action: { label: 'Create a Work Order →', href: '/work-orders/new' },
+    tip: 'Tip: Your team gets email notifications automatically when a work order is created or updated.',
   },
   {
     number: 6,

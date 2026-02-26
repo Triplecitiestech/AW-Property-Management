@@ -244,3 +244,38 @@ export async function updatePropertyStatus(
     return { error: err instanceof Error ? err.message : 'Failed to update status' }
   }
 }
+
+// ---- Update Property Access Info ----
+
+export async function updatePropertyAccess(
+  propertyId: string,
+  data: {
+    wifi_name?: string
+    wifi_password?: string
+    door_code?: string
+    gate_code?: string
+    parking_info?: string
+    trash_schedule?: string
+    check_in_time?: string
+    check_out_time?: string
+    house_rules?: string
+  }
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/login')
+
+  const update = Object.fromEntries(
+    Object.entries(data).map(([k, v]) => [k, v?.trim() || null])
+  )
+
+  const { error } = await supabase
+    .from('properties')
+    .update(update)
+    .eq('id', propertyId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/properties/${propertyId}`)
+  return { success: true }
+}

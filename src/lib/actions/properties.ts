@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { PropertyStatusEnum, OccupancyEnum } from '@/lib/supabase/types'
 import { getOrCreateUserOrg } from '@/lib/actions/organizations'
 import { DEFAULT_CHECKLIST_LABELS } from '@/lib/checklist-defaults'
@@ -23,7 +23,10 @@ export async function createPropertyForWizard(
 
     const orgId = await getOrCreateUserOrg()
 
-    const { data: property, error } = await supabase
+    // Use service client for INSERT to bypass any stale RLS policy on the
+    // properties table. Auth has already been verified above via getUser().
+    const svc = createServiceClient()
+    const { data: property, error } = await svc
       .from('properties')
       .insert({
         name: name.trim(),

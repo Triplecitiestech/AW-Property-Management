@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useOptimistic } from 'react'
+import { useState, useTransition } from 'react'
 import { saveChecklistItems, resetChecklistToDefaults, toggleChecklistItem, resetChecklistChecks } from '@/lib/actions/checklist'
 import { DEFAULT_CHECKLIST_LABELS } from '@/lib/checklist-defaults'
 
@@ -18,26 +18,25 @@ export default function ChecklistEditor({
     : DEFAULT_CHECKLIST_LABELS.map((label, i) => ({ id: `default-${i}`, label, is_checked: false }))
 
   const [mode, setMode] = useState<'check' | 'edit'>('check')
+  // Use plain state — useOptimistic reverts after transition which caused the "uncheck" bug
+  const [items, setItems] = useState<ChecklistItem[]>(defaultItems)
   const [editLabels, setEditLabels] = useState<string[]>(defaultItems.map(i => i.label))
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
-  // Optimistic checked state for instant UI feedback
-  const [optimisticItems, setOptimisticItems] = useOptimistic(defaultItems)
-
   function handleToggle(item: ChecklistItem) {
+    if (item.id.startsWith('default-')) return
+    // Update local state immediately — it persists (no revert after transition)
+    setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_checked: !i.is_checked } : i))
     startTransition(async () => {
-      setOptimisticItems(prev =>
-        prev.map(i => i.id === item.id ? { ...i, is_checked: !i.is_checked } : i)
-      )
       await toggleChecklistItem(item.id, !item.is_checked)
     })
   }
 
   function handleResetChecks() {
+    setItems(prev => prev.map(i => ({ ...i, is_checked: false })))
     startTransition(async () => {
-      setOptimisticItems(prev => prev.map(i => ({ ...i, is_checked: false })))
       await resetChecklistChecks(propertyId)
     })
   }
@@ -65,11 +64,11 @@ export default function ChecklistEditor({
   }
 
   // Sort: unchecked first, checked last
-  const sorted = [...optimisticItems].sort((a, b) => {
+  const sorted = [...items].sort((a, b) => {
     if (a.is_checked === b.is_checked) return 0
     return a.is_checked ? 1 : -1
   })
-  const checkedCount = optimisticItems.filter(i => i.is_checked).length
+  const checkedCount = items.filter(i => i.is_checked).length
 
   if (mode === 'check') {
     return (

@@ -145,26 +145,6 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ─────────────────────────────────────────────── */}
-      <section className="py-24 border-t border-white/5">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-3">How it works</h2>
-            <p className="text-[#6480a0] text-lg max-w-2xl mx-auto">
-              From adding a property to resolving a work order — see the complete workflow at a glance.
-            </p>
-          </div>
-          <div className="rounded-2xl overflow-hidden border border-white/5 shadow-2xl">
-            <img
-              src="/workflow-diagram.svg"
-              alt="SmartSumai workflow diagram — property manager, system, maintenance worker, and tenant flow"
-              className="w-full h-auto"
-              loading="lazy"
-            />
-          </div>
-        </div>
-      </section>
-
       {/* ── FAQ ─────────────────────────────────────────────────────── */}
       <section className="py-24 border-t border-white/5">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">

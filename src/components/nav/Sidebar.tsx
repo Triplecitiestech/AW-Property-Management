@@ -101,7 +101,7 @@ export default function Sidebar({ isSuperAdmin = false }: { isSuperAdmin?: boole
     >
       {/* Logo */}
       <div className="p-5 border-b border-[#1e2d42]">
-        <div className="flex items-center gap-3">
+        <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
                           bg-gradient-to-br from-violet-600 to-cyan-500 shadow-lg shadow-violet-900/50">
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,7 +113,7 @@ export default function Sidebar({ isSuperAdmin = false }: { isSuperAdmin?: boole
             <p className="font-bold text-white text-sm tracking-wide">Smart <span className="text-teal-400">Sumai</span></p>
             <p className="text-xs text-[#4a6080]">Property Management</p>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Nav */}

@@ -113,6 +113,28 @@ export default async function AdminPage() {
         <h2 className="font-semibold text-white mb-4">Feature Requests</h2>
         <FeatureRequestAdmin requests={featureRequests ?? []} />
       </div>
+
+      {/* System Workflow Diagram */}
+      <div className="card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="font-semibold text-white">System Workflow Diagram</h2>
+            <p className="text-xs text-[#6480a0] mt-0.5">Live visual of how the system works — update this whenever workflows change</p>
+          </div>
+          <a href="/workflow-diagram.svg" target="_blank" rel="noopener noreferrer"
+             className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
+            Open full size ↗
+          </a>
+        </div>
+        <div className="rounded-xl overflow-hidden border border-[#1e2d42]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/workflow-diagram.svg"
+            alt="SmartSumai system workflow diagram"
+            className="w-full h-auto"
+          />
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import MarketingNav from '@/components/marketing/MarketingNav'
 import Link from 'next/link'
 
@@ -21,11 +20,6 @@ export default async function Home({
     const qs = new URLSearchParams({ code: params.code, ...(params.next ? { next: params.next } : {}) })
     redirect(`/auth/callback?${qs}`)
   }
-
-  // Redirect logged-in users
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (user) redirect('/dashboard')
 
   return (
     <div className="min-h-screen bg-[#07101e] text-white overflow-x-hidden">
@@ -162,8 +156,8 @@ export default async function Home({
                 ),
                 color: 'from-teal-600 to-teal-400',
                 glow: 'group-hover:shadow-teal-900/40',
-                title: 'Guest Stay Tracking',
-                desc: 'Log check-ins and check-outs. Automatically generate guest checklist links and collect post-stay reports — no app required.',
+                title: 'Guest & Tenant Tracking',
+                desc: 'Log short-term guest stays or long-term tenants. Auto-generate access links with WiFi codes and house rules. Collect post-stay reports and track full activity history — no app required.',
               },
               {
                 icon: (
@@ -173,8 +167,8 @@ export default async function Home({
                 ),
                 color: 'from-amber-600 to-amber-400',
                 glow: 'group-hover:shadow-amber-900/40',
-                title: 'Service Tickets',
-                desc: 'Create, assign, and track maintenance, cleaning, and supply requests with priority levels, comments, and full audit history.',
+                title: 'Work Orders',
+                desc: 'Create, assign, and track maintenance, cleaning, and supply requests. AI auto-routes to the right contact. Full audit history of every action.',
               },
               {
                 icon: (
@@ -208,17 +202,6 @@ export default async function Home({
                 glow: 'group-hover:shadow-rose-900/40',
                 title: 'AI SMS Property Manager',
                 desc: 'Text your dedicated AI number in plain English. Check status, file tickets, schedule stays, add contacts — no app needed. Conversations sync with the in-app chat.',
-              },
-              {
-                icon: (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                ),
-                color: 'from-slate-600 to-slate-400',
-                glow: 'group-hover:shadow-slate-900/40',
-                title: 'Audit & Activity Log',
-                desc: 'Full history of every change — who updated what and when. Stay accountable and troubleshoot issues in seconds.',
               },
             ].map(f => (
               <div key={f.title}

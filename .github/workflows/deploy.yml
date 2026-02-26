@@ -205,8 +205,7 @@ jobs:
         # This triggers SSL certificate provisioning if not already done.
         run: |
           set -euo pipefail
-          echo "VERCEL_PROJECT_ID=${VERCEL_PROJECT_ID}"
-          echo "VERCEL_ORG_ID=${VERCEL_ORG_ID}"
+          echo "## Custom Domain Setup: smartsumai.com" >> "$GITHUB_STEP_SUMMARY"
 
           for DOMAIN in "smartsumai.com" "www.smartsumai.com"; do
             echo "--- Adding $DOMAIN ---"
@@ -216,23 +215,22 @@ jobs:
               -H "Content-Type: application/json" \
               -d "{\"name\":\"${DOMAIN}\"}")
             RESP=$(cat /tmp/domain_resp.json)
-            echo "$DOMAIN → HTTP $HTTP"
-            echo "Response: $RESP"
-            if [ "$HTTP" = "200" ]; then
-              echo "✓ $DOMAIN added successfully"
-            elif [ "$HTTP" = "409" ]; then
-              echo "✓ $DOMAIN already exists on project"
-            else
-              echo "Warning: unexpected HTTP $HTTP for $DOMAIN"
-            fi
+            echo "POST $DOMAIN → HTTP $HTTP: $RESP"
+            echo "**POST $DOMAIN** → HTTP $HTTP" >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            echo "$RESP" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
 
             echo "--- Checking $DOMAIN verification status ---"
             VHTTP=$(curl -s -o /tmp/domain_verify.json -w "%{http_code}" \
               "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}/domains/${DOMAIN}?teamId=${VERCEL_ORG_ID}" \
               -H "Authorization: Bearer $VERCEL_TOKEN")
             VRESP=$(cat /tmp/domain_verify.json)
-            echo "$DOMAIN verify → HTTP $VHTTP"
-            echo "Verify response: $VRESP"
+            echo "GET $DOMAIN status → HTTP $VHTTP: $VRESP"
+            echo "**GET $DOMAIN status** → HTTP $VHTTP" >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            echo "$VRESP" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
           done
 
       - name: Verify — Supabase reachable

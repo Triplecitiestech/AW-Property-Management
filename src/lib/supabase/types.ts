@@ -148,6 +148,15 @@ export interface AuditLog {
   after_data: Record<string, unknown> | null
 }
 
+export interface ContactPropertyLink {
+  id: string
+  contact_id: string
+  property_id: string
+  role: string
+  is_primary: boolean
+  created_at: string
+}
+
 // ---- Joined / View Types ----
 
 export interface PropertyWithStatus extends Property {

@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   if (!address && !name) return NextResponse.json({ error: 'Address or name required' }, { status: 400 })
 
   const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) return NextResponse.json({ summary: '' })
+  if (!apiKey) return NextResponse.json({ summary: '', error: 'ANTHROPIC_API_KEY not set in Vercel environment variables.' })
 
   const client = new Anthropic({ apiKey })
   const response = await client.messages.create({

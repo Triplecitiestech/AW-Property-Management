@@ -24,7 +24,9 @@ export default function AppError({
       </div>
       <h2 className="text-lg font-semibold text-white mb-2">Something went wrong</h2>
       <p className="text-sm text-[#60608a] mb-6 max-w-sm">
-        A page error occurred. This has been logged.
+        {error.message?.includes('infinite recursion')
+          ? 'A database policy update is in progress. Please wait a moment and try again.'
+          : 'A page error occurred. This has been logged.'}
         {error.digest && <span className="block mt-1 font-mono text-xs text-[#40405a]">ref: {error.digest}</span>}
       </p>
       <div className="flex gap-3">

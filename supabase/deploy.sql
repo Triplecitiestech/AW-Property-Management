@@ -613,5 +613,92 @@ ALTER TABLE stays ADD COLUMN IF NOT EXISTS host_instructions TEXT;
 DROP POLICY IF EXISTS "properties_insert" ON properties;
 CREATE POLICY "properties_insert" ON properties FOR INSERT TO authenticated WITH CHECK (owner_id = auth.uid());
 
+-- ========================
+-- 010: Fix org_members / organizations RLS infinite recursion
+-- ========================
+-- The org_members_select policy referenced org_members itself, causing infinite
+-- recursion. Same with organizations policies that queried org_members directly.
+-- Fix: SECURITY DEFINER helper functions that bypass RLS.
+
+CREATE OR REPLACE FUNCTION get_user_org_ids()
+RETURNS SETOF UUID LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT org_id FROM org_members WHERE user_id = auth.uid();
+$$;
+
+CREATE OR REPLACE FUNCTION is_org_admin(p_org_id UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM org_members
+    WHERE org_id = p_org_id AND user_id = auth.uid() AND role IN ('owner', 'admin')
+  );
+$$;
+
+-- Recreate org_members policies (no self-referencing subqueries)
+DROP POLICY IF EXISTS "org_members_select" ON org_members;
+DROP POLICY IF EXISTS "org_members_insert" ON org_members;
+DROP POLICY IF EXISTS "org_members_update" ON org_members;
+DROP POLICY IF EXISTS "org_members_delete" ON org_members;
+
+CREATE POLICY "org_members_select" ON org_members FOR SELECT TO authenticated
+  USING (org_id = ANY(get_user_org_ids()));
+CREATE POLICY "org_members_insert" ON org_members FOR INSERT TO authenticated
+  WITH CHECK (user_id = auth.uid() OR is_org_admin(org_id));
+CREATE POLICY "org_members_update" ON org_members FOR UPDATE TO authenticated
+  USING (is_org_admin(org_id)) WITH CHECK (is_org_admin(org_id));
+CREATE POLICY "org_members_delete" ON org_members FOR DELETE TO authenticated
+  USING (user_id = auth.uid() OR is_org_admin(org_id));
+
+-- Recreate organizations policies (also queried org_members directly → recursion)
+DROP POLICY IF EXISTS "organizations_select" ON organizations;
+DROP POLICY IF EXISTS "organizations_insert" ON organizations;
+DROP POLICY IF EXISTS "organizations_update" ON organizations;
+
+CREATE POLICY "organizations_select" ON organizations FOR SELECT TO authenticated
+  USING (id = ANY(get_user_org_ids()));
+CREATE POLICY "organizations_insert" ON organizations FOR INSERT TO authenticated
+  WITH CHECK (true);
+CREATE POLICY "organizations_update" ON organizations FOR UPDATE TO authenticated
+  USING (is_org_admin(id));
+
+-- ========================
+-- 011: Multi-property contacts
+-- ========================
+-- contact_property_links lets one contact be associated with multiple properties,
+-- each with its own role and is_primary flag.
+
+CREATE TABLE IF NOT EXISTS contact_property_links (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  contact_id  UUID NOT NULL REFERENCES property_contacts(id) ON DELETE CASCADE,
+  property_id UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+  role        TEXT NOT NULL DEFAULT 'other',
+  is_primary  BOOLEAN NOT NULL DEFAULT false,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (contact_id, property_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cpl_contact  ON contact_property_links(contact_id);
+CREATE INDEX IF NOT EXISTS idx_cpl_property ON contact_property_links(property_id);
+
+ALTER TABLE contact_property_links ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "cpl_select" ON contact_property_links;
+DROP POLICY IF EXISTS "cpl_insert" ON contact_property_links;
+DROP POLICY IF EXISTS "cpl_update" ON contact_property_links;
+DROP POLICY IF EXISTS "cpl_delete" ON contact_property_links;
+
+CREATE POLICY "cpl_select" ON contact_property_links FOR SELECT TO authenticated
+  USING (can_access_property(property_id));
+CREATE POLICY "cpl_insert" ON contact_property_links FOR INSERT TO authenticated
+  WITH CHECK (can_access_property(property_id));
+CREATE POLICY "cpl_update" ON contact_property_links FOR UPDATE TO authenticated
+  USING (can_access_property(property_id)) WITH CHECK (can_access_property(property_id));
+CREATE POLICY "cpl_delete" ON contact_property_links FOR DELETE TO authenticated
+  USING (can_access_property(property_id));
+
+-- Backfill existing property_contacts → junction table
+INSERT INTO contact_property_links (contact_id, property_id, role, is_primary)
+SELECT id, property_id, role, is_primary
+FROM property_contacts
+ON CONFLICT (contact_id, property_id) DO NOTHING;
+
 -- Done!
 SELECT 'Schema deployed successfully' AS result;

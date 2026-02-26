@@ -174,6 +174,7 @@ function PropertyDetailsStep({
   async function fetchAiSummary() {
     if (!address && !name) return
     setSummaryLoading(true)
+    setError(null)
     try {
       const res = await fetch('/api/property-summary', {
         method: 'POST',
@@ -181,7 +182,13 @@ function PropertyDetailsStep({
         body: JSON.stringify({ name, address }),
       })
       const data = await res.json()
-      if (data.summary) setAiSummary(data.summary)
+      if (data.error && !data.summary) {
+        setError(`AI summary unavailable: ${data.error}`)
+      } else if (data.summary) {
+        setAiSummary(data.summary)
+      }
+    } catch {
+      setError('Failed to generate AI summary. Check your API key configuration.')
     } finally {
       setSummaryLoading(false)
     }

@@ -58,9 +58,21 @@ export async function POST(req: NextRequest) {
   // Validate Twilio signature (skip in dev if no token set)
   if (AUTH_TOKEN) {
     const signature = req.headers.get('x-twilio-signature') ?? ''
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
-    const webhookUrl = `${appUrl}/api/webhooks/sms`
-    if (!validateTwilioSignature(signature, webhookUrl, params)) {
+    // Build the candidate URLs: Twilio signs using the exact URL it posted to.
+    // Try both the configured app URL and the actual request host to handle
+    // domain renames / multiple Vercel deployments.
+    const proto = req.headers.get('x-forwarded-proto') ?? 'https'
+    const host  = req.headers.get('host') ?? ''
+    const actualUrl   = `${proto}://${host}/api/webhooks/sms`
+    const configuredUrl = process.env.NEXT_PUBLIC_APP_URL
+      ? `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/sms`
+      : actualUrl
+
+    const validSignature =
+      validateTwilioSignature(signature, configuredUrl, params) ||
+      validateTwilioSignature(signature, actualUrl, params)
+
+    if (!validSignature) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
   }

@@ -67,6 +67,7 @@ export interface Property {
   description: string | null
   quick_notes: string | null
   ai_instructions: string | null
+  ai_summary: string | null
   owner_id: string
   org_id: string | null
   created_at: string

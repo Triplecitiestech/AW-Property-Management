@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import Link from 'next/link'
 import { logError } from '@/lib/log-error'
 
-export default function AppError({
+export default function RootError({
   error,
   reset,
 }: {
@@ -17,12 +17,12 @@ export default function AppError({
       route: window.location.pathname,
       message: error.message || 'Unknown error',
       stack: error.stack,
-      metadata: { digest: error.digest },
+      metadata: { digest: error.digest, segment: 'root' },
     })
   }, [error])
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+    <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 bg-[#0f1829]">
       <div className="w-14 h-14 rounded-2xl bg-red-950/60 ring-1 ring-red-800/50 flex items-center justify-center mb-5">
         <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -31,12 +31,12 @@ export default function AppError({
       </div>
       <h2 className="text-lg font-semibold text-white mb-2">Something went wrong</h2>
       <p className="text-sm text-[#60608a] mb-6 max-w-sm">
-        A page error occurred. It has been automatically logged.
+        An unexpected error occurred. It has been automatically logged.
         {error.digest && <span className="block mt-1 font-mono text-xs text-[#40405a]">ref: {error.digest}</span>}
       </p>
       <div className="flex gap-3">
         <button onClick={reset} className="btn-primary text-sm">Try again</button>
-        <Link href="/dashboard" className="btn-secondary text-sm">Go to Dashboard</Link>
+        <Link href="/auth/login" className="btn-secondary text-sm">Go to Login</Link>
       </div>
     </div>
   )

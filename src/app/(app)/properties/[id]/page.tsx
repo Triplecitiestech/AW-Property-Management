@@ -7,6 +7,7 @@ import DeletePropertyButton from '@/components/properties/DeletePropertyButton'
 import QuickNotesEditor from '@/components/properties/QuickNotesEditor'
 import AiInstructionsEditor from '@/components/properties/AiInstructionsEditor'
 import PropertyContactsEditor from '@/components/properties/PropertyContactsEditor'
+import ScrollToContactsButton from '@/components/properties/ScrollToContactsButton'
 import { seedDefaultChecklistIfEmpty } from '@/lib/actions/checklist'
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -127,20 +128,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             ) : (
               <div className="space-y-3">
                 <p className="text-xs text-[#60608a]">No primary contact set.</p>
-                <a
-                  href="#contacts"
-                  onClick={() => {
-                    setTimeout(() => {
-                      document.getElementById('contacts-add-btn')?.click()
-                    }, 400)
-                  }}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-400 hover:text-violet-300
-                             bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 px-3 py-1.5 rounded-lg transition-all">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Add Primary Contact
-                </a>
+                <ScrollToContactsButton />
               </div>
             )}
           </div>

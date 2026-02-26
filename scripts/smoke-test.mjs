@@ -69,7 +69,7 @@ async function run() {
 
   // ---- Test 2: Database tables exist ----
   console.log('\n2. Database schema')
-  const tables = ['profiles', 'properties', 'property_status', 'stays', 'service_requests', 'service_request_comments', 'guest_reports', 'audit_log', 'property_checklist_items', 'property_contacts', 'organizations', 'org_members', 'property_access', 'invitations', 'contact_property_links']
+  const tables = ['profiles', 'properties', 'property_status', 'stays', 'service_requests', 'service_request_comments', 'guest_reports', 'audit_log', 'property_checklist_items', 'property_contacts', 'organizations', 'org_members', 'property_access', 'invitations', 'contact_property_links', 'error_logs']
   for (const table of tables) {
     try {
       await supabaseQuery(`${table}?limit=1`, { prefer: 'count=planned' })

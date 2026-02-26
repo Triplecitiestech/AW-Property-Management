@@ -1,5 +1,8 @@
 'use client'
 
+import { useEffect } from 'react'
+import { logError } from '@/lib/log-error'
+
 export default function PropertiesError({
   error,
   reset,
@@ -7,6 +10,16 @@ export default function PropertiesError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  useEffect(() => {
+    logError({
+      source: 'client',
+      route: window.location.pathname,
+      message: error.message || 'Unknown error',
+      stack: error.stack,
+      metadata: { digest: error.digest, segment: 'properties' },
+    })
+  }, [error])
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
       <div className="card p-8 max-w-md w-full text-center">
@@ -18,9 +31,7 @@ export default function PropertiesError({
         </div>
         <h2 className="text-lg font-semibold text-white mb-2">Failed to load properties</h2>
         <p className="text-sm text-[#6480a0] mb-4">
-          {error.message?.includes('infinite recursion')
-            ? 'A database policy fix is being deployed. Please wait a moment and try again.'
-            : 'Something went wrong loading this page.'}
+          Something went wrong loading this page. It has been automatically logged.
         </p>
         {error.digest && (
           <p className="text-xs text-[#4a6080] mb-4">ref: {error.digest}</p>

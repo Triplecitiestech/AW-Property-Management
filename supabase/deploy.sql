@@ -711,6 +711,30 @@ EXCEPTION
 END;
 $$;
 
+-- ========================
+-- Error Logs — persisted client + server errors for session-start diagnostics
+-- ========================
+CREATE TABLE IF NOT EXISTS error_logs (
+  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  level      TEXT NOT NULL DEFAULT 'error',
+  source     TEXT NOT NULL,
+  route      TEXT,
+  message    TEXT NOT NULL,
+  stack      TEXT,
+  user_id    UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  metadata   JSONB,
+  resolved   BOOLEAN NOT NULL DEFAULT false
+);
+CREATE INDEX IF NOT EXISTS idx_error_logs_created ON error_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_error_logs_resolved ON error_logs(resolved, created_at DESC);
+
+ALTER TABLE error_logs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "error_logs_insert" ON error_logs;
+DROP POLICY IF EXISTS "error_logs_select" ON error_logs;
+CREATE POLICY "error_logs_insert" ON error_logs FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "error_logs_select" ON error_logs FOR SELECT TO authenticated USING (user_id = auth.uid());
+
 -- Done!
 SELECT 'Schema deployed successfully' AS result;
 

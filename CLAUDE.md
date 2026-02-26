@@ -52,7 +52,7 @@ All credentials live in `.env.local` (gitignored). If that file exists, read it 
 - **MCP**: If `mcp__supabase__*` tools are available, use them — they have full DB access.
 - **Project ref**: stored in `.env.local` as `NEXT_PUBLIC_SUPABASE_URL` (extract the ref from `https://<ref>.supabase.co`)
 - **Migration approach**: run `supabase/deploy.sql` as a single idempotent script, or use the MCP execute_sql tool.
-- **Schema**: all tables defined in `supabase/deploy.sql`. Current tables: `profiles`, `properties`, `property_status`, `stays`, `service_requests`, `service_request_comments`, `guest_reports`, `audit_log`, `property_checklist_items`, `property_contacts`, `organizations`, `org_members`, `property_access`, `invitations`
+- **Schema**: all tables defined in `supabase/deploy.sql`. Current tables: `profiles`, `properties`, `property_status`, `stays`, `service_requests`, `service_request_comments`, `guest_reports`, `audit_log`, `property_checklist_items`, `property_contacts`, `organizations`, `org_members`, `property_access`, `invitations`, `error_logs`
 - **Types**: manually maintained in `src/lib/supabase/types.ts` — update when schema changes.
 
 ### Vercel
@@ -121,6 +121,39 @@ The app is a **fully deployed** multi-tenant property management SaaS.
 ### Deployment
 - GitHub Actions: `.github/workflows/deploy.yml` (auto-deploy + auto-migrate on push to `main` OR `claude/**`)
 - Git proxy only allows pushing to `claude/` branches — use the feature branch, not main
+
+## Session start: always check error logs first
+
+At the start of EVERY session, before doing anything else, check for unresolved errors:
+
+```sql
+SELECT id, created_at, source, route, message, metadata
+FROM error_logs
+WHERE resolved = false
+ORDER BY created_at DESC
+LIMIT 20;
+```
+
+Run this via the Supabase MCP tool (`mcp__supabase__execute_sql`) or via the management API
+(same pattern as `scripts/run-migration.mjs` but with a SELECT).
+
+**If unresolved errors exist:**
+1. Group by `route + message` to find the top 3 recurring issues
+2. Investigate the relevant code
+3. Implement fixes autonomously
+4. After deploying fixes, mark errors resolved:
+   ```sql
+   UPDATE error_logs SET resolved = true
+   WHERE resolved = false AND route = '<route>' AND message = '<message>';
+   ```
+
+**Error log columns:**
+- `source`: 'client' | 'server' | 'action'
+- `route`: URL path where crash occurred
+- `message`: error message
+- `stack`: full stack trace
+- `metadata`: JSON with extras (digest, segment, etc.)
+- `resolved`: false = needs attention
 
 ## What still needs to be done
 - Nothing critical. The app is fully functional.

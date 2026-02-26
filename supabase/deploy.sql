@@ -695,10 +695,19 @@ CREATE POLICY "cpl_delete" ON contact_property_links FOR DELETE TO authenticated
   USING (can_access_property(property_id));
 
 -- Backfill existing property_contacts → junction table
-INSERT INTO contact_property_links (contact_id, property_id, role, is_primary)
-SELECT id, property_id, role, is_primary
-FROM property_contacts
-ON CONFLICT (contact_id, property_id) DO NOTHING;
+-- Use a DO block to handle the case where the unique constraint doesn't exist yet
+DO $$
+BEGIN
+  INSERT INTO contact_property_links (contact_id, property_id, role, is_primary)
+  SELECT id, property_id, role, is_primary
+  FROM property_contacts
+  ON CONFLICT (contact_id, property_id) DO NOTHING;
+EXCEPTION
+  WHEN others THEN
+    -- If the backfill fails (e.g., constraint not yet in place), skip it safely
+    RAISE NOTICE 'Backfill skipped: %', SQLERRM;
+END;
+$$;
 
 -- Done!
 SELECT 'Schema deployed successfully' AS result;

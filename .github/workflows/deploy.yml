@@ -70,8 +70,9 @@ jobs:
         # property_access, invitations) and all other schema changes are
         # always present before the app is deployed.
         run: |
-          set -o pipefail
-          node scripts/run-migration.mjs 2>&1 | tee /tmp/migration-output.txt
+          # Run migration; use "|| true" so set -e doesn't kill the shell before
+          # we can capture the exit code and write the step summary.
+          node scripts/run-migration.mjs 2>&1 | tee /tmp/migration-output.txt || true
           STATUS=${PIPESTATUS[0]}
           # Write full output to Step Summary (visible in Actions UI)
           echo "## Supabase Migration Output" >> "$GITHUB_STEP_SUMMARY"
@@ -80,10 +81,10 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           # Also emit as an error annotation (accessible via GitHub API without log access)
           if [ $STATUS -ne 0 ]; then
-            TAIL=$(tail -5 /tmp/migration-output.txt | tr '\n' ' ')
-            echo "::error title=Migration Failed::$TAIL"
+            TAIL=$(tail -10 /tmp/migration-output.txt | tr '\n' ' ')
+            echo "::error title=Migration Failed::${TAIL:-no output captured}"
+            exit 1
           fi
-          exit $STATUS
 
       - name: Update Supabase auth Site URL
         # Ensures the confirmation/magic-link emails point to production, not localhost.

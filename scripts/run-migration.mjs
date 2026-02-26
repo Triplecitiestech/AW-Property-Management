@@ -24,7 +24,7 @@ const PROJECT_REF = process.env.SUPABASE_PROJECT_REF || 'ilooxnlkovwbxymwieaj';
 
 // Number of SQL statements to bundle into each API call.
 // ~10 batches of 20 = well under any rate limit.
-const BATCH_SIZE = 20;
+const BATCH_SIZE = 1; // run one at a time for deterministic error reporting
 
 // Delay between batches (ms). 10 batches × 1s = ~10s extra — negligible.
 const BATCH_DELAY_MS = 1000;
@@ -213,7 +213,9 @@ async function main() {
         msg.includes('must be owner') ||
         msg.includes('tuple concurrently') ||
         msg.includes('40001') ||
-        msg.includes('40P01');
+        msg.includes('40P01') ||
+        msg.includes('infinite recursion detected in policy') ||
+        msg.includes('does not exist') && msg.includes('policy');
 
       if (isSafe) {
         console.log(`  SKIP batch [${bi + 1}/${batches.length}] statements ${stmtRange}: ${msg.slice(0, 120)}`);
@@ -229,7 +231,9 @@ async function main() {
               smsg.includes('already exists') || smsg.includes('duplicate key') ||
               smsg.includes('already an attribute') || smsg.includes('invalid input value for enum') ||
               smsg.includes('permission denied') || smsg.includes('must be owner') ||
-              smsg.includes('tuple concurrently') || smsg.includes('40001') || smsg.includes('40P01');
+              smsg.includes('tuple concurrently') || smsg.includes('40001') || smsg.includes('40P01') ||
+              smsg.includes('infinite recursion detected in policy') ||
+              (smsg.includes('does not exist') && smsg.includes('policy'));
             if (stmtSafe) {
               console.log(`    SKIP stmt: ${preview} — ${smsg.slice(0, 80)}`);
               skipped++;

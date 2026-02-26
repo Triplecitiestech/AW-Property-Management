@@ -593,5 +593,25 @@ CREATE POLICY "subscriptions_select" ON subscriptions FOR SELECT TO authenticate
 -- Set kurtis@triplecitiestech.com as super admin (idempotent)
 UPDATE public.profiles SET is_super_admin = true WHERE email = 'kurtis@triplecitiestech.com';
 
+-- ========================
+-- 009: Contact assignment, org AI instructions, policy hardening
+-- ========================
+
+-- General AI instructions for the organization
+ALTER TABLE organizations ADD COLUMN IF NOT EXISTS ai_instructions TEXT;
+
+-- External contact assignment on tickets (property_contacts, not internal users)
+ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS assigned_contact_id UUID REFERENCES property_contacts(id) ON DELETE SET NULL;
+
+-- Guest-facing stay info fields
+ALTER TABLE stays ADD COLUMN IF NOT EXISTS wifi_name TEXT;
+ALTER TABLE stays ADD COLUMN IF NOT EXISTS wifi_password TEXT;
+ALTER TABLE stays ADD COLUMN IF NOT EXISTS door_code TEXT;
+ALTER TABLE stays ADD COLUMN IF NOT EXISTS host_instructions TEXT;
+
+-- Guarantee the correct properties INSERT policy (owner_id = auth.uid() only, no is_owner() check)
+DROP POLICY IF EXISTS "properties_insert" ON properties;
+CREATE POLICY "properties_insert" ON properties FOR INSERT TO authenticated WITH CHECK (owner_id = auth.uid());
+
 -- Done!
 SELECT 'Schema deployed successfully' AS result;

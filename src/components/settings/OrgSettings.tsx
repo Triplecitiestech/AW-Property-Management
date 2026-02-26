@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import {
   updateOrgName,
+  updateOrgAiInstructions,
   createOrgInvitation,
   revokeInvitation,
   removeOrgMember,
@@ -10,7 +11,7 @@ import {
 } from '@/lib/actions/organizations'
 import type { OrgRole } from '@/lib/supabase/types'
 
-type Org = { id: string; name: string; created_at: string }
+type Org = { id: string; name: string; ai_instructions: string | null; created_at: string }
 type Member = {
   org_id: string; user_id: string; role: string; joined_at: string
   profiles?: { full_name: string; email: string | null } | null
@@ -68,6 +69,21 @@ export default function OrgSettings({
   const [nameError, setNameError] = useState<string | null>(null)
   const [nameSaved, setNameSaved] = useState(false)
   const [namePending, startNameTransition] = useTransition()
+
+  // ── Org AI Instructions ────────────────────────────────────────────────────
+  const [aiInstructions, setAiInstructions] = useState(org.ai_instructions ?? '')
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [aiSaved, setAiSaved] = useState(false)
+  const [aiPending, startAiTransition] = useTransition()
+
+  function handleSaveAi() {
+    setAiError(null)
+    startAiTransition(async () => {
+      const result = await updateOrgAiInstructions(org.id, aiInstructions)
+      if (result?.error) { setAiError(result.error) }
+      else { setAiSaved(true); setTimeout(() => setAiSaved(false), 2000) }
+    })
+  }
 
   function handleSaveName() {
     setNameError(null)
@@ -145,6 +161,31 @@ export default function OrgSettings({
             Created {new Date(org.created_at).toLocaleDateString()} · {members.length} member{members.length !== 1 ? 's' : ''}
           </p>
         </div>
+      </div>
+
+      {/* ── General AI Instructions ────────────────────────────── */}
+      <div className="card p-5">
+        <h2 className="text-base font-semibold text-white mb-1">General AI Instructions</h2>
+        <p className="text-xs text-[#6480a0] mb-3">
+          Default instructions for the AI agent across all your properties. Override per-property in the property&apos;s AI Agent Instructions section.
+        </p>
+        <textarea
+          className="form-input text-sm w-full"
+          rows={5}
+          value={aiInstructions}
+          onChange={e => setAiInstructions(e.target.value)}
+          placeholder="e.g. Always respond politely. Prefer texting over email. For maintenance issues, always contact the plumber first..."
+          disabled={!isAdmin}
+        />
+        {aiError && <p className="text-xs text-red-400 mt-1">{aiError}</p>}
+        {isAdmin && (
+          <div className="flex items-center gap-3 mt-2">
+            <button onClick={handleSaveAi} disabled={aiPending} className="btn-primary text-sm">
+              {aiPending ? 'Saving…' : aiSaved ? 'Saved!' : 'Save AI Instructions'}
+            </button>
+            {aiSaved && <span className="text-xs text-emerald-400">Instructions saved</span>}
+          </div>
+        )}
       </div>
 
       {/* ── Team Members ──────────────────────────────────────── */}

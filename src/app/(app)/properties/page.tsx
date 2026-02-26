@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 
 function StatusBadge({ status }: { status: string }) {
-  return <span className={`badge badge-${status}`}>{status.replace(/_/g, ' ')}</span>
+  const label = status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  return <span className={`badge badge-${status}`}>{label}</span>
 }
 
 export default async function PropertiesPage({

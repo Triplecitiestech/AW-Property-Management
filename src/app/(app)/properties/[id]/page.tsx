@@ -7,6 +7,7 @@ import DeletePropertyButton from '@/components/properties/DeletePropertyButton'
 import QuickNotesEditor from '@/components/properties/QuickNotesEditor'
 import AiInstructionsEditor from '@/components/properties/AiInstructionsEditor'
 import PropertyContactsEditor from '@/components/properties/PropertyContactsEditor'
+import { seedDefaultChecklistIfEmpty } from '@/lib/actions/checklist'
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -29,6 +30,11 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
   ])
 
   if (!property) notFound()
+
+  // Seed default checklist items if none exist (for older properties)
+  if (!checklistItems || checklistItems.length === 0) {
+    await seedDefaultChecklistIfEmpty(id)
+  }
 
   const ps = Array.isArray(property.property_status) ? property.property_status[0] : property.property_status
   const today = new Date().toISOString().split('T')[0]
@@ -121,9 +127,15 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             ) : (
               <div className="space-y-3">
                 <p className="text-xs text-[#60608a]">No primary contact set.</p>
-                <a href="#contacts"
-                   className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-400 hover:text-violet-300
-                              bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 px-3 py-1.5 rounded-lg transition-all">
+                <a
+                  href="#contacts"
+                  onClick={() => {
+                    setTimeout(() => {
+                      document.getElementById('contacts-add-btn')?.click()
+                    }, 400)
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-400 hover:text-violet-300
+                             bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 px-3 py-1.5 rounded-lg transition-all">
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
@@ -199,8 +211,8 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                     <p className="text-xs text-[#6480a0] capitalize">{ticket.category}</p>
                   </div>
                   <div className="flex items-center gap-2 ml-4 flex-shrink-0">
-                    <span className={`badge badge-${ticket.priority}`}>{ticket.priority}</span>
-                    <span className={`badge badge-${ticket.status}`}>{ticket.status.replace('_', ' ')}</span>
+                    <span className={`badge badge-${ticket.priority}`}>{ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}</span>
+                    <span className={`badge badge-${ticket.status}`}>{ticket.status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}</span>
                   </div>
                 </Link>
               ))}

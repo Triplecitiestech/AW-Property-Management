@@ -274,6 +274,7 @@ export default function PropertyContactsEditor({
 
       {!showAdd && editingId === null && (
         <button
+          id="contacts-add-btn"
           onClick={() => setShowAdd(true)}
           className="flex items-center gap-2 text-sm text-violet-400 hover:text-violet-300 transition-colors py-1"
         >

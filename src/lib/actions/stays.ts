@@ -18,6 +18,10 @@ export async function createStay(formData: FormData) {
   const start_date = formData.get('start_date') as string
   const end_date = formData.get('end_date') as string
   const notes = (formData.get('notes') as string) || null
+  const wifi_name = (formData.get('wifi_name') as string) || null
+  const wifi_password = (formData.get('wifi_password') as string) || null
+  const door_code = (formData.get('door_code') as string) || null
+  const host_instructions = (formData.get('host_instructions') as string) || null
 
   if (!property_id || !guest_name?.trim() || !start_date || !end_date) {
     return { error: 'Property, guest name, start date, and end date are required.' }
@@ -32,6 +36,10 @@ export async function createStay(formData: FormData) {
       start_date,
       end_date,
       notes: notes?.trim() || null,
+      wifi_name: wifi_name?.trim() || null,
+      wifi_password: wifi_password?.trim() || null,
+      door_code: door_code?.trim() || null,
+      host_instructions: host_instructions?.trim() || null,
       created_by: user.id,
     })
     .select('*, properties(name)')

@@ -64,9 +64,32 @@ export default async function NewStayPage({
             </div>
           </div>
 
+          {/* Guest Access Info */}
+          <div className="border-t border-[#2a3d58] pt-4">
+            <p className="text-sm font-medium text-white mb-3">Guest Access Info <span className="text-xs text-[#6480a0] font-normal">(sent to guest)</span></p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="form-label" htmlFor="wifi_name">Wi-Fi Network</label>
+                <input id="wifi_name" name="wifi_name" type="text" className="form-input" placeholder="MyNetwork" />
+              </div>
+              <div>
+                <label className="form-label" htmlFor="wifi_password">Wi-Fi Password</label>
+                <input id="wifi_password" name="wifi_password" type="text" className="form-input" placeholder="password123" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <label className="form-label" htmlFor="door_code">Door / Lock Code</label>
+              <input id="door_code" name="door_code" type="text" className="form-input" placeholder="1234" />
+            </div>
+            <div className="mt-3">
+              <label className="form-label" htmlFor="host_instructions">Host Instructions</label>
+              <textarea id="host_instructions" name="host_instructions" className="form-input" rows={3} placeholder="Check-in instructions, parking, trash day, etc." />
+            </div>
+          </div>
+
           <div>
-            <label className="form-label" htmlFor="notes">Notes</label>
-            <textarea id="notes" name="notes" className="form-input" rows={3} placeholder="Late check-in, special requests, etc." />
+            <label className="form-label" htmlFor="notes">Internal Notes</label>
+            <textarea id="notes" name="notes" className="form-input" rows={2} placeholder="Internal notes (not sent to guest)" />
           </div>
 
           <div className="flex gap-3 pt-2">

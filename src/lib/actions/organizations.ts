@@ -93,6 +93,23 @@ export async function getMyOrg() {
   return data ?? null
 }
 
+// ─── Update org AI instructions ───────────────────────────────────────────────
+
+export async function updateOrgAiInstructions(orgId: string, aiInstructions: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/login')
+
+  const { error } = await supabase
+    .from('organizations')
+    .update({ ai_instructions: aiInstructions.trim() || null })
+    .eq('id', orgId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/settings')
+  return { success: true }
+}
+
 // ─── Update org name ──────────────────────────────────────────────────────────
 
 export async function updateOrgName(orgId: string, name: string) {

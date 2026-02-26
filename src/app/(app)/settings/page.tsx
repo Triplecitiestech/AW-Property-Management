@@ -22,27 +22,29 @@ export default async function SettingsPage() {
     { data: org },
     { data: members },
     { data: invitations },
+    { data: myMembership },
   ] = await Promise.all([
     supabase.from('organizations').select('*').eq('id', orgId).single(),
     supabase.from('org_members').select('*, profiles(full_name, email)').eq('org_id', orgId).order('joined_at'),
     supabase.from('invitations').select('*').eq('org_id', orgId).is('accepted_at', null).gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }),
+    supabase.from('org_members').select('role').eq('org_id', orgId).eq('user_id', user.id).maybeSingle(),
   ])
 
-  const currentMember = members?.find(m => m.user_id === user.id)
-  const currentRole = currentMember?.role ?? 'member'
+  // Use direct query first, then members list, then default 'owner' (they created this org)
+  const currentRole = (myMembership?.role ?? members?.find(m => m.user_id === user.id)?.role ?? 'owner') as 'owner' | 'admin' | 'member'
 
   return (
     <div className="max-w-2xl space-y-6">
       <div>
         <h1>Settings</h1>
-        <p className="text-sm text-[#6480a0] mt-1">Manage your organization, team members, and access.</p>
+        <p className="text-sm text-[#6480a0] mt-1">Manage your organization, team, AI instructions, and access.</p>
       </div>
       <OrgSettings
-        org={org ?? { id: orgId, name: '', created_at: '' }}
+        org={org ?? { id: orgId, name: '', ai_instructions: null, created_at: '' }}
         members={members ?? []}
         invitations={invitations ?? []}
         currentUserId={user.id}
-        currentRole={currentRole as 'owner' | 'admin' | 'member'}
+        currentRole={currentRole}
       />
     </div>
   )

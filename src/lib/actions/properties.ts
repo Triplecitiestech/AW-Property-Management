@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { PropertyStatusEnum, OccupancyEnum } from '@/lib/supabase/types'
 import { getOrCreateUserOrg } from '@/lib/actions/organizations'
+import { DEFAULT_CHECKLIST_LABELS } from '@/lib/checklist-defaults'
 
 // ---- Create Property (wizard flow — returns id, does not redirect) ----
 
@@ -43,6 +44,14 @@ export async function createPropertyForWizard(
       changed_by: user.id,
       after_data: { name, address, description },
     })
+
+    // Seed default checklist items for new property
+    const defaultItems = DEFAULT_CHECKLIST_LABELS.map((label, i) => ({
+      property_id: property.id,
+      label,
+      sort_order: i,
+    }))
+    try { await supabase.from('property_checklist_items').insert(defaultItems) } catch { /* non-fatal */ }
 
     revalidatePath('/properties')
     revalidatePath('/dashboard')

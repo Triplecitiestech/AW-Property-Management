@@ -54,7 +54,7 @@ export async function sendGuestLinkEmail(params: {
   return resend.emails.send({
     from: getFROM(),
     to,
-    subject: `Your stay at ${propertyName} — Guest Checklist`,
+    subject: `Your stay at ${propertyName} — Check-in Info`,
     html: guestLinkTemplate({ guestName, propertyName, startDate, endDate, guestLink }),
   })
 }
@@ -122,6 +122,42 @@ export async function sendWelcomeEmail(params: {
     to,
     subject: `Welcome to Smart Sumai — your AI property manager is ready 🏠`,
     html: welcomeTemplate({ name, appUrl, twilioPhone }),
+  })
+}
+
+// ---- Contact Ticket Notification Email (external contact) ----
+
+export async function sendContactTicketEmail(params: {
+  to: string
+  contactName: string
+  ticketId: string
+  title: string
+  propertyName: string
+  category: string
+  priority: string
+  description?: string
+}) {
+  const resend = getResend()
+  if (!resend) return
+  const { to, contactName, ticketId, title, propertyName, category, priority, description } = params
+  const ticketUrl = `${getAPP_URL()}/tickets/${ticketId}`
+  return resend.emails.send({
+    from: getFROM(),
+    to,
+    subject: `Service Request: ${title} — ${propertyName}`,
+    html: baseLayout(`
+      <div class="header"><h1>Service Request</h1><p>${propertyName}</p></div>
+      <div class="body">
+        <p>Hi <strong>${contactName}</strong>,</p>
+        <p>A service request has been assigned to you at <strong>${propertyName}</strong>.</p>
+        <p>
+          <strong>${title}</strong><br>
+          Category: ${category} &nbsp; Priority: <span class="badge badge-${priority}">${priority}</span>
+        </p>
+        ${description ? `<p>${description}</p>` : ''}
+        <p>Please respond as soon as possible or reply to this email to confirm receipt.</p>
+        <a class="btn" href="${ticketUrl}">View Details</a>
+      </div>`),
   })
 }
 
@@ -201,13 +237,14 @@ function assigneeTemplate(p: { assigneeName: string; title: string; propertyName
 
 function guestLinkTemplate(p: { guestName: string; propertyName: string; startDate: string; endDate: string; guestLink: string }) {
   return baseLayout(`
-    <div class="header"><h1>Your Stay Details</h1><p>${p.propertyName}</p></div>
+    <div class="header"><h1>Your Stay at ${p.propertyName}</h1><p>${p.startDate} – ${p.endDate}</p></div>
     <div class="body">
       <p>Hi <strong>${p.guestName}</strong>,</p>
-      <p>Thank you for your upcoming stay at <strong>${p.propertyName}</strong> (${p.startDate} – ${p.endDate}).</p>
-      <p>Please use the link below to access your guest checklist. You can report any issues or leave notes for the host.</p>
-      <a class="btn" href="${p.guestLink}">Open Guest Checklist</a>
+      <p>We're excited to host you at <strong>${p.propertyName}</strong> (${p.startDate} – ${p.endDate}).</p>
+      <p>Use the link below to access your check-in info, including Wi-Fi details, door codes, and instructions for your stay. You can also use it to reach us if you need anything.</p>
+      <a class="btn" href="${p.guestLink}">View Check-in Info</a>
       <p style="margin-top:16px;font-size:13px;color:#6b7280;">Or copy this link: <a href="${p.guestLink}">${p.guestLink}</a></p>
+      <p style="font-size:13px;color:#6b7280;">We hope you enjoy your stay!</p>
     </div>`)
 }
 

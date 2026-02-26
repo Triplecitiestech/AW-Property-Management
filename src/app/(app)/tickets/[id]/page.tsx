@@ -21,7 +21,8 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         *,
         properties(id, name),
         assignee:profiles!service_requests_assignee_id_fkey(id, full_name, email),
-        creator:profiles!service_requests_created_by_fkey(full_name)
+        creator:profiles!service_requests_created_by_fkey(full_name),
+        assigned_contact:property_contacts!service_requests_assigned_contact_id_fkey(id, name, role, email, phone)
       `)
       .eq('id', id)
       .single(),
@@ -41,9 +42,17 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
   if (!ticket) notFound()
 
+  // Fetch contacts for this property (for reassignment dropdown)
+  const { data: propertyContacts } = await supabase
+    .from('property_contacts')
+    .select('id, name, role')
+    .eq('property_id', ticket.property_id)
+    .order('name')
+
   const propertyName = (ticket.properties as {name:string}|null)?.name ?? 'Unknown'
   const assignee = ticket.assignee as {id:string; full_name:string; email:string}|null
   const creator = ticket.creator as {full_name:string}|null
+  const assignedContact = ticket.assigned_contact as {id:string; name:string; role:string; email:string|null; phone:string|null}|null
 
   return (
     <div className="space-y-6">
@@ -63,7 +72,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className={`badge badge-${ticket.priority}`}>{ticket.priority}</span>
+          <span className={`badge badge-${ticket.priority}`}>{ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}</span>
           <TicketStatusSelect ticketId={ticket.id} currentStatus={ticket.status} />
         </div>
       </div>
@@ -150,7 +159,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
               </div>
               <div>
                 <p className="text-gray-400 text-xs mb-0.5">Priority</p>
-                <span className={`badge badge-${ticket.priority}`}>{ticket.priority}</span>
+                <span className={`badge badge-${ticket.priority}`}>{ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1)}</span>
               </div>
               <div>
                 <p className="text-gray-400 text-xs mb-0.5">Due Date</p>
@@ -164,6 +173,19 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
                   <p className="text-gray-400">Unassigned</p>
                 )}
               </div>
+              <div>
+                <p className="text-gray-400 text-xs mb-0.5">Contact Assigned</p>
+                {assignedContact ? (
+                  <div>
+                    <p className="text-gray-700 font-medium">{assignedContact.name}</p>
+                    <p className="text-gray-400 text-xs capitalize">{assignedContact.role}</p>
+                    {assignedContact.email && <p className="text-xs text-blue-500">{assignedContact.email}</p>}
+                    {assignedContact.phone && <p className="text-xs text-gray-500">{assignedContact.phone}</p>}
+                  </div>
+                ) : (
+                  <p className="text-gray-400">None assigned</p>
+                )}
+              </div>
             </div>
 
             {/* Edit form */}
@@ -173,10 +195,19 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
               await updateTicket(id, formData)
             }} className="mt-4 pt-4 border-t border-gray-100 space-y-3">
               <div>
-                <label className="form-label text-xs">Reassign to</label>
+                <label className="form-label text-xs">Reassign to (Team)</label>
                 <select name="assignee_id" className="form-select text-sm" defaultValue={assignee?.id ?? ''}>
                   <option value="">Unassigned</option>
                   {profiles?.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="form-label text-xs">Send To Contact</label>
+                <select name="assigned_contact_id" className="form-select text-sm" defaultValue={assignedContact?.id ?? ''}>
+                  <option value="">None</option>
+                  {propertyContacts?.map(c => (
+                    <option key={c.id} value={c.id}>{c.name} ({c.role})</option>
+                  ))}
                 </select>
               </div>
               <div>

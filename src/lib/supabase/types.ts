@@ -25,6 +25,7 @@ export interface Profile {
 export interface Organization {
   id: string
   name: string
+  ai_instructions: string | null
   created_at: string
 }
 
@@ -89,6 +90,10 @@ export interface Stay {
   start_date: string
   end_date: string
   notes: string | null
+  wifi_name: string | null
+  wifi_password: string | null
+  door_code: string | null
+  host_instructions: string | null
   guest_link_token: string
   created_by: string | null
   created_at: string
@@ -104,6 +109,7 @@ export interface ServiceRequest {
   priority: TicketPriority
   due_date: string | null
   assignee_id: string | null
+  assigned_contact_id: string | null
   status: TicketStatus
   created_by: string | null
   created_at: string

@@ -35,6 +35,9 @@ export default async function ContactsPage({
           <h1>Contacts</h1>
           <p className="text-gray-500 mt-1">{contacts?.length ?? 0} contacts</p>
         </div>
+        <Link href="/contacts/new" className="btn-primary text-sm">
+          + Add Contact
+        </Link>
       </div>
 
       {/* Filters */}

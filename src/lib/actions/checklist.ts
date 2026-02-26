@@ -93,6 +93,29 @@ export async function resetChecklistChecks(propertyId: string) {
   }
 }
 
+// ---- Seed default checklist items if property has none ----
+
+export async function seedDefaultChecklistIfEmpty(propertyId: string) {
+  const supabase = await createClient()
+  const { data: existing } = await supabase
+    .from('property_checklist_items')
+    .select('id')
+    .eq('property_id', propertyId)
+    .limit(1)
+
+  if (existing && existing.length > 0) return { seeded: false }
+
+  const items = DEFAULT_CHECKLIST_LABELS.map((label, i) => ({
+    property_id: propertyId,
+    label,
+    sort_order: i,
+  }))
+
+  const { error } = await supabase.from('property_checklist_items').insert(items)
+  if (error) return { seeded: false, error: error.message }
+  return { seeded: true }
+}
+
 // ---- Reset to defaults ----
 
 export async function resetChecklistToDefaults(propertyId: string) {

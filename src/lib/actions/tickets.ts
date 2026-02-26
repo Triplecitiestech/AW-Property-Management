@@ -3,8 +3,48 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { sendNewTicketEmail, sendTicketStatusChangedEmail, sendAssigneeEmail } from '@/lib/email/resend'
+import { sendNewTicketEmail, sendTicketStatusChangedEmail, sendAssigneeEmail, sendContactTicketEmail } from '@/lib/email/resend'
 import type { TicketCategory, TicketPriority, TicketStatus } from '@/lib/supabase/types'
+
+// ---- AI: pick the best contact for a ticket ----
+
+async function aiPickContact(
+  contacts: Array<{ id: string; name: string; role: string; email: string | null; phone: string | null }>,
+  title: string,
+  description: string | null,
+  category: string
+): Promise<string | null> {
+  if (!contacts.length) return null
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) return null
+
+  try {
+    const Anthropic = (await import('@anthropic-ai/sdk')).default
+    const client = new Anthropic({ apiKey })
+    const contactList = contacts.map((c, i) => `${i + 1}. ${c.name} (role: ${c.role})`).join('\n')
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 10,
+      messages: [{
+        role: 'user',
+        content: `Given this service request, pick the best contact number (just the number, nothing else):
+
+Ticket: ${title}
+Category: ${category}
+${description ? `Details: ${description}` : ''}
+
+Contacts:
+${contactList}
+
+Reply with only the contact number (e.g. "2"). If none match, reply "0".`,
+      }],
+    })
+    const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '0'
+    const idx = parseInt(text, 10) - 1
+    if (idx >= 0 && idx < contacts.length) return contacts[idx].id
+  } catch { /* silent */ }
+  return null
+}
 
 // ---- Create Ticket ----
 
@@ -21,9 +61,21 @@ export async function createTicket(formData: FormData) {
   const priority = (formData.get('priority') as TicketPriority) || 'medium'
   const due_date = (formData.get('due_date') as string) || null
   const assignee_id = (formData.get('assignee_id') as string) || null
+  let assigned_contact_id = (formData.get('assigned_contact_id') as string) || null
 
   if (!property_id || !title?.trim()) {
     return { error: 'Property and title are required.' }
+  }
+
+  // If no contact manually selected, use AI to auto-pick from property contacts
+  if (!assigned_contact_id) {
+    const { data: contacts } = await supabase
+      .from('property_contacts')
+      .select('id, name, role, email, phone')
+      .eq('property_id', property_id)
+    if (contacts && contacts.length > 0) {
+      assigned_contact_id = await aiPickContact(contacts, title, description, category)
+    }
   }
 
   const { data: ticket, error } = await supabase
@@ -37,6 +89,7 @@ export async function createTicket(formData: FormData) {
       priority,
       due_date: due_date || null,
       assignee_id: assignee_id || null,
+      assigned_contact_id: assigned_contact_id || null,
       status: 'open',
       created_by: user.id,
     })
@@ -50,7 +103,7 @@ export async function createTicket(formData: FormData) {
     entity_id: ticket.id,
     action: 'created',
     changed_by: user.id,
-    after_data: { title, property_id, category, priority, status: 'open' },
+    after_data: { title, property_id, category, priority, status: 'open', assigned_contact_id },
   })
 
   // Send email notification to owner/managers
@@ -64,7 +117,7 @@ export async function createTicket(formData: FormData) {
     description: description ?? undefined,
   }).catch(console.error)
 
-  // If assigned, also notify the assignee directly
+  // Notify internal assignee
   if (assignee_id) {
     const { data: assigneeProfile } = await supabase
       .from('profiles')
@@ -82,6 +135,27 @@ export async function createTicket(formData: FormData) {
         priority,
         description: description ?? undefined,
         dueDate: due_date ?? undefined,
+      }).catch(console.error)
+    }
+  }
+
+  // Notify external contact (AI-assigned or manual)
+  if (assigned_contact_id) {
+    const { data: contact } = await supabase
+      .from('property_contacts')
+      .select('name, email, phone')
+      .eq('id', assigned_contact_id)
+      .single()
+    if (contact?.email) {
+      await sendContactTicketEmail({
+        to: contact.email,
+        contactName: contact.name,
+        ticketId: ticket.id,
+        title: ticket.title,
+        propertyName,
+        category,
+        priority,
+        description: description ?? undefined,
       }).catch(console.error)
     }
   }
@@ -148,6 +222,7 @@ export async function updateTicket(id: string, formData: FormData) {
   const priority = formData.get('priority') as TicketPriority
   const due_date = (formData.get('due_date') as string) || null
   const assignee_id = (formData.get('assignee_id') as string) || null
+  const assigned_contact_id = (formData.get('assigned_contact_id') as string) || null
 
   const { data: before } = await supabase.from('service_requests').select('*').eq('id', id).single()
 
@@ -160,6 +235,7 @@ export async function updateTicket(id: string, formData: FormData) {
       priority,
       due_date: due_date || null,
       assignee_id: assignee_id || null,
+      assigned_contact_id: assigned_contact_id || null,
     })
     .eq('id', id)
 
@@ -171,8 +247,34 @@ export async function updateTicket(id: string, formData: FormData) {
     action: 'updated',
     changed_by: user.id,
     before_data: before,
-    after_data: { title, description, category, priority, due_date, assignee_id },
+    after_data: { title, description, category, priority, due_date, assignee_id, assigned_contact_id },
   })
+
+  // Notify new contact if changed
+  if (assigned_contact_id && assigned_contact_id !== before?.assigned_contact_id) {
+    const { data: contact } = await supabase
+      .from('property_contacts')
+      .select('name, email')
+      .eq('id', assigned_contact_id)
+      .single()
+    const { data: propertyData } = await supabase
+      .from('properties')
+      .select('name')
+      .eq('id', before?.property_id)
+      .single()
+    if (contact?.email) {
+      await sendContactTicketEmail({
+        to: contact.email,
+        contactName: contact.name,
+        ticketId: id,
+        title: title.trim(),
+        propertyName: propertyData?.name ?? 'Unknown Property',
+        category,
+        priority,
+        description: description ?? undefined,
+      }).catch(console.error)
+    }
+  }
 
   // Notify new assignee if changed
   if (assignee_id && assignee_id !== before?.assignee_id) {

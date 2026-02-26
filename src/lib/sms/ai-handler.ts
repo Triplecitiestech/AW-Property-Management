@@ -162,11 +162,15 @@ export async function handleAiSms(params: {
     }
   }
 
+  let step = 'buildContext'
   try {
     const ctx = await buildContext(params.userId)
+    step = 'formatContext'
     const contextText = formatContext(ctx)
+    step = 'buildSystemPrompt'
     const systemPrompt = buildSystemPrompt(params.userName, contextText)
 
+    step = 'anthropic.messages.create'
     const client = new Anthropic({ apiKey })
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
@@ -175,6 +179,7 @@ export async function handleAiSms(params: {
       messages: [{ role: 'user', content: params.message }],
     })
 
+    step = 'parseResponse'
     const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
 
     // Strip any accidental markdown code fences
@@ -183,10 +188,28 @@ export async function handleAiSms(params: {
     const parsed = JSON.parse(cleaned) as AiSmsAction
     return parsed
   } catch (err) {
-    console.error('[AI SMS handler error]', err)
+    const msg = err instanceof Error ? err.message : String(err)
+    const stack = err instanceof Error ? (err.stack ?? '') : ''
+    console.error(`[AI SMS handler error at step=${step}]`, err)
+    // Log to error_logs so it's queryable
+    try {
+      const { createClient: createSupabaseClient } = require('@supabase/supabase-js')
+      const svc = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { autoRefreshToken: false, persistSession: false } }
+      )
+      await svc.from('error_logs').insert({
+        source: 'server',
+        route: '/api/chat [ai-handler]',
+        message: `[step=${step}] ${msg}`,
+        stack,
+        resolved: false,
+      })
+    } catch { /* best-effort */ }
     return {
       type: 'error',
-      reply: 'Sorry, I had trouble understanding that. Try texting HELP for command examples.',
+      reply: 'Sorry, I had trouble understanding that. Please try again in a moment.',
     }
   }
 }

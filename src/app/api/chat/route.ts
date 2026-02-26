@@ -38,7 +38,20 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ reply, action: action.type })
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    const stack = err instanceof Error ? (err.stack ?? '') : ''
     console.error('[/api/chat POST error]', err)
+    // Log to error_logs so it's queryable
+    try {
+      const svc2 = createServiceClient()
+      await svc2.from('error_logs').insert({
+        source: 'server',
+        route: '/api/chat',
+        message: msg,
+        stack,
+        resolved: false,
+      })
+    } catch { /* best-effort */ }
     return NextResponse.json({ reply: 'Sorry, something went wrong on our end. Please try again in a moment.' }, { status: 200 })
   }
 }

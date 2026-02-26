@@ -703,5 +703,49 @@ ON CONFLICT (contact_id, property_id) DO NOTHING;
 -- Done!
 SELECT 'Schema deployed successfully' AS result;
 
--- 2026-02-26: Re-apply RLS fix for org_members infinite recursion (ensure applied)
--- Functions get_user_org_ids() and is_org_admin() defined above handle this.
+-- ========================
+-- FINAL: Re-apply org_members / organizations RLS fix (idempotent, runs last)
+-- ========================
+-- This is intentionally repeated here to guarantee it is the LAST migration step.
+-- The functions are SECURITY DEFINER so they bypass RLS when querying org_members,
+-- preventing the infinite recursion that breaks settings and properties pages.
+
+CREATE OR REPLACE FUNCTION get_user_org_ids()
+RETURNS SETOF UUID LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT org_id FROM org_members WHERE user_id = auth.uid();
+$$;
+
+CREATE OR REPLACE FUNCTION is_org_admin(p_org_id UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM org_members
+    WHERE org_id = p_org_id AND user_id = auth.uid() AND role IN ('owner', 'admin')
+  );
+$$;
+
+DROP POLICY IF EXISTS "org_members_select" ON org_members;
+DROP POLICY IF EXISTS "org_members_insert" ON org_members;
+DROP POLICY IF EXISTS "org_members_update" ON org_members;
+DROP POLICY IF EXISTS "org_members_delete" ON org_members;
+
+CREATE POLICY "org_members_select" ON org_members FOR SELECT TO authenticated
+  USING (org_id = ANY(get_user_org_ids()));
+CREATE POLICY "org_members_insert" ON org_members FOR INSERT TO authenticated
+  WITH CHECK (user_id = auth.uid() OR is_org_admin(org_id));
+CREATE POLICY "org_members_update" ON org_members FOR UPDATE TO authenticated
+  USING (is_org_admin(org_id)) WITH CHECK (is_org_admin(org_id));
+CREATE POLICY "org_members_delete" ON org_members FOR DELETE TO authenticated
+  USING (user_id = auth.uid() OR is_org_admin(org_id));
+
+DROP POLICY IF EXISTS "organizations_select" ON organizations;
+DROP POLICY IF EXISTS "organizations_insert" ON organizations;
+DROP POLICY IF EXISTS "organizations_update" ON organizations;
+
+CREATE POLICY "organizations_select" ON organizations FOR SELECT TO authenticated
+  USING (id = ANY(get_user_org_ids()));
+CREATE POLICY "organizations_insert" ON organizations FOR INSERT TO authenticated
+  WITH CHECK (true);
+CREATE POLICY "organizations_update" ON organizations FOR UPDATE TO authenticated
+  USING (is_org_admin(id));
+
+SELECT 'RLS fix verified and applied' AS final_check;

@@ -60,6 +60,39 @@ export async function saveChecklistItems(propertyId: string, labels: string[]) {
   }
 }
 
+// ---- Toggle a single checklist item's checked state ----
+
+export async function toggleChecklistItem(itemId: string, checked: boolean) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) redirect('/auth/login')
+    const { error } = await supabase.from('property_checklist_items').update({ is_checked: checked }).eq('id', itemId)
+    if (error) return { error: error.message }
+    return { success: true }
+  } catch (err: unknown) {
+    if (err instanceof Error && (err.message === 'NEXT_REDIRECT' || err.message === 'NEXT_NOT_FOUND')) throw err
+    return { error: err instanceof Error ? err.message : 'Failed to toggle item' }
+  }
+}
+
+// ---- Reset all checked states for a property ----
+
+export async function resetChecklistChecks(propertyId: string) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) redirect('/auth/login')
+    const { error } = await supabase.from('property_checklist_items').update({ is_checked: false }).eq('property_id', propertyId)
+    if (error) return { error: error.message }
+    revalidatePath(`/properties/${propertyId}`)
+    return { success: true }
+  } catch (err: unknown) {
+    if (err instanceof Error && (err.message === 'NEXT_REDIRECT' || err.message === 'NEXT_NOT_FOUND')) throw err
+    return { error: err instanceof Error ? err.message : 'Failed to reset' }
+  }
+}
+
 // ---- Reset to defaults ----
 
 export async function resetChecklistToDefaults(propertyId: string) {

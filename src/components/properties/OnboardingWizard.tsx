@@ -166,8 +166,26 @@ function PropertyDetailsStep({
   // Edit mode: full-text description
   const [description, setDescription] = useState(initialDescription)
 
+  const [aiSummary, setAiSummary] = useState('')
+  const [summaryLoading, setSummaryLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+
+  async function fetchAiSummary() {
+    if (!address && !name) return
+    setSummaryLoading(true)
+    try {
+      const res = await fetch('/api/property-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, address }),
+      })
+      const data = await res.json()
+      if (data.summary) setAiSummary(data.summary)
+    } finally {
+      setSummaryLoading(false)
+    }
+  }
 
   function handleSave() {
     if (!name.trim()) { setError('Property name is required.'); return }
@@ -177,6 +195,14 @@ function PropertyDetailsStep({
         const desc = buildDescription(bedrooms, bathrooms, maxGuests, wifiName, wifiPass, amenities, extra)
         const result = await createPropertyForWizard(name, address, desc || null)
         if ('error' in result) { setError(result.error); return }
+        // Save AI summary if generated
+        if (aiSummary) {
+          await fetch('/api/property-summary', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ propertyId: result.propertyId, summary: aiSummary }),
+          }).catch(() => {})
+        }
         onSave(result.propertyId, name.trim())
       } else {
         const fd = new FormData()
@@ -216,6 +242,30 @@ function PropertyDetailsStep({
           />
         </div>
       </div>
+
+      {/* AI Property Summary */}
+      {(name || address) && (
+        <div className="rounded-xl border border-[#2a3d58] bg-[#0f1829] p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="form-label text-xs mb-0">AI Property Summary</label>
+            <button
+              type="button"
+              onClick={fetchAiSummary}
+              disabled={summaryLoading}
+              className="text-xs text-violet-400 hover:text-violet-300 transition-colors disabled:opacity-50"
+            >
+              {summaryLoading ? 'Generating…' : aiSummary ? 'Regenerate' : '✨ Generate'}
+            </button>
+          </div>
+          <textarea
+            className="form-input text-sm w-full resize-none"
+            rows={3}
+            value={aiSummary}
+            onChange={e => setAiSummary(e.target.value)}
+            placeholder="Click Generate to get an AI-powered property description…"
+          />
+        </div>
+      )}
 
       {isNew ? (
         /* Create mode: structured fields */

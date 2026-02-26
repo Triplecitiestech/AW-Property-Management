@@ -201,11 +201,22 @@ export default async function Home({
               {
                 icon: (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                ),
+                color: 'from-rose-600 to-pink-400',
+                glow: 'group-hover:shadow-rose-900/40',
+                title: 'AI SMS Property Manager',
+                desc: 'Text your dedicated AI number in plain English. Check status, file tickets, schedule stays, add contacts — no app needed. Conversations sync with the in-app chat.',
+              },
+              {
+                icon: (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 ),
-                color: 'from-rose-600 to-rose-400',
-                glow: 'group-hover:shadow-rose-900/40',
+                color: 'from-slate-600 to-slate-400',
+                glow: 'group-hover:shadow-slate-900/40',
                 title: 'Audit & Activity Log',
                 desc: 'Full history of every change — who updated what and when. Stay accountable and troubleshoot issues in seconds.',
               },
@@ -304,7 +315,9 @@ export default async function Home({
                   'Team collaboration & invites',
                   'Email notifications',
                   'Full audit log & history',
-                  'AI-powered property notes',
+                  'AI SMS property manager',
+                  'In-app AI chat assistant',
+                  'AI-powered property summaries',
                 ].map(f => (
                   <div key={f} className="flex items-center gap-2.5">
                     <svg className="w-4 h-4 text-teal-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -373,6 +386,7 @@ export default async function Home({
             </div>
             <div className="flex items-center gap-6 text-sm text-[#4a6080]">
               <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
+              <Link href="/faq" className="hover:text-white transition-colors">FAQ</Link>
               <Link href="/auth/login" className="hover:text-white transition-colors">Sign In</Link>
               <Link href="/auth/login?mode=signup" className="hover:text-white transition-colors">Sign Up</Link>
             </div>

@@ -26,6 +26,7 @@ export default function MarketingNav() {
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/pricing" className="text-sm text-[#8aa0be] hover:text-white transition-colors">Pricing</Link>
+            <Link href="/faq" className="text-sm text-[#8aa0be] hover:text-white transition-colors">FAQ</Link>
             <Link href="/auth/login" className="text-sm text-[#8aa0be] hover:text-white transition-colors">Sign In</Link>
             <Link href="/auth/login?mode=signup"
               className="text-sm px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-violet-500

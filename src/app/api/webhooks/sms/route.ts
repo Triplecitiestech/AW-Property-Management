@@ -84,6 +84,9 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // Save inbound SMS to conversation history (fire-and-forget)
+  supabase.from('conversations').insert({ user_id: profile.id, role: 'user', content: body, channel: 'sms' }).catch(console.error)
+
   // Quick HELP shortcut
   if (/^(help|\/help|\/start|hi|hello|hey)$/i.test(body)) {
     return twiml(
@@ -102,6 +105,11 @@ export async function POST(req: NextRequest) {
     userName: profile.full_name ?? 'User',
     message: body,
   })
+
+  // Save AI reply to conversation history (fire-and-forget)
+  supabase.from('conversations').insert({ user_id: profile.id, role: 'assistant', content: action.reply, channel: 'sms' }).catch(console.error)
+  // Track token usage
+  supabase.from('ai_usage').insert({ user_id: profile.id, feature: 'sms', tokens_in: Math.ceil(body.length / 4), tokens_out: Math.ceil(action.reply.length / 4) }).catch(console.error)
 
   // Execute the action
   try {

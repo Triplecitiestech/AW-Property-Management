@@ -516,5 +516,82 @@ CREATE POLICY "organizations_select" ON organizations FOR SELECT TO authenticate
 CREATE POLICY "organizations_insert" ON organizations FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "organizations_update" ON organizations FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM org_members om WHERE om.org_id = id AND om.user_id = auth.uid() AND om.role IN ('owner', 'admin')));
 
+-- ========================
+-- 008: AI Chat, Billing, Super Admin
+-- ========================
+
+-- Super admin flag
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN NOT NULL DEFAULT false;
+
+-- AI property summary
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS ai_summary TEXT;
+
+-- Checklist checked state
+ALTER TABLE property_checklist_items ADD COLUMN IF NOT EXISTS is_checked BOOLEAN NOT NULL DEFAULT false;
+
+-- Conversations (synced between SMS and web chat)
+CREATE TABLE IF NOT EXISTS conversations (
+  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id    UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  role       TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+  content    TEXT NOT NULL,
+  channel    TEXT NOT NULL DEFAULT 'web' CHECK (channel IN ('sms', 'web')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_conversations_user ON conversations(user_id, created_at DESC);
+
+ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "conversations_select" ON conversations;
+DROP POLICY IF EXISTS "conversations_insert" ON conversations;
+CREATE POLICY "conversations_select" ON conversations FOR SELECT TO authenticated USING (user_id = auth.uid());
+CREATE POLICY "conversations_insert" ON conversations FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+
+-- Feature requests
+CREATE TABLE IF NOT EXISTS feature_requests (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id     UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  title       TEXT NOT NULL,
+  description TEXT,
+  status      TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','reviewing','planned','done','declined')),
+  votes       INT NOT NULL DEFAULT 1,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE feature_requests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "feature_requests_select" ON feature_requests;
+DROP POLICY IF EXISTS "feature_requests_insert" ON feature_requests;
+CREATE POLICY "feature_requests_select" ON feature_requests FOR SELECT TO authenticated USING (true);
+CREATE POLICY "feature_requests_insert" ON feature_requests FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid());
+
+-- AI token usage tracking
+CREATE TABLE IF NOT EXISTS ai_usage (
+  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id    UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  feature    TEXT NOT NULL DEFAULT 'chat' CHECK (feature IN ('chat','sms','property_summary')),
+  tokens_in  INT NOT NULL DEFAULT 0,
+  tokens_out INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_user ON ai_usage(user_id, created_at DESC);
+
+-- Stripe subscriptions
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id                      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id                 UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  stripe_customer_id      TEXT UNIQUE NOT NULL,
+  stripe_subscription_id  TEXT UNIQUE,
+  status                  TEXT NOT NULL DEFAULT 'trialing',
+  current_period_end      TIMESTAMPTZ,
+  created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at              TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "subscriptions_select" ON subscriptions;
+CREATE POLICY "subscriptions_select" ON subscriptions FOR SELECT TO authenticated USING (user_id = auth.uid());
+
+-- Set kurtis@triplecitiestech.com as super admin (idempotent)
+UPDATE public.profiles SET is_super_admin = true WHERE email = 'kurtis@triplecitiestech.com';
+
 -- Done!
 SELECT 'Schema deployed successfully' AS result;

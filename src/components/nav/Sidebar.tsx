@@ -63,6 +63,15 @@ const navItems = [
     ),
   },
   {
+    href: '/billing',
+    label: 'Billing',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+      </svg>
+    ),
+  },
+  {
     href: '/welcome',
     label: 'Getting Started',
     icon: (
@@ -73,7 +82,7 @@ const navItems = [
   },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ isSuperAdmin = false }: { isSuperAdmin?: boolean }) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -138,6 +147,19 @@ export default function Sidebar() {
 
       {/* Sign out */}
       <div className="p-3 border-t border-[#1e2d42]">
+        {isSuperAdmin && (
+          <Link href="/admin" onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium mb-1 transition-all
+                  ${pathname.startsWith('/admin')
+                    ? 'bg-violet-600/15 text-violet-300 shadow-[inset_0_0_0_1px_rgba(139,92,246,0.2)]'
+                    : 'text-amber-400 hover:text-amber-300 hover:bg-[#1a2436]'
+                  }`}>
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+            Admin
+          </Link>
+        )}
         <button
           onClick={handleSignOut}
           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium

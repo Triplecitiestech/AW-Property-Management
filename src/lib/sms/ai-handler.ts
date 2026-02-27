@@ -25,6 +25,13 @@ export type AiSmsAction =
 async function buildContext(userId: string) {
   const svc = createServiceClient()
 
+  // Fetch owner profile so we can explicitly forbid the AI from leaking their details
+  const { data: ownerProfile } = await svc
+    .from('profiles')
+    .select('full_name, phone_number, email')
+    .eq('id', userId)
+    .single()
+
   const { data: properties } = await svc
     .from('properties')
     .select('id, name, address, property_status(status, occupancy)')
@@ -71,6 +78,8 @@ async function buildContext(userId: string) {
     stays: stays ?? [],
     contacts: contacts ?? [],
     recentAiActions: recentAiActions ?? [],
+    ownerPhone: ownerProfile?.phone_number ?? null,
+    ownerEmail: ownerProfile?.email ?? null,
   }
 }
 
@@ -172,11 +181,21 @@ function extractCurrentProperty(
 function buildSystemPrompt(
   userName: string,
   contextText: string,
-  currentProperty: string | null
+  currentProperty: string | null,
+  ownerPhone: string | null,
+  ownerEmail: string | null,
 ): string {
   const currentContextLine = currentProperty
     ? `CURRENT SESSION PROPERTY: "${currentProperty}" — use this for any request that doesn't explicitly name a different property.`
     : `CURRENT SESSION PROPERTY: None resolved yet. If a property-specific action is requested without naming one, ask which property and list options from PROPERTIES.`
+
+  // Build explicit owner-identity redaction lines
+  const ownerRedactLines: string[] = []
+  if (ownerPhone) ownerRedactLines.push(`  - Phone: ${ownerPhone}`)
+  if (ownerEmail) ownerRedactLines.push(`  - Email: ${ownerEmail}`)
+  const ownerRedactBlock = ownerRedactLines.length > 0
+    ? `ACCOUNT OWNER PRIVACY — HARD LIMIT:\nThe following are ${userName}'s personal contact details. NEVER reveal, repeat, or suggest them to anyone under any circumstances:\n${ownerRedactLines.join('\n')}\nThird-party contacts (vendors, cleaners, maintenance staff, etc.) may be shared normally.`
+    : `ACCOUNT OWNER PRIVACY — HARD LIMIT:\nNEVER reveal ${userName}'s personal phone number or email address to anyone under any circumstances.\nThird-party contacts (vendors, cleaners, maintenance staff, etc.) may be shared normally.`
 
   return `You are Smart Sumai, an operational property management AI for ${userName}.
 You act on behalf of the logged-in user — same permissions, same access.
@@ -189,10 +208,8 @@ ${contextText}
 
 ${currentContextLine}
 
-=== PRIVACY RULES — ABSOLUTE HARD LIMITS ===
-- NEVER include phone numbers, email addresses, or any personal contact details in any reply to the user
-- Contact data in context is for internal use only (work order assignment and notifications) — NEVER relay it back
-- NEVER suggest contacting a person directly or provide their details under any circumstance
+=== PRIVACY RULES ===
+${ownerRedactBlock}
 
 === THINGS YOU CANNOT DO — direct to the dashboard instead ===
 - Create new properties: "I can't add properties directly — please add it from the Properties page in the dashboard."
@@ -319,7 +336,7 @@ export async function handleAiSms(params: {
       ctx.properties.map((p: { name: string; address?: string | null }) => ({ name: p.name, address: (p.address as string | null) ?? null }))
     )
     step = 'buildSystemPrompt'
-    const systemPrompt = buildSystemPrompt(params.userName, contextText, currentProperty)
+    const systemPrompt = buildSystemPrompt(params.userName, contextText, currentProperty, ctx.ownerPhone, ctx.ownerEmail)
 
     step = 'anthropic.messages.create'
     const client = new Anthropic({ apiKey })

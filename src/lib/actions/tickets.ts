@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { sendNewTicketEmail, sendTicketStatusChangedEmail, sendAssigneeEmail, sendContactTicketEmail } from '@/lib/email/resend'
+import { buildOutboundMessage } from '@/lib/work-order-message'
 import type { TicketCategory, TicketPriority, TicketStatus } from '@/lib/supabase/types'
 
 // ---- AI: pick the best contact for a ticket ----
@@ -361,6 +362,91 @@ export async function addTicketComment(requestId: string, content: string, isInt
 
   revalidatePath(`/work-orders/${requestId}`)
   return { success: true, comment }
+}
+
+// ---- Notify Contact ----
+// Send (or re-send) the professional outbound message to the assigned contact.
+// Works regardless of whether the contact was previously notified.
+
+export async function notifyContact(id: string): Promise<{ success?: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/login')
+
+  const { data: workOrder } = await supabase
+    .from('service_requests')
+    .select(`
+      *,
+      properties(name),
+      assigned_contact:property_contacts!service_requests_assigned_contact_id_fkey(id, name, email, phone, role)
+    `)
+    .eq('id', id)
+    .single()
+
+  if (!workOrder) return { error: 'Work order not found.' }
+
+  type ContactRow = { id: string; name: string; email: string | null; phone: string | null; role: string }
+  const contact = workOrder.assigned_contact as ContactRow | null
+  if (!contact) return { error: 'No contact is assigned to this work order.' }
+  if (!contact.email) return { error: `${contact.name} has no email address on file. Add an email to their contact to send notifications.` }
+
+  const propertyName = (workOrder.properties as { name: string } | null)?.name ?? 'Property'
+
+  // Get owner profile for message attribution
+  const { data: ownerProfile } = await supabase
+    .from('profiles')
+    .select('full_name, email, phone_number')
+    .eq('id', user.id)
+    .single()
+
+  // Fetch checklist items for cleaning work orders
+  let checklistItems: string[] | undefined
+  if (workOrder.category === 'cleaning') {
+    const { data: checklist } = await supabase
+      .from('property_checklist_items')
+      .select('label')
+      .eq('property_id', workOrder.property_id)
+      .order('sort_order')
+    if (checklist && checklist.length > 0) {
+      checklistItems = checklist.map((c: { label: string }) => c.label)
+    }
+  }
+
+  const message = buildOutboundMessage({
+    category: workOrder.category,
+    title: workOrder.title,
+    priority: workOrder.priority,
+    propertyName,
+    ownerName: ownerProfile?.full_name ?? 'Property Owner',
+    ownerEmail: ownerProfile?.email ?? null,
+    ownerPhone: ownerProfile?.phone_number ?? null,
+    checklistItems,
+  })
+
+  await sendContactTicketEmail({
+    to: contact.email,
+    contactName: contact.name,
+    ticketId: id,
+    title: workOrder.title,
+    propertyName,
+    category: workOrder.category,
+    priority: workOrder.priority,
+    description: message,
+  })
+
+  // Record that we sent the notification
+  await supabase
+    .from('service_requests')
+    .update({
+      outbound_message: message,
+      outbound_sent_to: `${contact.name} <${contact.email}>`,
+      outbound_method: 'email',
+      outbound_sent_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+
+  revalidatePath(`/work-orders/${id}`)
+  return { success: true }
 }
 
 // ---- Delete Ticket ----

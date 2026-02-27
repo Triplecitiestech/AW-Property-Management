@@ -62,18 +62,14 @@ async function buildContext(userId: string) {
 function formatContext(ctx: Awaited<ReturnType<typeof buildContext>>): string {
   const lines: string[] = []
 
-  // ── PROPERTY NAME REFERENCE ──────────────────────────────────────────────
-  // The "property_name" field in every action MUST match one of the names in
-  // quotes below EXACTLY (copy-paste). Never use the address as property_name.
   lines.push('=== PROPERTIES ===')
-  lines.push('(Use the name in quotes exactly as the property_name in actions)')
   if (ctx.properties.length === 0) {
     lines.push('No properties yet.')
   } else {
     for (const p of ctx.properties) {
       const ps = Array.isArray(p.property_status) ? p.property_status[0] : p.property_status
-      const addressPart = p.address ? ` | address: ${p.address}` : ''
-      lines.push(`• name: "${p.name}"${addressPart} | status: ${ps?.status ?? 'unknown'} | occupancy: ${ps?.occupancy ?? 'unknown'}`)
+      const addressPart = p.address ? ` — ${p.address}` : ''
+      lines.push(`• "${p.name}"${addressPart} | status: ${ps?.status ?? 'unknown'} | occupancy: ${ps?.occupancy ?? 'unknown'}`)
     }
   }
 
@@ -159,15 +155,16 @@ For adding a contact:
 {"type":"create_contact","reply":"Added [name] as [role] for [property]","property_name":"exact property name","name":"Contact Name","role":"primary|cleaning|maintenance|plumbing|hvac|electrical|landscaping|groceries|other","phone":"optional","email":"optional","notes":"optional"}
 
 === RULES ===
-PROPERTY NAME:
-- Each property in the PROPERTIES section is shown as: name: "ExactName" | address: ...
-- ALWAYS copy the name in quotes verbatim into the property_name field — e.g. if the list shows name: "Home", use "Home", not the address.
-- If the user refers to a property by address (e.g. "165 lewis", "the vestal place"), identify the property in PROPERTIES whose address matches and use that property's quoted name.
-- If you cannot confidently match a property, list the available properties and ask the user to clarify.
+PROPERTY IDENTIFICATION:
+- Users often refer to properties informally — by partial name, street number, nickname, or address fragment. Use your best judgment to match to the right property.
+  Examples: "165 lewis" → the property at 165 Lewis Rd; "vestal" → Vestal Home; "my house" → the only property or most recently discussed one.
+- If you are confident (reasonable certainty), proceed with that property — do NOT ask for confirmation unless genuinely ambiguous.
+- If the user's description could match two or more properties, ask: "Did you mean [A] or [B]?"
+- The property_name field in action JSON must be the quoted name exactly as shown in PROPERTIES (e.g. "Home", "Vestal Home"). Never put an address in property_name.
 
 PROPERTY CONTINUITY:
-- Once a property has been identified in the conversation (from any prior message), that is the active property. Use it for all follow-up actions in the same thread.
-- Only switch to a different property if the user explicitly mentions a different property name or address.
+- Once a property is identified in the conversation, it stays active for all subsequent turns.
+- Only switch properties if the user explicitly names a different one.
 - NEVER silently switch to a different property between turns.
 
 CONVERSATION CONTEXT:

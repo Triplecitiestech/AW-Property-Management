@@ -5,8 +5,9 @@ import WorkOrderStatusSelect from '@/components/work-orders/WorkOrderStatusSelec
 import AddWorkOrderCommentForm from '@/components/work-orders/AddWorkOrderCommentForm'
 import DeleteWorkOrderButton from '@/components/work-orders/DeleteWorkOrderButton'
 
-export default async function WorkOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function WorkOrderDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ notified?: string; notify_error?: string }> }) {
   const { id } = await params
+  const { notified, notify_error } = await searchParams
   const supabase = await createClient()
 
   const [
@@ -254,7 +255,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
                 )}
               </div>
               <div>
-                <p className="text-[#4a6080] text-xs mb-0.5">Contact Assigned</p>
+                <p className="text-[#4a6080] text-xs mb-0.5">Assigned Contact</p>
                 {assignedContact ? (
                   <div>
                     <p className="text-[#cbd5e1] font-medium">{assignedContact.name}</p>
@@ -267,6 +268,45 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
                 )}
               </div>
             </div>
+
+            {/* Notify Contact */}
+            {assignedContact && (
+              <div className="mt-4 pt-4 border-t border-[#2a3d58]">
+                <p className="text-[#4a6080] text-xs mb-2">
+                  {outboundSentAt
+                    ? `Last notified ${new Date(outboundSentAt).toLocaleDateString()} via ${outboundMethod}`
+                    : 'Contact has not been notified yet'}
+                </p>
+                {notified && (
+                  <p className="text-xs text-teal-400 mb-2">✓ Notification sent to {assignedContact.name}</p>
+                )}
+                {notify_error && (
+                  <p className="text-xs text-red-400 mb-2">{notify_error}</p>
+                )}
+                {!assignedContact.email && (
+                  <p className="text-xs text-amber-400 mb-2">No email on file — add an email to enable notifications.</p>
+                )}
+                <form action={async () => {
+                  'use server'
+                  const { notifyContact } = await import('@/lib/actions/tickets')
+                  const result = await notifyContact(id)
+                  const { redirect: doRedirect } = await import('next/navigation')
+                  if (result.error) {
+                    doRedirect(`/work-orders/${id}?notify_error=${encodeURIComponent(result.error)}`)
+                  } else {
+                    doRedirect(`/work-orders/${id}?notified=1`)
+                  }
+                }}>
+                  <button
+                    type="submit"
+                    disabled={!assignedContact.email}
+                    className="btn-secondary text-sm w-full justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {outboundSentAt ? 'Resend Notification' : 'Notify Contact'}
+                  </button>
+                </form>
+              </div>
+            )}
 
             {/* Edit form */}
             <form action={async (formData) => {
@@ -282,7 +322,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
                 </select>
               </div>
               <div>
-                <label className="form-label text-xs">Send To Contact</label>
+                <label className="form-label text-xs">Assigned Contact</label>
                 <select name="assigned_contact_id" className="form-select text-sm" defaultValue={assignedContact?.id ?? ''}>
                   <option value="">None</option>
                   {propertyContacts?.map(c => (
@@ -299,7 +339,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
               <input type="hidden" name="description" value={workOrder.description ?? ''} />
               <input type="hidden" name="category" value={workOrder.category} />
               <input type="hidden" name="priority" value={workOrder.priority} />
-              <button type="submit" className="btn-secondary text-sm w-full justify-center">Update</button>
+              <button type="submit" className="btn-secondary text-sm w-full justify-center">Save Changes</button>
             </form>
           </div>
 

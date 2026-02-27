@@ -114,7 +114,7 @@ export default async function WorkOrdersPage({
               <div className="flex flex-col items-center gap-1 flex-shrink-0 w-16">
                 <span className="font-mono text-xs text-[#4a6080]">{woLabel(wo.work_order_number)}</span>
                 <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${PRIORITY_STYLES[wo.priority] ?? PRIORITY_STYLES.low}`}>
-                  {wo.priority}
+                  {wo.priority.charAt(0).toUpperCase() + wo.priority.slice(1)}
                 </span>
               </div>
 
@@ -145,7 +145,7 @@ export default async function WorkOrdersPage({
               {/* Status + arrow */}
               <div className="flex items-center gap-3 flex-shrink-0">
                 <span className={`badge ${STATUS_STYLES[wo.status] ?? 'badge-closed'}`}>
-                  {wo.status.replace('_', ' ')}
+                  {wo.status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
                 </span>
                 <svg className="w-4 h-4 text-[#4a6080] group-hover:text-[#6480a0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

@@ -51,19 +51,29 @@ async function buildContext(userId: string) {
     .select('name, role, phone, email, properties(name)')
     .in('property_id', propertyIds)
 
-  return { properties: properties ?? [], tickets: tickets ?? [], stays: stays ?? [], contacts: contacts ?? [] }
+  const { data: checklists } = await svc
+    .from('property_checklist_items')
+    .select('label, properties(name)')
+    .in('property_id', propertyIds)
+
+  return { properties: properties ?? [], tickets: tickets ?? [], stays: stays ?? [], contacts: contacts ?? [], checklists: checklists ?? [] }
 }
 
 function formatContext(ctx: Awaited<ReturnType<typeof buildContext>>): string {
   const lines: string[] = []
 
+  // ── PROPERTY NAME REFERENCE ──────────────────────────────────────────────
+  // The "property_name" field in every action MUST match one of the names in
+  // quotes below EXACTLY (copy-paste). Never use the address as property_name.
   lines.push('=== PROPERTIES ===')
+  lines.push('(Use the name in quotes exactly as the property_name in actions)')
   if (ctx.properties.length === 0) {
     lines.push('No properties yet.')
   } else {
     for (const p of ctx.properties) {
       const ps = Array.isArray(p.property_status) ? p.property_status[0] : p.property_status
-      lines.push(`• ${p.name}${p.address ? ` (${p.address})` : ''} — Status: ${ps?.status ?? 'unknown'}, Occupancy: ${ps?.occupancy ?? 'unknown'}`)
+      const addressPart = p.address ? ` | address: ${p.address}` : ''
+      lines.push(`• name: "${p.name}"${addressPart} | status: ${ps?.status ?? 'unknown'} | occupancy: ${ps?.occupancy ?? 'unknown'}`)
     }
   }
 
@@ -94,6 +104,20 @@ function formatContext(ctx: Awaited<ReturnType<typeof buildContext>>): string {
     for (const c of ctx.contacts) {
       const prop = (c.properties as { name: string } | null)?.name ?? 'unknown'
       lines.push(`• ${c.name} (${c.role}) at ${prop}${c.phone ? ` — ${c.phone}` : ''}`)
+    }
+  }
+
+  // Group checklist items by property
+  const checklistByProp: Record<string, string[]> = {}
+  for (const item of ctx.checklists) {
+    const prop = (item.properties as { name: string } | null)?.name ?? 'unknown'
+    if (!checklistByProp[prop]) checklistByProp[prop] = []
+    checklistByProp[prop].push(item.label)
+  }
+  if (Object.keys(checklistByProp).length > 0) {
+    lines.push('\n=== CLEANING CHECKLISTS ===')
+    for (const [prop, items] of Object.entries(checklistByProp)) {
+      lines.push(`• ${prop}: ${items.join(', ')}`)
     }
   }
 
@@ -135,17 +159,34 @@ For adding a contact:
 {"type":"create_contact","reply":"Added [name] as [role] for [property]","property_name":"exact property name","name":"Contact Name","role":"primary|cleaning|maintenance|plumbing|hvac|electrical|landscaping|groceries|other","phone":"optional","email":"optional","notes":"optional"}
 
 === RULES ===
-- PROPERTY NAME: Always use the EXACT property name from the PROPERTIES list (copy it verbatim into property_name). Never use an address or partial name — use the full name like "Vestal Home" not "Home" or "165 Lewis Rd".
-- Dates must be YYYY-MM-DD format. Today is ${new Date().toISOString().split('T')[0]}
-- Reply text must use past tense — say "Work order created" not "I will create"
-- If a property doesn't exist, say so and list available properties
-- CRITICAL: You have the full conversation history in the messages above. ALWAYS reference prior messages before asking for info. Never ask for something already provided.
-- If the user asks to create a work order but the property was NOT mentioned in any prior message, ask which property. Otherwise use the property from context.
-- CONTACT CHECK: Before creating a work order that requires a service provider (cleaning, maintenance, plumbing, electrical, hvac, landscaping), check the CONTACTS section for a matching contact at that property. If NONE exists for that category and property, DO NOT create the work order yet. Instead use type "reply" to say: "No [category] contact is on file for [property]. Please provide their name and phone/email so I can add them, or reply 'skip' to create the work order without a contact."
-- If the user replies "skip" or says to proceed without a contact, then create the work order immediately.
-- STAY CREATION: Before creating a stay, you MUST have a guest name. If the user did not provide one, use type "reply" to ask: "What is the guest's name?" Do not create the stay without a guest name. Once you have the guest name, create the stay immediately — do not ask for anything else.
-- DO NOT say "work order created" or "stay created" unless you are actually using the create_work_order or create_stay action type. Never use type "reply" to announce a creation — only action types create things.
-- If a request is otherwise unclear, ask for clarification using type "reply"`
+PROPERTY NAME:
+- Each property in the PROPERTIES section is shown as: name: "ExactName" | address: ...
+- ALWAYS copy the name in quotes verbatim into the property_name field — e.g. if the list shows name: "Home", use "Home", not the address.
+- If the user refers to a property by address (e.g. "165 lewis", "the vestal place"), identify the property in PROPERTIES whose address matches and use that property's quoted name.
+- If you cannot confidently match a property, list the available properties and ask the user to clarify.
+
+PROPERTY CONTINUITY:
+- Once a property has been identified in the conversation (from any prior message), that is the active property. Use it for all follow-up actions in the same thread.
+- Only switch to a different property if the user explicitly mentions a different property name or address.
+- NEVER silently switch to a different property between turns.
+
+CONVERSATION CONTEXT:
+- You have the full conversation history above. ALWAYS check prior messages before asking for information.
+- Never ask for something the user has already provided in this conversation.
+
+CONTACT CHECK:
+- Before creating a work order that requires an external service provider (cleaning, maintenance, plumbing, electrical, hvac, landscaping), check CONTACTS for a matching contact at that property.
+- If NONE exists, do NOT create the work order yet. Reply: "No [category] contact on file for [property]. Provide their name and phone/email to add them, or reply 'skip' to create the work order without assigning a contact."
+- If the user replies "skip" or says to proceed without a contact, create the work order immediately.
+
+STAY CREATION:
+- You MUST have a guest name before creating a stay. If missing, ask: "What is the guest's name?" Once you have it, create the stay — do not ask for anything else.
+
+ACTIONS:
+- Reply text must use past tense — "Work order created" not "I will create".
+- NEVER announce a creation with type "reply". Only action types (create_work_order, create_stay, etc.) actually create things.
+- Dates must be YYYY-MM-DD format. Today is ${new Date().toISOString().split('T')[0]}.
+- If a request is unclear, ask for clarification using type "reply".`
 }
 
 // ─── Main Handler ─────────────────────────────────────────────────────────────
@@ -169,6 +210,7 @@ export async function handleAiSms(params: {
   const apiKey = process.env.ANTHROPIC_API_KEY || _rk()
 
   let step = 'buildContext'
+  let rawResponse = ''
   try {
     const ctx = await buildContext(params.userId)
     step = 'formatContext'
@@ -179,7 +221,7 @@ export async function handleAiSms(params: {
     step = 'anthropic.messages.create'
     const client = new Anthropic({ apiKey })
 
-    // Build multi-turn messages: prior history (last 10) + current message
+    // Build multi-turn messages: prior history (last 10) + current message.
     // IMPORTANT: assistant messages are stored as human-friendly text in the DB,
     // but Claude expects its own prior turns to be valid JSON (matching the response format).
     // We wrap old assistant replies in a JSON envelope so Claude's context remains consistent.
@@ -187,7 +229,7 @@ export async function handleAiSms(params: {
       (params.conversationHistory ?? []).slice(-10).map(m => ({
         role: m.role,
         content: m.role === 'assistant'
-          ? JSON.stringify({ type: 'reply', reply: m.content })  // keep format consistent
+          ? JSON.stringify({ type: 'reply', reply: m.content })
           : m.content,
       }))
 
@@ -202,11 +244,11 @@ export async function handleAiSms(params: {
     })
 
     step = 'parseResponse'
-    const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
+    rawResponse = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
 
-    const start = raw.indexOf('{')
-    const end = raw.lastIndexOf('}')
-    const jsonStr = start !== -1 && end > start ? raw.slice(start, end + 1) : raw
+    const start = rawResponse.indexOf('{')
+    const end = rawResponse.lastIndexOf('}')
+    const jsonStr = start !== -1 && end > start ? rawResponse.slice(start, end + 1) : rawResponse
 
     const parsed = JSON.parse(jsonStr) as AiSmsAction
     return parsed
@@ -214,6 +256,16 @@ export async function handleAiSms(params: {
     const msg = err instanceof Error ? err.message : String(err)
     const stack = err instanceof Error ? (err.stack ?? '') : ''
     console.error(`[AI SMS handler error at step=${step}]`, err)
+
+    // If JSON parsing failed but we got raw text from the model, return it as a reply
+    // rather than showing a generic error — the model was responsive, just didn't format correctly.
+    if (step === 'parseResponse' && rawResponse) {
+      const plainText = rawResponse.replace(/```[a-z]*\n?/g, '').trim()
+      if (plainText.length > 0 && plainText.length < 600) {
+        return { type: 'reply', reply: plainText }
+      }
+    }
+
     try {
       const { createClient: createSupabaseClient } = require('@supabase/supabase-js')
       const svc = createSupabaseClient(
@@ -231,7 +283,7 @@ export async function handleAiSms(params: {
     } catch { /* best-effort */ }
     return {
       type: 'error',
-      reply: 'Sorry, I had trouble understanding that. Please try again in a moment.',
+      reply: "I'm sorry, something went wrong on my end. Please try again.",
     }
   }
 }

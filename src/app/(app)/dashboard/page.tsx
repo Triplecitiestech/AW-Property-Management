@@ -1,16 +1,20 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 
+function toLabel(s: string) {
+  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
 function StatusBadge({ status }: { status: string }) {
   return (
     <span className={`badge badge-${status}`}>
-      {status.replace(/_/g, ' ')}
+      {toLabel(status)}
     </span>
   )
 }
 
 function PriorityBadge({ priority }: { priority: string }) {
-  return <span className={`badge badge-${priority}`}>{priority}</span>
+  return <span className={`badge badge-${priority}`}>{toLabel(priority)}</span>
 }
 
 function StatCard({ label, value, sub, color }: { label: string; value: number | string; sub?: string; color: string }) {
@@ -139,7 +143,7 @@ export default async function DashboardPage() {
                   <p className="text-sm text-gray-700">
                     <span className="font-medium">{actor}</span>
                     {' '}{entry.action}{' '}
-                    <span className="text-gray-500">{entry.entity_type.replace(/_/g, ' ')}</span>
+                    <span className="text-gray-500">{toLabel(entry.entity_type)}</span>
                     {detail && <span className="text-gray-500">: {String(detail)}</span>}
                   </p>
                 </div>

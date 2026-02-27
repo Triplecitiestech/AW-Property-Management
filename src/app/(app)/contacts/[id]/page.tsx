@@ -185,7 +185,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
                         </p>
                       </div>
                       <span className={`badge ${STATUS_STYLES[wo.status] ?? 'badge-closed'} flex-shrink-0`}>
-                        {wo.status.replace('_', ' ')}
+                        {wo.status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}
                       </span>
                     </Link>
                   )

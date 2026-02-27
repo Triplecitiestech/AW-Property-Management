@@ -7,7 +7,7 @@
  *
  * Usage:
  *   APP_URL=http://localhost:3000 \
- *   SUPABASE_URL=https://xxx.supabase.co \
+ *   NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co \
  *   SUPABASE_SERVICE_ROLE_KEY=your_key \
  *   node scripts/smoke-test.mjs
  */
@@ -68,8 +68,15 @@ async function run() {
   }
 
   // ---- Test 2: Database tables exist ----
+  // Matches the tables defined in supabase/deploy.sql
   console.log('\n2. Database schema')
-  const tables = ['profiles', 'properties', 'property_status', 'stays', 'service_requests', 'service_request_comments', 'guest_reports', 'audit_log', 'property_checklist_items', 'property_contacts', 'organizations', 'org_members', 'property_access', 'invitations', 'contact_property_links', 'error_logs', 'property_units']
+  const tables = [
+    'profiles', 'properties', 'property_status', 'stays',
+    'service_requests', 'service_request_comments', 'guest_reports',
+    'audit_log', 'property_checklist_items', 'property_contacts',
+    'organizations', 'org_members', 'property_access', 'invitations',
+    'error_logs', 'conversations', 'ai_usage',
+  ]
   for (const table of tables) {
     try {
       await supabaseQuery(`${table}?limit=1`, { prefer: 'count=planned' })
@@ -81,10 +88,6 @@ async function run() {
 
   // ---- Test 3: Create a property ----
   console.log('\n3. CRUD operations')
-  let testPropertyId = null
-  let testStayId = null
-  let testTicketId = null
-  let guestToken = null
 
   try {
     const props = await supabaseQuery('properties', {
@@ -126,24 +129,26 @@ async function run() {
     fail('Guest report API', err.message)
   }
 
-  // ---- Test 5: Telegram webhook ----
-  console.log('\n5. Telegram webhook')
+  // ---- Test 5: Twilio SMS webhook ----
+  // An unsigned POST should return 401 when TWILIO_AUTH_TOKEN is set in production.
+  // This confirms the route is deployed and reachable.
+  console.log('\n5. Twilio SMS webhook')
   try {
-    const res = await fetch(`${APP_URL}/api/webhooks/telegram`, {
+    const res = await fetch(`${APP_URL}/api/webhooks/sms`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Telegram-Bot-Api-Secret-Token': 'wrong_secret',
-      },
-      body: JSON.stringify({}),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'From=%2B15555550001&Body=smoke+test',
     })
-    if (res.status === 200 || res.status === 401) {
-      pass('Telegram webhook endpoint reachable')
+    if (res.status === 401) {
+      pass('SMS webhook rejects unsigned requests (401) — auth working')
+    } else if (res.status === 200) {
+      // If no TWILIO_AUTH_TOKEN set (local dev), the handler processes the message
+      pass('SMS webhook endpoint reachable (no auth required in this environment)')
     } else {
-      fail('Telegram webhook', `Unexpected status ${res.status}`)
+      fail('SMS webhook', `Unexpected status ${res.status}`)
     }
   } catch (err) {
-    fail('Telegram webhook', err.message)
+    fail('SMS webhook', err.message)
   }
 
   // ---- Test 6: Guest page renders ----

@@ -222,6 +222,58 @@ async function checkAppHealth() {
   }
 }
 
+// ─── Check E: Runtime env vars on deployed app (/api/envcheck) ──────────────
+
+async function checkRuntimeEnv() {
+  console.log('\n=== Check E: Runtime environment variables (Vercel) ===')
+
+  const appUrl = process.env.APP_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  try {
+    const res = await fetch(`${appUrl}/api/envcheck`, {
+      headers: { 'Authorization': `Bearer ${serviceKey}` },
+      signal: AbortSignal.timeout(15000),
+    })
+
+    if (res.status === 401) {
+      fail('Runtime envcheck', 'Returned 401 — SUPABASE_SERVICE_ROLE_KEY in CI does not match the deployed app. Fix in Vercel (project > settings > environment variables > Production scope).')
+      return
+    }
+
+    if (!res.ok) {
+      fail('Runtime envcheck', `HTTP ${res.status}`)
+      return
+    }
+
+    const data = await res.json()
+    if (data.ok === true) {
+      pass(`All runtime env vars present on ${data.environment}`)
+      return
+    }
+
+    // Report which keys are missing, with system attribution
+    const missingKeys = Object.entries(data.present || {})
+      .filter(([, v]) => v === false)
+      .map(([k]) => k)
+
+    if (missingKeys.length > 0) {
+      const detail = missingKeys.map((k) => {
+        if (k.startsWith('NEXT_PUBLIC_')) return `${k} (set in: Vercel project env vars, scope: Production — rebuild required)`
+        if (k.startsWith('STRIPE_')) return `${k} (set in: Vercel project env vars, scope: Production)`
+        if (k.startsWith('TWILIO_')) return `${k} (set in: Vercel project env vars, scope: Production)`
+        if (k.startsWith('RESEND_') || k === 'NOTIFY_EMAIL') return `${k} (set in: Vercel project env vars, scope: Production)`
+        if (k === 'SUPABASE_SERVICE_ROLE_KEY') return `${k} (set in: Vercel project env vars, scope: Production)`
+        if (k === 'ANTHROPIC_API_KEY') return `${k} (set in: Vercel project env vars, scope: Production)`
+        return `${k} (set in: Vercel project env vars)`
+      })
+      fail('Runtime env vars missing on Vercel', `\n      ${detail.join('\n      ')}`)
+    }
+  } catch (err) {
+    fail('Runtime envcheck', err.message)
+  }
+}
+
 // ─── Main ───────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -232,10 +284,11 @@ async function main() {
   // Check D first — env vars must be present before anything else
   checkEnvVars()
 
-  // Run checks A, B, C
+  // Run checks A, B, C, E
   await checkSupabaseSchema()
   await checkTwilioWebhook()
   await checkAppHealth()
+  await checkRuntimeEnv()
 
   // Summary
   console.log(`\n${'─'.repeat(40)}`)

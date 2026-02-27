@@ -66,6 +66,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: CI environment preflight
+        # Fails fast if any required env var is missing/empty BEFORE we
+        # spend time on migrations, Twilio config, builds, or deploys.
+        run: node scripts/ci-env-preflight.mjs
+
       - name: Security audit (SOC 2 — dependency vulnerability scan)
         # Fails on high or critical vulnerabilities. Warnings on moderate.
         run: npm audit --audit-level=high || echo "::warning::npm audit found high/critical vulnerabilities — review before next deploy"

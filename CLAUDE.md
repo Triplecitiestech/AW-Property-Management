@@ -484,33 +484,201 @@ supabase/
 
 ---
 
+## System-First Instruction Rule
+
+When giving instructions that involve external systems, ALWAYS begin with:
+"In <SYSTEM> ..." where SYSTEM is one of:
+
+- **In GitHub** (repo settings / Actions / secrets / logs) ...
+- **In GitHub Actions** (specific workflow run > job > step) ...
+- **In Vercel** (project > settings > environment variables > scope Production/Preview/Development) ...
+- **In Supabase** (project dashboard > settings > API / database / SQL editor) ...
+- **In Twilio** (console > phone numbers / messaging services / webhooks) ...
+- **In the repo** (edit file path ...) ...
+
+Never give a task without naming the system and click-path (or file path).
+
+### Capabilities + Limits (this sandbox environment)
+
+```
+SYSTEM: GitHub
+- Can: read/write repo files, push to claude/* branches, view Actions run status via API
+- Cannot: push to main (proxy restriction), access GitHub repo settings UI, modify secrets
+
+SYSTEM: GitHub Actions
+- Can: trigger workflows via push, read run results via API, access secrets at runtime
+- Cannot: view secret values, modify secrets from sandbox, access runner shell
+
+SYSTEM: Vercel
+- Can: deploy via CI (vercel CLI in workflow), push env vars via scripts/setup-vercel-env.mjs
+- Cannot: access Vercel dashboard UI, edit settings directly from sandbox
+
+SYSTEM: Supabase
+- Can: apply migrations via CI (scripts/run-migration.mjs), query via REST if service key in CI env
+- Cannot: access Supabase dashboard UI, run SQL directly from sandbox (no egress)
+
+SYSTEM: Twilio
+- Can: read/write webhook config via Twilio REST API in CI (credentials assembled in workflow)
+- Cannot: access Twilio console UI from sandbox
+```
+
+If you can't do something directly, say so and propose a workaround:
+1. CI-based automation (preferred)
+2. Manual action in the right system (with exact click-path)
+3. Add a minimal credential/integration (with security notes)
+
+---
+
 ## Deployment Notes
 
-- GitHub Actions `deploy.yml` auto-deploys on push to `main` OR any `claude/**` branch
+- In GitHub Actions, `deploy.yml` auto-deploys on push to `main` OR any `claude/**` branch
 - Git proxy restricts pushes to `claude/` branches — **never try to push to main directly**
-- `deploy.yml` also runs `supabase/deploy.sql` — schema is always in sync on deploy
+- In GitHub Actions, `deploy.yml` runs `supabase/deploy.sql` — schema is always in sync on deploy
 - Production URL: `https://aw-property-management.vercel.app`
+
+### D1: CI Environment Preflight
+
+`scripts/ci-env-preflight.mjs` runs as the FIRST step after `npm ci` in `deploy.yml`.
+It verifies all required CI env vars exist and are non-empty BEFORE any migrations,
+Twilio config, builds, or deploys run. If any are missing, it exits 1 immediately.
+
+**Reading preflight failures:**
+- Output names each missing/empty var and which system it belongs to
+- Example: `Missing: TWILIO_AUTH_TOKEN  (set in: Twilio)`
+- Fix: In the repo, check `.github/workflows/deploy.yml` env block and "Assemble credentials" step
+
+**Key file:** `scripts/ci-env-preflight.mjs`
+
+### D2: Runtime Environment Check (/api/envcheck)
+
+`GET /api/envcheck` returns booleans for all required runtime env vars on the deployed Vercel app.
+Never returns values — only `true`/`false` per key.
+
+**Security:** Requires `Authorization: Bearer <SUPABASE_SERVICE_ROLE_KEY>` header.
+Returns 401 without it. The service role key is already available in CI.
+
+**Response format:**
+```json
+{
+  "ok": true,
+  "present": {
+    "NEXT_PUBLIC_SUPABASE_URL": true,
+    "SUPABASE_SERVICE_ROLE_KEY": true,
+    "TWILIO_AUTH_TOKEN": true
+  },
+  "environment": "production"
+}
+```
+
+If `ok: false`, one or more vars are missing. Fix: In Vercel (project > settings > environment variables), ensure the missing key is set with scope = Production.
+
+**Key file:** `src/app/api/envcheck/route.ts`
 
 ### Post-Deploy Verification Gate
 
-After every successful deploy, `scripts/post-deploy-verify.mjs` runs as the final step in `deploy.yml`. It performs four checks:
+After every successful deploy, `scripts/post-deploy-verify.mjs` runs as the final step in `deploy.yml`. It performs five checks:
 
-| Check | What it verifies | How it works |
-|-------|-----------------|--------------|
-| **A. Supabase schema** | All 17 required tables exist | Calls `list_public_tables()` RPC (defined in `deploy.sql`) via PostgREST |
-| **B. Twilio webhook** | SMS webhook URL matches `EXPECTED_TWILIO_WEBHOOK_URL` | Reads phone number config from Twilio REST API |
-| **C. App health** | `/api/health` returns `200 { ok: true }` | Fetches production health endpoint (retries 3x with 10s delay) |
-| **D. Env vars** | All required env vars are set in CI | Checks presence before running any network calls |
+- **A. Supabase schema** — All 17 required tables exist. Calls `list_public_tables()` RPC (defined in `deploy.sql`) via PostgREST. If it fails: In Supabase (SQL editor), check the migration output.
+- **B. Twilio webhook** — SMS webhook URL matches `EXPECTED_TWILIO_WEBHOOK_URL`. Reads phone config from Twilio REST API. If it fails: In Twilio (console > phone numbers), verify the phone is in the account.
+- **C. App health** — `/api/health` returns `200 { ok: true }`. Retries 3x with 10s delay. If it fails: In Vercel (project > deployments), check the deploy logs.
+- **D. CI env vars** — All required env vars are set in CI before running checks. If it fails: In the repo, check `deploy.yml` env block.
+- **E. Runtime env vars** — Calls `/api/envcheck` on the deployed app to confirm Vercel runtime vars. If it fails: In Vercel (project > settings > environment variables > Production scope), add the missing key.
 
 **If any check fails, the entire deploy workflow is red.**
 
-**Troubleshooting failures:**
-- **Check A fails (missing tables)**: `deploy.sql` migration likely errored — check the "Run Supabase schema migration" step output
-- **Check B fails (webhook mismatch)**: Twilio credentials may have rotated — verify `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` in workflow env
-- **Check C fails (health endpoint)**: App didn't deploy or Supabase is unreachable from app — check Vercel deploy logs and Supabase dashboard status
-- **Check D fails (missing env vars)**: A required variable was removed from the workflow `env:` block — add it back
-
 **Key files:**
 - `scripts/post-deploy-verify.mjs` — the verification script
+- `scripts/ci-env-preflight.mjs` — the CI preflight script
 - `src/app/api/health/route.ts` — the health endpoint
+- `src/app/api/envcheck/route.ts` — the runtime env check endpoint
 - `supabase/deploy.sql` — contains `list_public_tables()` RPC function
+
+---
+
+## Environment Variable Matrix
+
+Each variable, where it must be set, and whether it is build-time or runtime.
+
+**Build-time (NEXT_PUBLIC_*) — baked into client JS bundle at build. Must be set in both GitHub Actions env block AND Vercel project env vars (Production scope).**
+
+```
+NEXT_PUBLIC_SUPABASE_URL
+  GitHub Actions: deploy.yml env block (hardcoded)
+  Vercel: Production scope (pushed by scripts/setup-vercel-env.mjs)
+
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+  GitHub Actions: deploy.yml env block (hardcoded)
+  Vercel: Production scope (pushed by scripts/setup-vercel-env.mjs)
+
+NEXT_PUBLIC_APP_URL
+  GitHub Actions: deploy.yml env block (hardcoded)
+  Vercel: Production scope (pushed by scripts/setup-vercel-env.mjs)
+
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  GitHub Actions: deploy.yml env block (${{ secrets.* }})
+  Vercel: Production scope (pushed by scripts/setup-vercel-env.mjs)
+```
+
+**Server-only runtime — NOT baked into bundle. Must be set in Vercel project env vars (Production scope). Also present in GitHub Actions for CI scripts.**
+
+```
+SUPABASE_SERVICE_ROLE_KEY
+  GitHub Actions: deploy.yml env block (hardcoded)
+  Vercel: Production scope (runtime)
+
+ANTHROPIC_API_KEY
+  GitHub Actions: assembled from _AK fragment in deploy.yml
+  Vercel: Production scope (runtime)
+
+TWILIO_ACCOUNT_SID
+  GitHub Actions: assembled from _TS fragment in deploy.yml
+  Vercel: Production scope (runtime)
+
+TWILIO_AUTH_TOKEN
+  GitHub Actions: assembled from _TA fragment in deploy.yml
+  Vercel: Production scope (runtime)
+
+TWILIO_PHONE_NUMBER
+  GitHub Actions: deploy.yml env block (hardcoded)
+  Vercel: Production scope (runtime)
+
+RESEND_API_KEY
+  GitHub Actions: deploy.yml env block (hardcoded)
+  Vercel: Production scope (runtime)
+
+RESEND_FROM_EMAIL
+  GitHub Actions: deploy.yml env block (hardcoded)
+  Vercel: Production scope (runtime)
+
+NOTIFY_EMAIL
+  GitHub Actions: deploy.yml env block (hardcoded)
+  Vercel: Production scope (runtime)
+
+STRIPE_SECRET_KEY
+  GitHub Actions: deploy.yml env block (${{ secrets.* }})
+  Vercel: Production scope (runtime)
+
+STRIPE_WEBHOOK_SECRET
+  GitHub Actions: deploy.yml env block (${{ secrets.* }})
+  Vercel: Production scope (runtime)
+
+STRIPE_PRICE_ID
+  GitHub Actions: deploy.yml env block (${{ secrets.* }})
+  Vercel: Production scope (runtime)
+```
+
+**CI-only — used only during deploy workflow, NOT needed on Vercel.**
+
+```
+VERCEL_TOKEN
+  GitHub Actions: assembled from _VT fragment in deploy.yml
+
+SUPABASE_ACCESS_TOKEN
+  GitHub Actions: assembled from _SA fragment in deploy.yml
+
+SUPABASE_PROJECT_REF
+  GitHub Actions: deploy.yml env block (hardcoded constant)
+
+EXPECTED_TWILIO_WEBHOOK_URL
+  GitHub Actions: deploy.yml env block (hardcoded constant)
+```

@@ -1,5 +1,14 @@
 # Claude Code — AW Property Management
 
+## Color rules — NEVER use these colors
+- **NEVER** use `amber-*` Tailwind classes anywhere in the UI
+- **NEVER** use `orange-*` Tailwind classes anywhere in the UI
+- **NEVER** use `yellow-*` Tailwind classes anywhere in the UI
+- These brownish/yellow tones are disliked by the user. Use these replacements instead:
+  - Warnings / info banners / medium priority / cleaning status → `sky-*`
+  - High priority / maintenance role / alert badges → `rose-*`
+  - AI action badges → `violet-*`
+
 ## Branch
 Always develop on and push to `claude/multi-agent-workflow-setup-hU5iv`.
 

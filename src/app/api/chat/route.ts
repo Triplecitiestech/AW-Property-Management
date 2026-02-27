@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { handleAiSms } from '@/lib/sms/ai-handler'
 
-export const maxDuration = 30 // seconds — Anthropic API can take a few seconds
-
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient()
@@ -54,7 +52,8 @@ export async function POST(req: NextRequest) {
         resolved: false,
       })
     } catch { /* best-effort */ }
-    return NextResponse.json({ reply: 'Sorry, something went wrong on our end. Please try again in a moment.' }, { status: 200 })
+    // Return actual error so we can diagnose — will be reverted once root cause is found
+    return NextResponse.json({ reply: `⚠ Error [${new Date().toISOString()}]: ${msg}` }, { status: 200 })
   }
 }
 

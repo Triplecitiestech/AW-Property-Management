@@ -28,19 +28,19 @@ const steps = [
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     ),
-    title: 'Add your service contacts',
-    description: 'Your contacts are who the AI calls on when work needs to get done. The more complete this list, the more hands-off your life becomes.',
+    title: 'Add your team & service contacts',
+    description: 'Your people are what make the AI powerful. Add external vendors for fully automated work order routing, and invite your co-hosts or staff for full platform access.',
     bullets: [
-      'Add a contact for every service type: cleaner, plumber, electrician, HVAC, landscaper',
-      'Each contact gets a role — the AI automatically assigns the right contact to each work order',
-      'Include email so the AI can send them a detailed message when a work order is created',
-      'You can have multiple contacts per property — one cleaner, two plumbers, etc.',
+      'Add service contacts (cleaner, plumber, electrician, HVAC, landscaper) — the AI assigns them to work orders automatically',
+      'Include email for each contact so the AI can send professional notification messages when work orders are created',
+      'Invite co-hosts and staff from Settings — they get their own login and see only the properties you allow',
+      'Assign roles: owner, admin, or member — admins can manage work orders and post notes',
     ],
     action: { label: 'Add Contacts →', href: '/contacts/new' },
-    tip: 'Tip: A missing contact means the AI will ask you before creating a work order — add contacts first for full automation.',
+    tip: 'Tip: A missing service contact means the AI will ask before creating a work order — add contacts first for full automation.',
   },
   {
     number: 3,
@@ -80,7 +80,7 @@ const steps = [
       'Add internal notes for your team, or send external updates to the contact',
     ],
     action: { label: 'Create a Work Order →', href: '/work-orders/new' },
-    tip: 'Tip: All AI actions are logged with an "Undo" button — so you can always reverse a mistake.',
+    tip: 'Tip: All AI actions are logged — so you can always review what the AI did and reverse a mistake.',
   },
   {
     number: 5,
@@ -96,31 +96,11 @@ const steps = [
     bullets: [
       'Text "Schedule a cleaning at the Lewis house after checkout this Friday"',
       'Text "Mark the Vestal property as clean" — status updates instantly',
-      'Text "Delete the spring cleaning work order" — AI can close, update, or create anything',
-      'All AI changes show an "Undo" button in the activity log — never worry about mistakes',
+      'Text "Urgent leaking pipe at Beach House" — AI creates a ticket and contacts your plumber',
+      'All AI changes are logged with full history — never worry about mistakes',
     ],
     action: { label: 'Open Dashboard →', href: '/dashboard' },
     tip: 'Tip: The AI learns your property names — even partial names and addresses work.',
-  },
-  {
-    number: 6,
-    color: 'from-blue-600 to-blue-400',
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-    title: 'Invite your team',
-    description: 'Bring in co-hosts, cleaners, and maintenance crew. Control exactly which properties each person can access.',
-    bullets: [
-      'Generate a shareable invite link from Settings',
-      'Assign roles: owner, admin, or member',
-      'Set property-level access per team member',
-      'Team members get their own login — they only see what you allow',
-    ],
-    action: { label: 'Go to Settings →', href: '/settings' },
-    tip: 'Tip: Admins can post internal notes and manage work orders. Members can view.',
   },
 ]
 
@@ -233,7 +213,7 @@ export default async function WelcomePage() {
         <h3 className="text-xl font-bold text-white mb-2">You&apos;re all set!</h3>
         <p className="text-[#6480a0] text-sm mb-6 max-w-md mx-auto">
           Your dashboard is ready. You can always come back to this guide from the sidebar.
-          Pricing is simple — $10/property/month, billed monthly.
+          Your plan is $50/month and includes 3 properties — additional properties are $10/month each.
         </p>
         <Link
           href="/dashboard"

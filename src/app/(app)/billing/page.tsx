@@ -69,8 +69,9 @@ export default function BillingPage() {
             <p className="text-[#6480a0] text-sm mt-1">Everything you need to manage your rentals</p>
           </div>
           <div className="text-right">
-            <p className="text-3xl font-bold text-white">$10</p>
-            <p className="text-xs text-[#6480a0]">per property / month</p>
+            <p className="text-3xl font-bold text-white">$50</p>
+            <p className="text-xs text-[#6480a0]">/ month — includes 3 properties</p>
+            <p className="text-xs text-teal-400 mt-0.5">+$10/mo per additional property</p>
           </div>
         </div>
 

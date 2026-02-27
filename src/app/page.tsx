@@ -3,19 +3,19 @@ import MarketingNav from '@/components/marketing/MarketingNav'
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Smart Sumai — Property Management Made Smart',
-  description: 'AI-powered property management for short-term rental hosts. Manage properties, guests, tickets, and teams — all in one place. $10/property/month.',
+  title: 'Smart Sumai — AI Property Manager for Short-Term Rentals',
+  description: 'Smart Sumai is your AI property manager. Text it to create work orders, schedule cleanings, track guests, and manage your team — all from any phone. $50/month includes 3 properties.',
   openGraph: {
-    title: 'Smart Sumai — Property Management Made Smart',
-    description: 'AI-powered property management for short-term rental hosts. Manage work orders, guest stays, checklists, and your whole team — all from one dashboard.',
+    title: 'Smart Sumai — AI Property Manager for Short-Term Rentals',
+    description: 'Text in plain English to create work orders, schedule stays, manage contacts, and check property status. Your AI handles the details so you can focus on what matters.',
     url: 'https://aw-property-management.vercel.app',
     siteName: 'Smart Sumai',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Smart Sumai — Property Management Made Smart',
-    description: 'AI-powered property management for short-term rental hosts. $10/property/month.',
+    title: 'Smart Sumai — AI Property Manager for Short-Term Rentals',
+    description: 'Your AI property manager. Text it to run your rentals from anywhere. $50/month includes 3 properties.',
   },
   robots: {
     index: true,
@@ -30,8 +30,6 @@ export default async function Home({
 }) {
   const params = await searchParams
 
-  // Supabase auth emails link to /?code=… when Site URL lacks /auth/callback.
-  // Forward to the proper callback route so the code is exchanged correctly.
   if (params.code) {
     const qs = new URLSearchParams({ code: params.code, ...(params.next ? { next: params.next } : {}) })
     redirect(`/auth/callback?${qs}`)
@@ -43,97 +41,93 @@ export default async function Home({
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section className="relative min-h-[100vh] flex items-center pt-16">
-        {/* Background glows */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[500px]
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[600px]
                           bg-gradient-radial from-violet-600/20 via-violet-900/5 to-transparent blur-3xl" />
           <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px]
                           bg-teal-600/10 rounded-full blur-3xl" />
-          {/* Subtle grid */}
           <div className="absolute inset-0 opacity-[0.03]"
             style={{backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '60px 60px'}} />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center">
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-[1.05]">
-            Property management,{' '}
-            <span className="bg-gradient-to-r from-violet-400 via-violet-300 to-teal-400 bg-clip-text text-transparent">
-              powered by AI
-            </span>
-          </h1>
-          <p className="text-xl text-[#8aa0be] max-w-2xl mx-auto mb-10 leading-relaxed">
-            Run your short-term rentals without the chaos. Smart Sumai centralizes your properties,
-            guest stays, service tickets, and team — in one beautifully simple dashboard.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/login?mode=signup"
-              className="px-8 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-violet-500
-                         text-white font-semibold text-lg hover:from-violet-500 hover:to-violet-400
-                         transition-all shadow-2xl shadow-violet-900/50 hover:shadow-violet-700/40">
-              Start Free — No credit card needed
-            </Link>
-            <Link href="/pricing"
-              className="px-8 py-4 rounded-xl border border-white/10 bg-white/5
-                         text-white font-semibold text-lg hover:bg-white/10 transition-all">
-              See Pricing →
-            </Link>
-          </div>
-
-          {/* Hero screenshot / mockup placeholder */}
-          <div className="mt-20 relative max-w-5xl mx-auto">
-            <div className="rounded-2xl border border-white/10 bg-[#0f1829] shadow-2xl shadow-black/60 overflow-hidden">
-              {/* Fake browser bar */}
-              <div className="flex items-center gap-2 px-4 py-3 bg-[#0c1220] border-b border-white/5">
-                <div className="w-3 h-3 rounded-full bg-red-500/60" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
-                <div className="w-3 h-3 rounded-full bg-green-500/60" />
-                <div className="flex-1 mx-4 h-6 rounded-md bg-white/5 flex items-center px-3">
-                  <span className="text-xs text-[#6480a0]">smartsumai.com/dashboard</span>
-                </div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Left: Copy */}
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full
+                              bg-violet-500/15 border border-violet-500/30 text-violet-300 text-sm font-medium mb-6">
+                <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+                AI Property Manager
               </div>
-              {/* Dashboard preview */}
-              <div className="p-4 sm:p-6">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6 leading-[1.05]">
+                Your AI runs<br />your properties.{' '}
+                <span className="bg-gradient-to-r from-violet-400 via-violet-300 to-teal-400 bg-clip-text text-transparent">
+                  You just own them.
+                </span>
+              </h1>
+              <p className="text-xl text-[#8aa0be] mb-4 leading-relaxed">
+                Smart Sumai is an AI property manager you text like a person. It creates work orders,
+                schedules cleanings, contacts your vendors, tracks guest stays, and updates property
+                status — automatically, from any phone.
+              </p>
+              <p className="text-base text-[#6480a0] mb-10 leading-relaxed">
+                No app for guests. No training for your team. Just text in plain English and your AI handles the rest.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link href="/auth/login?mode=signup"
+                  className="px-8 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-violet-500
+                             text-white font-semibold text-lg hover:from-violet-500 hover:to-violet-400
+                             transition-all shadow-2xl shadow-violet-900/50 hover:shadow-violet-700/40 text-center">
+                  Start Free — No credit card needed
+                </Link>
+                <Link href="/pricing"
+                  className="px-8 py-4 rounded-xl border border-white/10 bg-white/5
+                             text-white font-semibold text-lg hover:bg-white/10 transition-all text-center">
+                  See Pricing →
+                </Link>
+              </div>
+            </div>
+
+            {/* Right: AI Chat Demo */}
+            <div className="relative">
+              <div className="absolute -inset-4 bg-violet-600/10 rounded-3xl blur-2xl" />
+              <div className="relative rounded-2xl border border-white/10 bg-[#0c1525] shadow-2xl shadow-black/60 overflow-hidden">
+                {/* Phone header */}
+                <div className="flex items-center gap-3 px-5 py-4 bg-[#0f1829] border-b border-white/5">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-teal-400
+                                  flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">Smart Sumai AI</p>
+                    <p className="text-xs text-teal-400">● Online — SMS &amp; Web Chat</p>
+                  </div>
+                </div>
+                {/* Conversation */}
+                <div className="p-5 space-y-4 text-sm">
                   {[
-                    { label: 'Properties', value: '12', color: 'text-violet-400' },
-                    { label: 'Active Stays', value: '4', color: 'text-teal-400' },
-                    { label: 'Open Tickets', value: '2', color: 'text-amber-400' },
-                    { label: 'Team Members', value: '5', color: 'text-emerald-400' },
-                  ].map(s => (
-                    <div key={s.label} className="rounded-xl bg-[#1a2436] border border-[#2a3d58] p-3 sm:p-4">
-                      <p className="text-xs text-[#6480a0] font-medium">{s.label}</p>
-                      <p className={`text-2xl font-bold mt-1 ${s.color}`}>{s.value}</p>
+                    { from: 'user', text: 'Leaking faucet under the kitchen sink at Beach House — pretty urgent' },
+                    { from: 'ai',   text: 'Urgent plumbing work order created at Beach House. Mike\'s Plumbing has been notified with full details.' },
+                    { from: 'user', text: 'Schedule a cleaning after the guests check out Friday' },
+                    { from: 'ai',   text: 'Cleaning work order created for Saturday morning at Beach House. Sarah (cleaner) has been notified.' },
+                    { from: 'user', text: 'Who\'s checking in next week?' },
+                    { from: 'ai',   text: 'Jake Miller at Beach House (Fri Jun 14) and Sarah Chen at Lake Cabin (Mon Jun 17).' },
+                    { from: 'user', text: 'Mark Lake Cabin as clean' },
+                    { from: 'ai',   text: 'Lake Cabin → clean ✓' },
+                  ].map((m, i) => (
+                    <div key={i} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed
+                        ${m.from === 'user'
+                          ? 'bg-violet-600/80 text-white rounded-br-md'
+                          : 'bg-[#1a2d44] text-[#c0d4e8] rounded-bl-md border border-white/5'}`}>
+                        {m.text}
+                      </div>
                     </div>
                   ))}
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-xl bg-[#1a2436] border border-[#2a3d58] p-4 space-y-3">
-                    <p className="text-sm font-semibold text-white">Recent Properties</p>
-                    {['Lakeside Cottage', 'Downtown Loft', 'Beach House A'].map(p => (
-                      <div key={p} className="flex items-center justify-between">
-                        <span className="text-sm text-[#8aa0be]">{p}</span>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-900/40 text-emerald-400 border border-emerald-800/40">Clean</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="rounded-xl bg-[#1a2436] border border-[#2a3d58] p-4 space-y-3">
-                    <p className="text-sm font-semibold text-white">Open Tickets</p>
-                    {[
-                      { title: 'Fix kitchen faucet', priority: 'high' },
-                      { title: 'Restock linens', priority: 'medium' },
-                    ].map(t => (
-                      <div key={t.title} className="flex items-center justify-between">
-                        <span className="text-sm text-[#8aa0be]">{t.title}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full border
-                          ${t.priority === 'high'
-                            ? 'bg-red-900/40 text-red-400 border-red-800/40'
-                            : 'bg-amber-900/40 text-amber-400 border-amber-800/40'}`}>
-                          {t.priority}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </div>
             </div>
@@ -141,13 +135,144 @@ export default async function Home({
         </div>
       </section>
 
-      {/* ── FEATURES ─────────────────────────────────────────────────── */}
-      <section className="py-24 relative" id="features">
+      {/* ── WHAT IS SMART SUMAI ──────────────────────────────────────── */}
+      <section className="py-20 border-t border-white/5 bg-gradient-to-b from-violet-950/10 to-transparent">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-5">
+            One platform. Every part of property management.
+          </h2>
+          <p className="text-[#8aa0be] text-lg max-w-3xl mx-auto mb-12 leading-relaxed">
+            Smart Sumai is a complete property management system with an AI at the center.
+            Add your properties, your team, and your service vendors — then let the AI handle
+            day-to-day operations while you keep full visibility from the dashboard.
+          </p>
+          <div className="grid sm:grid-cols-3 gap-6 text-left">
+            {[
+              {
+                icon: '🏠',
+                title: 'Property & Status Hub',
+                desc: 'Track every property\'s real-time status — clean, needs cleaning, occupied, or needs maintenance. See open tickets, upcoming guests, and team activity all in one place.',
+              },
+              {
+                icon: '🤖',
+                title: 'AI That Does the Work',
+                desc: 'Text your AI in plain English from anywhere. It creates tickets, contacts vendors, schedules stays, and updates statuses — no manual data entry, no app switching.',
+              },
+              {
+                icon: '👥',
+                title: 'Team & Vendor Network',
+                desc: 'Invite your cleaning crew and co-hosts. Add your plumber, electrician, and landscaper as contacts. The AI automatically routes work orders to the right person and sends professional notification emails.',
+              },
+            ].map(c => (
+              <div key={c.title} className="rounded-2xl border border-white/5 bg-[#0f1829] p-6">
+                <div className="text-3xl mb-3">{c.icon}</div>
+                <h3 className="text-base font-semibold text-white mb-2">{c.title}</h3>
+                <p className="text-sm text-[#6480a0] leading-relaxed">{c.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── AI WORKFLOWS ─────────────────────────────────────────────── */}
+      <section className="py-24 border-t border-white/5" id="ai">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Everything you need to run your rentals</h2>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full
+                            bg-violet-500/15 border border-violet-500/30 text-violet-300 text-sm font-medium mb-4">
+              AI Property Manager
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              Text it. It handles it.
+            </h2>
+            <p className="text-[#8aa0be] text-lg max-w-2xl mx-auto">
+              Your AI understands your properties, your team, and your vendors.
+              It takes action — not just advice.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {[
+              {
+                color: 'border-red-500/20 bg-red-950/10',
+                badgeColor: 'bg-red-500/20 text-red-300 border-red-500/30',
+                badge: 'Maintenance',
+                example: '"Urgent — leaking pipe at the Monroe St property, under the kitchen sink"',
+                outcome: 'Creates an urgent plumbing work order, identifies your plumber from your contacts, and sends them a detailed professional notification email — all instantly.',
+                icon: '🔧',
+              },
+              {
+                color: 'border-teal-500/20 bg-teal-950/10',
+                badgeColor: 'bg-teal-500/20 text-teal-300 border-teal-500/30',
+                badge: 'Cleaning',
+                example: '"Schedule a cleaning at Beach House after the guests check out this Friday"',
+                outcome: 'Creates a cleaning work order for the correct property, assigns your cleaner as the contact, sends them a notification, and marks the property as needs_cleaning.',
+                icon: '🧹',
+              },
+              {
+                color: 'border-violet-500/20 bg-violet-950/10',
+                badgeColor: 'bg-violet-500/20 text-violet-300 border-violet-500/30',
+                badge: 'Guest Stays',
+                example: '"Add a stay for Jake Miller at the lake cabin, checking in July 5th through the 9th"',
+                outcome: 'Logs the stay, generates a personalized guest welcome page with your property info, WiFi codes, and house rules — ready to share immediately.',
+                icon: '🛎️',
+              },
+              {
+                color: 'border-amber-500/20 bg-amber-950/10',
+                badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+                badge: 'Status Updates',
+                example: '"Mark the Vestal property clean" or "Beach House needs groceries"',
+                outcome: 'Updates property status instantly across your dashboard. Your whole team sees the current state in real time — no calls, no texts to the group chat.',
+                icon: '✅',
+              },
+              {
+                color: 'border-blue-500/20 bg-blue-950/10',
+                badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+                badge: 'Work Order Updates',
+                example: '"Close the spring cleaning ticket at the cabin — it\'s done" or "bump the faucet ticket to urgent"',
+                outcome: 'Closes, updates priority, changes status, or reassigns work orders by partial name match. Full audit trail of every AI action with the ability to reverse mistakes.',
+                icon: '📋',
+              },
+              {
+                color: 'border-emerald-500/20 bg-emerald-950/10',
+                badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+                badge: 'Portfolio Overview',
+                example: '"What\'s the status of all my properties?" or "Who\'s checking in next week?"',
+                outcome: 'Instant summary of every property status, upcoming guest arrivals, and open tickets across your entire portfolio — without opening the dashboard.',
+                icon: '📊',
+              },
+            ].map(w => (
+              <div key={w.badge} className={`rounded-2xl border ${w.color} p-6`}>
+                <div className="flex items-start gap-4">
+                  <div className="text-2xl flex-shrink-0">{w.icon}</div>
+                  <div>
+                    <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full border mb-3 ${w.badgeColor}`}>
+                      {w.badge}
+                    </span>
+                    <p className="text-sm text-white font-medium italic mb-2">{w.example}</p>
+                    <p className="text-sm text-[#8aa0be] leading-relaxed">{w.outcome}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-10 rounded-2xl border border-violet-500/15 bg-violet-950/15 p-6 text-center">
+            <p className="text-[#8aa0be] text-sm">
+              Available via <strong className="text-white">SMS text message</strong> and the <strong className="text-white">in-app chat bubble</strong> — conversations sync across both.
+              Your AI knows your property names, your contacts, and your history.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FULL FEATURES ────────────────────────────────────────────── */}
+      <section className="py-24 relative border-t border-white/5" id="features">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Everything built in. Nothing extra to buy.</h2>
             <p className="text-[#8aa0be] text-lg max-w-xl mx-auto">
-              One platform for properties, guests, maintenance, and your whole team.
+              One platform covers your entire operation — from the AI to the guest page.
             </p>
           </div>
 
@@ -156,68 +281,74 @@ export default async function Home({
               {
                 icon: (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
                 ),
                 color: 'from-violet-600 to-violet-400',
                 glow: 'group-hover:shadow-violet-900/40',
-                title: 'Property Management',
-                desc: 'Track status, notes, AI instructions, and custom checklists for every property. Know exactly what needs attention at a glance.',
+                title: 'AI Property Manager',
+                desc: 'Text your AI to create work orders, update property status, schedule stays, and manage contacts. Available via SMS and in-app chat. Responds in seconds, 24/7.',
               },
               {
                 icon: (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                   </svg>
                 ),
                 color: 'from-teal-600 to-teal-400',
                 glow: 'group-hover:shadow-teal-900/40',
-                title: 'Guest & Tenant Tracking',
-                desc: 'Log short-term guest stays or long-term tenants. Auto-generate access links with WiFi codes and house rules. Collect post-stay reports and track full activity history — no app required.',
+                title: 'Property Dashboard',
+                desc: 'Track every property\'s status (clean, needs cleaning, occupied, needs maintenance). Custom AI instructions, checklists, notes, and contacts per property.',
               },
               {
                 icon: (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                   </svg>
                 ),
                 color: 'from-amber-600 to-amber-400',
                 glow: 'group-hover:shadow-amber-900/40',
                 title: 'Work Orders',
-                desc: 'Create, assign, and track maintenance, cleaning, and supply requests. AI auto-routes to the right contact. Full audit history of every action.',
+                desc: 'Create, assign, and track maintenance, cleaning, plumbing, HVAC, electrical, landscaping, and supply requests. AI auto-routes to the right contact with full audit history.',
               },
               {
                 icon: (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 ),
                 color: 'from-emerald-600 to-emerald-400',
                 glow: 'group-hover:shadow-emerald-900/40',
-                title: 'Team Collaboration',
-                desc: 'Invite your cleaning crew, maintenance staff, and co-hosts. Assign roles, control property access, and work together seamlessly.',
+                title: 'Guest Stays',
+                desc: 'Log check-ins with guest name and dates. Auto-generate a unique welcome page with WiFi, door codes, and house rules. Guests submit checkout reports — no account needed.',
               },
               {
                 icon: (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 ),
                 color: 'from-blue-600 to-blue-400',
                 glow: 'group-hover:shadow-blue-900/40',
-                title: 'Email Notifications',
-                desc: 'Get instant alerts for new tickets, guest reports, and status changes. Your whole team stays in the loop automatically.',
+                title: 'Team & Contacts',
+                desc: 'Invite co-hosts and staff with role-based access per property. Add external vendors (plumbers, cleaners, electricians) — the AI contacts them automatically when work orders are created.',
               },
               {
                 icon: (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 ),
                 color: 'from-rose-600 to-pink-400',
                 glow: 'group-hover:shadow-rose-900/40',
-                title: 'AI SMS Property Manager',
-                desc: 'Text your dedicated AI number in plain English. Check status, file tickets, schedule stays, add contacts — no app needed. Conversations sync with the in-app chat.',
+                title: 'Notifications & Audit Log',
+                desc: 'Instant email alerts for new tickets, guest reports, and status changes. Every AI and manual action is logged with full history — and AI actions can be undone.',
               },
             ].map(f => (
               <div key={f.title}
@@ -244,28 +375,33 @@ export default async function Home({
             <p className="text-[#8aa0be] text-lg">No complex setup. No training required.</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 relative">
-            {/* Connector lines */}
-            <div className="hidden md:block absolute top-8 left-1/3 right-1/3 h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent" />
-
+          <div className="grid md:grid-cols-4 gap-8 relative">
+            <div className="hidden md:block absolute top-8 left-[12.5%] right-[12.5%] h-px
+                            bg-gradient-to-r from-transparent via-violet-500/30 to-transparent" />
             {[
               {
                 step: '1',
                 title: 'Add your properties',
-                desc: 'Enter property details, add contacts (cleaners, plumbers, managers), and set up custom checklists — takes under 5 minutes per property.',
+                desc: 'Enter property details, add WiFi/door codes, and set custom AI instructions and checklists. Under 5 minutes per property.',
                 color: 'bg-violet-600',
               },
               {
                 step: '2',
-                title: 'Invite your team',
-                desc: 'Share an invite link with your cleaning crew and maintenance team. Control who sees which properties with role-based access.',
+                title: 'Add team & contacts',
+                desc: 'Add your cleaners, plumbers, and other vendors as contacts. Invite co-hosts and staff with role-based access.',
                 color: 'bg-teal-600',
               },
               {
                 step: '3',
-                title: 'Manage from anywhere',
-                desc: 'Track live property status, log guest stays, file tickets, and get notified — all from any device, anywhere.',
+                title: 'Text your AI',
+                desc: 'Send your first message to your AI. File a ticket, schedule a cleaning, or ask what\'s open — in plain English.',
                 color: 'bg-violet-500',
+              },
+              {
+                step: '4',
+                title: 'Manage from anywhere',
+                desc: 'Your dashboard stays current. Track status, view open tickets, and see upcoming guests from any device.',
+                color: 'bg-teal-500',
               },
             ].map(s => (
               <div key={s.step} className="text-center">
@@ -273,8 +409,8 @@ export default async function Home({
                                  text-2xl font-bold text-white mx-auto mb-5 shadow-xl`}>
                   {s.step}
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-3">{s.title}</h3>
-                <p className="text-[#6480a0] leading-relaxed">{s.desc}</p>
+                <h3 className="text-lg font-semibold text-white mb-3">{s.title}</h3>
+                <p className="text-[#6480a0] text-sm leading-relaxed">{s.desc}</p>
               </div>
             ))}
           </div>
@@ -285,38 +421,38 @@ export default async function Home({
       <section className="py-24 border-t border-white/5" id="pricing">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">Simple, transparent pricing</h2>
-          <p className="text-[#8aa0be] text-lg mb-12">Pay only for what you use. No hidden fees.</p>
+          <p className="text-[#8aa0be] text-lg mb-12">3 properties included. Pay as you grow.</p>
 
           <div className="relative rounded-2xl border border-violet-500/30 bg-gradient-to-b from-violet-950/30 to-[#0f1829]
                           p-8 sm:p-12 shadow-2xl shadow-violet-900/20 overflow-hidden">
-            {/* Glow */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-violet-600/20 blur-3xl pointer-events-none" />
 
             <div className="relative">
               <div className="inline-block px-3 py-1 rounded-full bg-teal-500/20 border border-teal-500/30 text-teal-300 text-sm font-medium mb-6">
-                One simple plan
+                Everything included
               </div>
-              <div className="mb-8">
+              <div className="mb-2">
                 <div className="flex flex-wrap items-end justify-center gap-1">
                   <span className="text-xl text-[#8aa0be] font-medium mb-2">$</span>
-                  <span className="text-6xl sm:text-7xl font-extrabold text-white">10</span>
-                  <span className="text-lg sm:text-xl text-[#8aa0be] font-medium mb-2">/property/mo</span>
+                  <span className="text-6xl sm:text-7xl font-extrabold text-white">50</span>
+                  <span className="text-lg sm:text-xl text-[#8aa0be] font-medium mb-2">/month</span>
                 </div>
-                <p className="text-[#8aa0be] mt-2">Billed monthly · Cancel anytime</p>
+                <p className="text-teal-400 font-medium mt-1">Includes 3 properties · +$10/month per additional property</p>
+                <p className="text-[#8aa0be] text-sm mt-1">Billed monthly · Cancel anytime · No contracts</p>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-3 text-left mb-10 max-w-lg mx-auto">
+              <div className="grid sm:grid-cols-2 gap-3 text-left my-10 max-w-lg mx-auto">
                 {[
+                  'AI SMS property manager',
+                  'In-app AI chat assistant',
+                  'Unlimited work orders',
                   'Unlimited stays & guest logs',
-                  'Unlimited service tickets',
+                  'Auto-generated guest welcome pages',
                   'Custom checklists per property',
-                  'Property contacts & roles',
+                  'Property contacts & vendor directory',
                   'Team collaboration & invites',
                   'Email notifications',
                   'Full audit log & history',
-                  'AI SMS property manager',
-                  'In-app AI chat assistant',
-                  'AI-powered property summaries',
                 ].map(f => (
                   <div key={f} className="flex items-center gap-2.5">
                     <svg className="w-4 h-4 text-teal-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -356,10 +492,10 @@ export default async function Home({
             </svg>
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Ready to simplify your<br />property operations?
+            Stop managing your properties.<br />Let AI manage them for you.
           </h2>
           <p className="text-[#8aa0be] text-lg mb-10">
-            Join property managers who use Smart Sumai to save hours every week.
+            Set up in minutes. Your first text to the AI will feel like the future.
           </p>
           <Link href="/auth/login?mode=signup"
             className="inline-block px-10 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-violet-500
@@ -385,6 +521,7 @@ export default async function Home({
             </div>
             <div className="flex items-center gap-6 text-sm text-[#4a6080]">
               <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
+              <Link href="/faq" className="hover:text-white transition-colors">FAQ</Link>
               <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
               <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
               <Link href="/auth/login" className="hover:text-white transition-colors">Sign In</Link>

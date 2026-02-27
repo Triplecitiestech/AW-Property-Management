@@ -23,5 +23,5 @@ export async function updateProfile(formData: FormData) {
 
   revalidatePath('/profile')
   revalidatePath('/settings')
-  return { success: true }
+  redirect('/profile?saved=1')
 }

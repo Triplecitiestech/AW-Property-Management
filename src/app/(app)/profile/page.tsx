@@ -3,7 +3,12 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { updateProfile } from '@/lib/actions/profile'
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string }>
+}) {
+  const { saved } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
@@ -29,6 +34,16 @@ export default async function ProfilePage() {
         </Link>
         <h1>My Profile</h1>
       </div>
+
+      {/* Success banner */}
+      {saved === '1' && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-teal-500/40 bg-teal-500/10 px-4 py-3 text-sm text-teal-300">
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          Profile saved successfully.
+        </div>
+      )}
 
       <div className="card p-6 space-y-6">
         {/* Email (read-only) */}
@@ -66,8 +81,11 @@ export default async function ProfilePage() {
               type="tel"
               className="form-input"
               defaultValue={profile?.phone_number ?? ''}
-              placeholder="555-0100"
+              placeholder="+16075550100"
             />
+            <p className="text-xs text-[#6480a0] mt-1">
+              E.164 format required for SMS AI — include country code, e.g. <span className="font-mono text-[#8aa0c0]">+16075550100</span>
+            </p>
           </div>
           <div className="flex gap-3 pt-2">
             <button type="submit" className="btn-primary">Save Changes</button>

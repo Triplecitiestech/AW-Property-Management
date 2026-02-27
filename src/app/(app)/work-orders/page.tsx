@@ -9,6 +9,10 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`badge badge-${status}`}>{status.replace('_', ' ')}</span>
 }
 
+function woLabel(num: number | null) {
+  return num ? `WO-${String(num).padStart(4, '0')}` : '—'
+}
+
 export default async function WorkOrdersPage({
   searchParams,
 }: {
@@ -25,7 +29,16 @@ export default async function WorkOrdersPage({
   if (filters.property_id) query = query.eq('property_id', filters.property_id)
   if (filters.status) query = query.eq('status', filters.status)
   if (filters.priority) query = query.eq('priority', filters.priority)
-  if (filters.q) query = query.ilike('title', `%${filters.q}%`)
+  if (filters.q) {
+    // Search by title OR work order number (e.g. "WO-0001" or "1")
+    const numMatch = filters.q.replace(/^wo-?/i, '')
+    const num = parseInt(numMatch, 10)
+    if (!isNaN(num)) {
+      query = query.or(`title.ilike.%${filters.q}%,work_order_number.eq.${num}`)
+    } else {
+      query = query.ilike('title', `%${filters.q}%`)
+    }
+  }
 
   const { data: workOrders } = await query
   const { data: properties } = await supabase.from('properties').select('id, name').order('name')
@@ -52,8 +65,8 @@ export default async function WorkOrdersPage({
             name="q"
             type="search"
             defaultValue={filters.q ?? ''}
-            placeholder="Search work orders…"
-            className="form-input text-sm w-auto flex-1 min-w-[160px]"
+            placeholder="Search by title or WO number…"
+            className="form-input text-sm w-auto flex-1 min-w-[200px]"
           />
           <select name="property_id" className="form-select text-sm w-auto" defaultValue={filters.property_id ?? ''}>
             <option value="">All Properties</option>
@@ -85,6 +98,7 @@ export default async function WorkOrdersPage({
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
+              <th className="text-left px-4 py-3 font-medium text-gray-600 w-20">WO#</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Work Order</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Property</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Priority</th>
@@ -97,6 +111,9 @@ export default async function WorkOrdersPage({
           <tbody className="divide-y divide-gray-100">
             {workOrders?.map(wo => (
               <tr key={wo.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3">
+                  <span className="font-mono text-xs text-gray-400">{woLabel(wo.work_order_number)}</span>
+                </td>
                 <td className="px-4 py-3">
                   <p className="font-medium text-gray-900">{wo.title}</p>
                   <p className="text-xs text-gray-400 capitalize">{wo.category}</p>
@@ -117,7 +134,7 @@ export default async function WorkOrdersPage({
             ))}
             {(!workOrders || workOrders.length === 0) && (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-gray-400">
+                <td colSpan={8} className="px-4 py-10 text-center text-gray-400">
                   No work orders found.{' '}
                   <Link href="/work-orders/new" className="text-blue-600 hover:underline">Create one</Link>
                 </td>

@@ -52,6 +52,8 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
   const assignee = workOrder.assignee as {id:string; full_name:string; email:string}|null
   const creator = workOrder.creator as {full_name:string}|null
   const assignedContact = workOrder.assigned_contact as {id:string; name:string; role:string; email:string|null; phone:string|null}|null
+  const woNum = workOrder.work_order_number ? `WO-${String(workOrder.work_order_number).padStart(4, '0')}` : null
+  const isAiComment = (content: string) => content.startsWith('[Smart Sumai AI')
 
   return (
     <div className="space-y-6">
@@ -64,9 +66,11 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
             </svg>
           </Link>
           <div className="min-w-0">
+            {woNum && <p className="font-mono text-xs text-gray-400 mb-0.5">{woNum}</p>}
             <h1 className="text-2xl font-bold text-gray-900 truncate">{workOrder.title}</h1>
             <p className="text-gray-500 text-sm mt-0.5">
               {propertyName} · {workOrder.category} · Created {new Date(workOrder.created_at).toLocaleDateString()} by {creator?.full_name ?? 'Unknown'}
+              {workOrder.source && <span className="ml-1 text-xs text-gray-400">via {workOrder.source === 'sms' ? 'SMS' : 'web chat'} AI</span>}
             </p>
           </div>
         </div>
@@ -93,17 +97,31 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
               <h3 className="font-semibold">Comments ({comments?.length ?? 0})</h3>
             </div>
             <div className="divide-y divide-gray-100">
-              {comments?.map(comment => (
-                <div key={comment.id} className="px-5 py-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="font-medium text-sm text-gray-900">
-                      {(comment.profiles as {full_name:string}|null)?.full_name ?? 'Unknown'}
-                    </span>
-                    <span className="text-xs text-gray-400">{new Date(comment.created_at).toLocaleDateString()}</span>
+              {comments?.map(comment => {
+                const aiComment = isAiComment(comment.content)
+                return (
+                  <div key={comment.id} className={`px-5 py-4 ${aiComment ? 'bg-violet-50/50' : ''}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      {aiComment ? (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-violet-700 bg-violet-100 rounded px-1.5 py-0.5">
+                            <span>🤖</span> Smart Sumai AI
+                          </span>
+                          <span className="text-xs text-gray-400">{new Date(comment.created_at).toLocaleString()}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-medium text-sm text-gray-900">
+                            {(comment.profiles as {full_name:string}|null)?.full_name ?? 'Unknown'}
+                          </span>
+                          <span className="text-xs text-gray-400">{new Date(comment.created_at).toLocaleString()}</span>
+                        </>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">{comment.content}</p>
                   </div>
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{comment.content}</p>
-                </div>
-              ))}
+                )
+              })}
               {(!comments || comments.length === 0) && (
                 <div className="px-5 py-6 text-sm text-gray-400">No comments yet.</div>
               )}

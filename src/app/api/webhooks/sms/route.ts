@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { createServiceClient } from '@/lib/supabase/server'
 import { handleAiSms } from '@/lib/sms/ai-handler'
-import { sendNewTicketEmail } from '@/lib/email/resend'
+import { executeAiAction } from '@/lib/actions/execute-ai-action'
 
-const ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID ?? ''
 const AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN ?? ''
 
 // -------------------------------------------------------
@@ -33,7 +32,6 @@ function validateTwilioSignature(
 // Reply to Twilio with TwiML
 // -------------------------------------------------------
 function twiml(message: string): NextResponse {
-  // Escape XML special chars so TwiML is valid
   const safe = message
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -55,12 +53,9 @@ export async function POST(req: NextRequest) {
   const from: string = params['From'] ?? ''
   const body: string = params['Body']?.trim() ?? ''
 
-  // Validate Twilio signature (skip in dev if no token set)
+  // Validate Twilio signature
   if (AUTH_TOKEN) {
     const signature = req.headers.get('x-twilio-signature') ?? ''
-    // Build the candidate URLs: Twilio signs using the exact URL it posted to.
-    // Try both the configured app URL and the actual request host to handle
-    // domain renames / multiple Vercel deployments.
     const proto = req.headers.get('x-forwarded-proto') ?? 'https'
     const host  = req.headers.get('host') ?? ''
     const actualUrl   = `${proto}://${host}/api/webhooks/sms`
@@ -92,7 +87,7 @@ export async function POST(req: NextRequest) {
 
   if (!profile) {
     return twiml(
-      'Your number is not registered. Sign up at smartsumai.com and add your phone number during registration.'
+      'Your number is not registered. Sign up at smartsumai.com and add your phone number in Settings > Profile.'
     )
   }
 
@@ -105,7 +100,7 @@ export async function POST(req: NextRequest) {
     return twiml(
       `Hi ${profile.full_name?.split(' ')[0] ?? 'there'}! I'm your Smart Sumai AI. I can:\n\n` +
       `• Check property status\n` +
-      `• Create service tickets\n` +
+      `• Create work orders\n` +
       `• Schedule guest stays\n` +
       `• Add contacts\n\n` +
       `Just text me naturally! e.g. "Leaking faucet at Lake Cabin, urgent"`
@@ -121,199 +116,32 @@ export async function POST(req: NextRequest) {
 
   // Save AI reply to conversation history (fire-and-forget)
   supabase.from('conversations').insert({ user_id: profile.id, role: 'assistant', content: action.reply, channel: 'sms' }).then(undefined, () => {})
-  // Track token usage
   supabase.from('ai_usage').insert({ user_id: profile.id, feature: 'sms', tokens_in: Math.ceil(body.length / 4), tokens_out: Math.ceil(action.reply.length / 4) }).then(undefined, () => {})
 
   // Execute the action
   try {
-    switch (action.type) {
-      case 'create_ticket': {
-        const { data: properties } = await supabase
-          .from('properties')
-          .select('id, name')
-          .eq('owner_id', profile.id)
-          .ilike('name', `%${action.property_name}%`)
-          .limit(1)
+    if (action.type === 'create_work_order' || action.type === 'create_stay' || action.type === 'update_status' || action.type === 'create_contact') {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+      const result = await executeAiAction(action, profile.id, 'sms', body, appUrl)
 
-        if (!properties?.length) {
-          return twiml(`Property not found: ${action.property_name}. Check the name and try again.`)
-        }
-        const property = properties[0]
-
-        const { data: ticket, error } = await supabase
-          .from('service_requests')
-          .insert({
-            property_id: property.id,
-            title: action.title,
-            category: action.category ?? 'other',
-            priority: action.priority,
-            status: 'open',
-            created_by: profile.id,
-          })
-          .select('id')
-          .single()
-
-        if (error || !ticket) {
-          return twiml(`Failed to create ticket: ${error?.message ?? 'unknown error'}`)
-        }
-
-        await supabase.from('audit_log').insert({
-          entity_type: 'service_request',
-          entity_id: ticket.id,
-          action: 'created',
-          changed_by: profile.id,
-          after_data: { title: action.title, property_id: property.id, source: 'sms_ai' },
-        })
-
-        // Notify relevant contact for this category
-        const categoryToRole: Record<string, string> = {
-          plumbing: 'plumbing', electrical: 'electrical', hvac: 'hvac',
-          cleaning: 'cleaning', landscaping: 'landscaping', maintenance: 'maintenance',
-        }
-        const contactRole = categoryToRole[action.category] ?? 'maintenance'
-        const { data: contact } = await supabase
-          .from('property_contacts')
-          .select('name, email, phone')
-          .eq('property_id', property.id)
-          .eq('role', contactRole)
-          .maybeSingle()
-
-        await sendNewTicketEmail({
-          ticketId: ticket.id,
-          title: action.title,
-          propertyName: property.name,
-          category: action.category ?? 'other',
-          priority: action.priority,
-        }).catch(console.error)
-
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
-        let reply = action.reply || `✓ Ticket created: ${action.title}\nProperty: ${property.name} | Priority: ${action.priority}`
-        if (contact) {
-          reply += `\nNotified: ${contact.name}`
-        } else {
-          reply += `\nNo ${contactRole} contact on file for this property.`
-        }
-        reply += `\n${appUrl}/work-orders/${ticket.id}`
-        return twiml(reply)
+      if (!result.success) {
+        return twiml(`${action.reply}\n\n⚠ ${result.detail}`)
       }
 
-      case 'create_stay': {
-        const { data: properties } = await supabase
-          .from('properties')
-          .select('id, name')
-          .eq('owner_id', profile.id)
-          .ilike('name', `%${action.property_name}%`)
-          .limit(1)
-
-        if (!properties?.length) {
-          return twiml(`Property not found: ${action.property_name}.`)
-        }
-        const property = properties[0]
-
-        const { data: stay, error } = await supabase
-          .from('stays')
-          .insert({
-            property_id: property.id,
-            guest_name: action.guest_name,
-            start_date: action.start_date,
-            end_date: action.end_date,
-            created_by: profile.id,
-          })
-          .select('id, guest_link_token')
-          .single()
-
-        if (error || !stay) {
-          return twiml(`Failed to create stay: ${error?.message ?? 'unknown error'}`)
-        }
-
-        await supabase.from('audit_log').insert({
-          entity_type: 'stay',
-          entity_id: stay.id,
-          action: 'created',
-          changed_by: profile.id,
-          after_data: { guest_name: action.guest_name, property_id: property.id, source: 'sms_ai' },
-        })
-
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
-        const guestLink = `${appUrl}/guest/${stay.guest_link_token}`
-        const reply = action.reply || `✓ Stay created for ${action.guest_name}\nProperty: ${property.name}\n${action.start_date} → ${action.end_date}`
-        return twiml(`${reply}\nGuest link: ${guestLink}`)
+      if (action.type === 'create_work_order' && result.workOrderId) {
+        const appUrl2 = process.env.NEXT_PUBLIC_APP_URL ?? ''
+        return twiml(`${action.reply}\n${result.detail ?? ''}\n${appUrl2}/work-orders/${result.workOrderId}`)
       }
 
-      case 'update_status': {
-        const { data: properties } = await supabase
-          .from('properties')
-          .select('id, name')
-          .eq('owner_id', profile.id)
-          .ilike('name', `%${action.property_name}%`)
-          .limit(1)
-
-        if (!properties?.length) {
-          return twiml(`Property not found: ${action.property_name}.`)
-        }
-        const property = properties[0]
-
-        const { error } = await supabase
-          .from('property_status')
-          .upsert({
-            property_id: property.id,
-            status: action.status,
-            occupancy: 'unoccupied',
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'property_id' })
-
-        if (error) {
-          return twiml(`Error updating status: ${error.message}`)
-        }
-
-        await supabase.from('audit_log').insert({
-          entity_type: 'property_status',
-          entity_id: property.id,
-          action: 'updated',
-          changed_by: profile.id,
-          after_data: { status: action.status, source: 'sms_ai' },
-        })
-
-        return twiml(action.reply || `✓ ${property.name} → ${action.status.replace(/_/g, ' ')}`)
+      if (result.detail) {
+        return twiml(`${action.reply}\n${result.detail}`)
       }
 
-      case 'create_contact': {
-        const { data: properties } = await supabase
-          .from('properties')
-          .select('id, name')
-          .eq('owner_id', profile.id)
-          .ilike('name', `%${action.property_name}%`)
-          .limit(1)
-
-        if (!properties?.length) {
-          return twiml(`Property not found: ${action.property_name}.`)
-        }
-        const property = properties[0]
-
-        const { error } = await supabase
-          .from('property_contacts')
-          .insert({
-            property_id: property.id,
-            name: action.name,
-            role: action.role,
-            phone: action.phone ?? null,
-            email: action.email ?? null,
-            notes: action.notes ?? null,
-            is_primary: false,
-          })
-
-        if (error) {
-          return twiml(`Failed to add contact: ${error.message}`)
-        }
-
-        return twiml(action.reply || `✓ Added ${action.name} (${action.role}) to ${property.name}`)
-      }
-
-      case 'reply':
-      case 'error':
-      default:
-        return twiml(action.reply || 'Something went wrong. Please try again.')
+      return twiml(action.reply)
     }
+
+    // Plain reply or error
+    return twiml(action.reply || 'Something went wrong. Please try again.')
   } catch (err) {
     console.error('[SMS webhook execution error]', err)
     return twiml('An unexpected error occurred. Please try again or text HELP.')

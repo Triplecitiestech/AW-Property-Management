@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { handleAiSms } from '@/lib/sms/ai-handler'
+import { executeAiAction } from '@/lib/actions/execute-ai-action'
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,13 +19,26 @@ export async function POST(req: NextRequest) {
     const { data: profile } = await svc.from('profiles').select('id, full_name').eq('id', user.id).single()
     const userName = profile?.full_name || user.email || 'User'
 
-    // Save the user message to conversations (non-fatal if it fails)
-    // NOTE: Supabase PostgrestFilterBuilder doesn't have .catch() — use try/catch
+    // Save the user message (non-fatal — PostgrestFilterBuilder has no .catch(), use try/catch)
     try { await svc.from('conversations').insert({ user_id: user.id, role: 'user', content: message, channel: 'web' }) } catch { /* non-fatal */ }
 
-    // Use the same AI handler as SMS for consistent behavior
+    // Get AI action
     const action = await handleAiSms({ userId: user.id, userName, message })
-    const reply = action.reply
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+
+    // Execute the action if it's not a plain reply
+    let reply = action.reply
+    let workOrderId: string | undefined
+
+    if (action.type !== 'reply' && action.type !== 'error') {
+      const result = await executeAiAction(action, user.id, 'web', message, appUrl)
+      if (!result.success) {
+        reply = `${action.reply}\n\n⚠ Could not complete: ${result.detail}`
+      } else if (result.workOrderId) {
+        workOrderId = result.workOrderId
+        reply = `${action.reply}\n\n👉 ${appUrl}/work-orders/${workOrderId}`
+      }
+    }
 
     // Save the assistant reply (non-fatal)
     try { await svc.from('conversations').insert({ user_id: user.id, role: 'assistant', content: reply, channel: 'web' }) } catch { /* non-fatal */ }
@@ -39,21 +53,14 @@ export async function POST(req: NextRequest) {
       })
     } catch { /* non-fatal */ }
 
-    return NextResponse.json({ reply, action: action.type })
+    return NextResponse.json({ reply, action: action.type, workOrderId })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     const stack = err instanceof Error ? (err.stack ?? '') : ''
     console.error('[/api/chat POST error]', err)
-    // Log to error_logs so it's queryable
     try {
       const svc2 = createServiceClient()
-      await svc2.from('error_logs').insert({
-        source: 'server',
-        route: '/api/chat',
-        message: msg,
-        stack,
-        resolved: false,
-      })
+      await svc2.from('error_logs').insert({ source: 'server', route: '/api/chat', message: msg, stack, resolved: false })
     } catch { /* best-effort */ }
     return NextResponse.json({ reply: 'Sorry, something went wrong. Please try again in a moment.' }, { status: 200 })
   }

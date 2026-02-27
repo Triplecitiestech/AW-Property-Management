@@ -19,8 +19,13 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 DO $$ BEGIN
-  CREATE TYPE ticket_category AS ENUM ('maintenance','cleaning','supplies','other');
+  CREATE TYPE ticket_category AS ENUM ('maintenance','cleaning','supplies','plumbing','electrical','hvac','landscaping','other');
 EXCEPTION WHEN duplicate_object THEN null; END $$;
+-- Expand existing enum if it exists (idempotent — postgres ignores if value already present)
+DO $$ BEGIN ALTER TYPE ticket_category ADD VALUE IF NOT EXISTS 'plumbing';     EXCEPTION WHEN others THEN null; END $$;
+DO $$ BEGIN ALTER TYPE ticket_category ADD VALUE IF NOT EXISTS 'electrical';   EXCEPTION WHEN others THEN null; END $$;
+DO $$ BEGIN ALTER TYPE ticket_category ADD VALUE IF NOT EXISTS 'hvac';         EXCEPTION WHEN others THEN null; END $$;
+DO $$ BEGIN ALTER TYPE ticket_category ADD VALUE IF NOT EXISTS 'landscaping';  EXCEPTION WHEN others THEN null; END $$;
 
 DO $$ BEGIN
   CREATE TYPE ticket_priority AS ENUM ('low','medium','high','urgent');
@@ -126,20 +131,27 @@ CREATE TABLE IF NOT EXISTS stays (
   CONSTRAINT valid_dates CHECK (end_date >= start_date)
 );
 
+CREATE SEQUENCE IF NOT EXISTS work_order_number_seq;
 CREATE TABLE IF NOT EXISTS service_requests (
-  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  property_id  UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
-  stay_id      UUID REFERENCES stays(id) ON DELETE SET NULL,
-  title        TEXT NOT NULL,
-  description  TEXT,
-  category     ticket_category NOT NULL DEFAULT 'other',
-  priority     ticket_priority NOT NULL DEFAULT 'medium',
-  due_date     DATE,
-  assignee_id  UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  status       ticket_status NOT NULL DEFAULT 'open',
-  created_by   UUID REFERENCES profiles(id) ON DELETE SET NULL,
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id                 UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  property_id        UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+  stay_id            UUID REFERENCES stays(id) ON DELETE SET NULL,
+  title              TEXT NOT NULL,
+  description        TEXT,
+  category           ticket_category NOT NULL DEFAULT 'other',
+  priority           ticket_priority NOT NULL DEFAULT 'medium',
+  due_date           DATE,
+  assignee_id        UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  assigned_contact_id UUID REFERENCES property_contacts(id) ON DELETE SET NULL,
+  status             ticket_status NOT NULL DEFAULT 'open',
+  source             TEXT,
+  created_by         UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+-- Add work_order_number and source to existing tables (idempotent)
+ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS work_order_number INTEGER DEFAULT nextval('work_order_number_seq');
+ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS source TEXT;
+ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS assigned_contact_id UUID REFERENCES property_contacts(id) ON DELETE SET NULL;
 
 CREATE TABLE IF NOT EXISTS service_request_comments (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

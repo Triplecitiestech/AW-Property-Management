@@ -8,7 +8,7 @@ export type OrgRole = 'owner' | 'admin' | 'member'
 export type PropertyRole = 'manager' | 'viewer'
 export type PropertyStatusEnum = 'clean' | 'needs_cleaning' | 'needs_maintenance' | 'needs_groceries'
 export type OccupancyEnum = 'occupied' | 'unoccupied'
-export type TicketCategory = 'maintenance' | 'cleaning' | 'supplies' | 'other'
+export type TicketCategory = 'maintenance' | 'cleaning' | 'supplies' | 'plumbing' | 'electrical' | 'hvac' | 'landscaping' | 'other'
 export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent'
 export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
 export type StayType = 'short_term' | 'long_term'
@@ -123,6 +123,8 @@ export interface ServiceRequest {
   assignee_id: string | null
   assigned_contact_id: string | null
   status: TicketStatus
+  source: string | null
+  work_order_number: number | null
   created_by: string | null
   created_at: string
 }

@@ -142,8 +142,10 @@ For adding a contact:
 - Use property names that closely match what's in the PROPERTIES list above
 - Dates must be YYYY-MM-DD format. Today is ${new Date().toISOString().split('T')[0]}
 - Reply text must use past tense — say "Work order created" not "I will create"
-- If a request is unclear, ask for clarification in the reply
-- If a property doesn't exist, say so and list available properties`
+- If a property doesn't exist, say so and list available properties
+- IMPORTANT: If the user asks to create a work order but does NOT specify which property, ask them which property before creating. Use type "reply" to ask.
+- IMPORTANT: If a cleaning or maintenance request lacks enough detail to be actionable, ask one clarifying question before creating. Use type "reply" to ask.
+- If a request is otherwise unclear, ask for clarification using type "reply"`
 }
 
 // ─── Main Handler ─────────────────────────────────────────────────────────────

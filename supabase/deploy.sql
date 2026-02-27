@@ -766,6 +766,20 @@ ALTER TABLE properties ADD COLUMN IF NOT EXISTS house_rules     TEXT;
 ALTER TABLE stays ADD COLUMN IF NOT EXISTS stay_type TEXT NOT NULL DEFAULT 'short_term'
   CHECK (stay_type IN ('short_term', 'long_term'));
 
+-- ========================
+-- 013: Outbound messaging + consent tracking
+-- ========================
+
+-- Outbound message sent to contact when a work order is created by AI
+ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS outbound_message   TEXT;
+ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS outbound_sent_to   TEXT;
+ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS outbound_method    TEXT;
+ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS outbound_sent_at   TIMESTAMPTZ;
+
+-- ToS / SMS consent tracking on user profiles
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS tos_agreed_at  TIMESTAMPTZ;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS sms_consent    BOOLEAN NOT NULL DEFAULT false;
+
 -- Done!
 SELECT 'Schema deployed successfully' AS result;
 

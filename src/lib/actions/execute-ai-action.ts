@@ -6,7 +6,7 @@
 
 import { createServiceClient } from '@/lib/supabase/server'
 import { AiSmsAction } from '@/lib/sms/ai-handler'
-import { sendNewTicketEmail } from '@/lib/email/resend'
+import { sendNewTicketEmail, sendContactTicketEmail } from '@/lib/email/resend'
 
 // Map AI categories to valid DB ticket_category enum values
 const CATEGORY_MAP: Record<string, string> = {
@@ -29,6 +29,103 @@ function formatTimestamp(d = new Date()): string {
     month: 'short', day: 'numeric', year: 'numeric',
     hour: 'numeric', minute: '2-digit', hour12: true,
   })
+}
+
+/**
+ * Build a category-specific external-facing message to send to the assigned contact.
+ * This message is sent on behalf of the property owner and includes specifics per category.
+ */
+function buildOutboundMessage(params: {
+  category: string
+  title: string
+  priority: string
+  propertyName: string
+  ownerName: string
+  ownerEmail: string | null
+  ownerPhone: string | null
+  source: 'web' | 'sms'
+}): string {
+  const { category, title, priority, propertyName, ownerName, ownerEmail, ownerPhone } = params
+
+  const replyLine = ownerEmail
+    ? `Please reply to this email with confirmation, updates, and payment info.`
+    : ownerPhone
+    ? `Please reply to ${ownerPhone} with confirmation, updates, and payment info.`
+    : `Please reply to confirm receipt and provide updates.`
+
+  const intro = `Hi,\n\nI'm reaching out on behalf of ${ownerName} regarding the following service request at ${propertyName}:\n\n`
+  const details = `Work Order: ${title}\nPriority: ${priority.toUpperCase()}\nProperty: ${propertyName}\n\n`
+
+  let specifics = ''
+
+  const cat = category.toLowerCase()
+
+  if (cat === 'cleaning') {
+    specifics = `Cleaning Checklist:\n` +
+      `□ Vacuum/sweep all floors\n` +
+      `□ Mop hard surface floors\n` +
+      `□ Clean and sanitize all bathrooms\n` +
+      `□ Clean kitchen (counters, appliances, sink)\n` +
+      `□ Change all bed linens and towels\n` +
+      `□ Empty trash in all rooms\n` +
+      `□ Dust surfaces and ceiling fans\n` +
+      `□ Wipe down windows and mirrors\n` +
+      `□ Restock any supplies (soap, toilet paper, etc.)\n` +
+      `□ Lock up securely when finished\n\n`
+  } else if (cat === 'plumbing') {
+    specifics = `Issue Details:\n` +
+      `${title}\n\n` +
+      `Please assess the situation and provide:\n` +
+      `• Description of the problem and root cause\n` +
+      `• Parts needed (if any) and estimated cost\n` +
+      `• Estimated time to complete\n` +
+      `• Your earliest available appointment\n\n`
+  } else if (cat === 'electrical') {
+    specifics = `Issue Details:\n` +
+      `${title}\n\n` +
+      `Please assess and provide:\n` +
+      `• Safety assessment of the issue\n` +
+      `• Required parts and estimated cost\n` +
+      `• Estimated time to complete\n` +
+      `• Your earliest available appointment\n\n` +
+      `Note: Ensure all work meets local electrical code requirements.\n\n`
+  } else if (cat === 'hvac') {
+    specifics = `Issue Details:\n` +
+      `${title}\n\n` +
+      `Please assess and provide:\n` +
+      `• Diagnosis of the HVAC issue\n` +
+      `• Required parts/refrigerant (if applicable) and cost\n` +
+      `• Estimated repair time\n` +
+      `• Your earliest available appointment\n\n`
+  } else if (cat === 'landscaping') {
+    specifics = `Landscaping Request:\n` +
+      `${title}\n\n` +
+      `Please include in your response:\n` +
+      `• Scope of work and estimated time\n` +
+      `• Any equipment or materials needed\n` +
+      `• Your available dates\n` +
+      `• Cost estimate\n\n`
+  } else if (cat === 'maintenance') {
+    specifics = `Maintenance Details:\n` +
+      `${title}\n\n` +
+      `Please provide:\n` +
+      `• Your assessment and recommended fix\n` +
+      `• Materials/parts needed and cost estimate\n` +
+      `• Estimated time to complete\n` +
+      `• Your earliest availability\n\n`
+  } else if (cat === 'supplies') {
+    specifics = `Supplies Needed:\n` +
+      `${title}\n\n` +
+      `Please confirm:\n` +
+      `• Availability of requested items\n` +
+      `• Total cost and delivery timeline\n\n`
+  } else {
+    specifics = `Details:\n${title}\n\n`
+  }
+
+  const closing = `${replyLine}\n\nThank you,\n${ownerName}\n(via Smart Sumai AI Property Manager)`
+
+  return intro + details + specifics + closing
 }
 
 export async function executeAiAction(
@@ -54,6 +151,47 @@ export async function executeAiAction(
     const property = properties[0]
     const category = mapCategory(action.category)
 
+    // Get owner profile for outbound message attribution
+    const { data: ownerProfile } = await svc
+      .from('profiles')
+      .select('full_name, email, phone_number')
+      .eq('id', ownerId)
+      .single()
+
+    const ownerName = ownerProfile?.full_name ?? 'Property Owner'
+    const ownerEmail = ownerProfile?.email ?? null
+    const ownerPhone = ownerProfile?.phone_number ?? null
+
+    // Find primary contact for this property and category
+    const { data: contacts } = await svc
+      .from('property_contacts')
+      .select('id, name, email, phone, role')
+      .eq('property_id', property.id)
+      .or(`role.eq.${category},role.eq.maintenance,role.eq.primary`)
+      .order('is_primary', { ascending: false })
+      .limit(5)
+
+    type ContactRow = { id: string; name: string; email: string | null; phone: string | null; role: string }
+    // Pick the best matching contact: category-specific > primary
+    const assignedContact: ContactRow | null = (contacts as ContactRow[] | null)?.find((c: ContactRow) => c.role === category)
+      ?? (contacts as ContactRow[] | null)?.find((c: ContactRow) => c.role === 'primary')
+      ?? (contacts as ContactRow[] | null)?.[0]
+      ?? null
+
+    // Build outbound message
+    const outboundMessage = buildOutboundMessage({
+      category,
+      title: action.title,
+      priority: action.priority,
+      propertyName: property.name,
+      ownerName,
+      ownerEmail,
+      ownerPhone,
+      source,
+    })
+
+    const outboundSentAt = new Date()
+
     const { data: ticket, error } = await svc
       .from('service_requests')
       .insert({
@@ -64,7 +202,14 @@ export async function executeAiAction(
         status: 'open',
         source,
         created_by: ownerId,
-        description: `Created by Smart Sumai AI via ${source === 'sms' ? 'SMS' : 'web chat'}.\n\nOriginal request: "${originalMessage}"`,
+        assigned_contact_id: assignedContact?.id ?? null,
+        description: `Created by Smart Sumai AI via ${source === 'sms' ? 'SMS' : 'web chat'}.\\n\\nOriginal request: "${originalMessage}"`,
+        outbound_message: outboundMessage,
+        outbound_sent_to: assignedContact
+          ? `${assignedContact.name}${assignedContact.email ? ` <${assignedContact.email}>` : ''}${assignedContact.phone ? ` / ${assignedContact.phone}` : ''}`
+          : null,
+        outbound_method: assignedContact?.email ? 'email' : assignedContact?.phone ? 'sms' : 'none',
+        outbound_sent_at: outboundSentAt.toISOString(),
       })
       .select('id, work_order_number')
       .single()
@@ -73,7 +218,7 @@ export async function executeAiAction(
       return { success: false, detail: error?.message ?? 'Insert failed' }
     }
 
-    // Save AI conversation as a comment on the work order
+    // Save AI conversation as an internal comment on the work order
     const conversationNote =
       `[Smart Sumai AI • ${formatTimestamp()} • ${source === 'sms' ? 'SMS' : 'Web Chat'}]\n` +
       `── User ─────────────────────────\n${originalMessage}\n` +
@@ -83,7 +228,7 @@ export async function executeAiAction(
       request_id: ticket.id,
       author_id: ownerId,
       content: conversationNote,
-    })
+    }).then(undefined, () => {})
 
     await svc.from('audit_log').insert({
       entity_type: 'service_request',
@@ -91,8 +236,9 @@ export async function executeAiAction(
       action: 'created',
       changed_by: ownerId,
       after_data: { title: action.title, property_id: property.id, source: `${source}_ai` },
-    })
+    }).then(undefined, () => {})
 
+    // Send internal notification email
     await sendNewTicketEmail({
       ticketId: ticket.id,
       title: action.title,
@@ -100,6 +246,20 @@ export async function executeAiAction(
       category,
       priority: action.priority,
     }).catch(() => {})
+
+    // Send external email to assigned contact if they have an email
+    if (assignedContact?.email) {
+      await sendContactTicketEmail({
+        to: assignedContact.email,
+        contactName: assignedContact.name,
+        ticketId: ticket.id,
+        title: action.title,
+        propertyName: property.name,
+        category,
+        priority: action.priority,
+        description: outboundMessage,
+      }).catch(() => {})
+    }
 
     const woNum = ticket.work_order_number ? `WO-${String(ticket.work_order_number).padStart(4, '0')}` : ''
     return {

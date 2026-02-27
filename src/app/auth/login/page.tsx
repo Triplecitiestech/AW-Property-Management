@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { lookupUsernameEmail } from '@/lib/actions/auth'
 
@@ -12,6 +13,8 @@ export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
+  const [tosAgreed, setTosAgreed] = useState(false)
+  const [smsConsent, setSmsConsent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -37,11 +40,20 @@ export default function LoginPage() {
         if (error) throw error
         window.location.href = '/welcome'
       } else {
+        if (!tosAgreed) throw new Error('You must accept the Terms of Use to create an account.')
         const email = emailOrUsername.trim()
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: fullName, role: 'owner', phone_number: phone.trim() || null } },
+          options: {
+            data: {
+              full_name: fullName,
+              role: 'owner',
+              phone_number: phone.trim() || null,
+              tos_agreed_at: new Date().toISOString(),
+              sms_consent: smsConsent,
+            },
+          },
         })
         if (error) throw error
         setMessage('Check your email to confirm your account, then log in.')
@@ -103,18 +115,49 @@ export default function LoginPage() {
                   />
                 </div>
                 <div>
-                  <label className="form-label">Phone Number</label>
+                  <label className="form-label">Phone Number <span className="text-[#6480a0] font-normal">(optional)</span></label>
                   <p className="text-[11px] text-[#60608a] mb-1.5">
-                    Used for your AI Property Manager — text this number to manage your properties.
+                    E.164 format — used for SMS AI. e.g. <span className="font-mono">+16075550100</span>
                   </p>
                   <input
                     type="tel"
                     className="form-input"
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
-                    placeholder="+1 555-000-0000"
+                    placeholder="+16075550100"
                   />
                 </div>
+                {/* SMS Consent — only shown when phone number is provided */}
+                {phone.trim() && (
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={smsConsent}
+                      onChange={e => setSmsConsent(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-[#2a3d58] bg-[#0f1829] text-violet-500 focus:ring-violet-500 flex-shrink-0"
+                    />
+                    <span className="text-[11px] text-[#60608a] leading-relaxed">
+                      I consent to receive automated SMS messages from Smart Sumai at this number for property
+                      management purposes. Message &amp; data rates may apply. Text STOP to opt out.{' '}
+                      <Link href="/sms-policy" target="_blank" className="text-violet-400 hover:text-violet-300 underline">SMS Policy</Link>
+                    </span>
+                  </label>
+                )}
+                {/* Terms of Use */}
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={tosAgreed}
+                    onChange={e => setTosAgreed(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-[#2a3d58] bg-[#0f1829] text-violet-500 focus:ring-violet-500 flex-shrink-0"
+                    required
+                  />
+                  <span className="text-[11px] text-[#60608a] leading-relaxed">
+                    I have read and agree to the{' '}
+                    <Link href="/terms" target="_blank" className="text-violet-400 hover:text-violet-300 underline">Terms of Use</Link>
+                    . I am at least 18 years old.
+                  </span>
+                </label>
               </>
             )}
             <div>

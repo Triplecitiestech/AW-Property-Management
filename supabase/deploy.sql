@@ -970,3 +970,24 @@ ALTER TABLE stays
 ALTER TABLE property_checklists
   ADD COLUMN IF NOT EXISTS unit_id UUID REFERENCES property_units(id) ON DELETE CASCADE;
 
+-- ========================
+-- RPC: list_public_tables
+-- ========================
+-- Returns the names of all tables in the public schema.
+-- Used by post-deploy verification (scripts/post-deploy-verify.mjs) to confirm
+-- that all required tables were created by this migration.
+-- SECURITY DEFINER so it works with anon/service_role without granting
+-- direct access to information_schema.
+CREATE OR REPLACE FUNCTION list_public_tables()
+RETURNS TABLE(table_name TEXT)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT t.table_name::TEXT
+  FROM information_schema.tables t
+  WHERE t.table_schema = 'public'
+    AND t.table_type = 'BASE TABLE'
+  ORDER BY t.table_name;
+$$;
+

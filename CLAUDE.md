@@ -490,3 +490,27 @@ supabase/
 - Git proxy restricts pushes to `claude/` branches — **never try to push to main directly**
 - `deploy.yml` also runs `supabase/deploy.sql` — schema is always in sync on deploy
 - Production URL: `https://aw-property-management.vercel.app`
+
+### Post-Deploy Verification Gate
+
+After every successful deploy, `scripts/post-deploy-verify.mjs` runs as the final step in `deploy.yml`. It performs four checks:
+
+| Check | What it verifies | How it works |
+|-------|-----------------|--------------|
+| **A. Supabase schema** | All 17 required tables exist | Calls `list_public_tables()` RPC (defined in `deploy.sql`) via PostgREST |
+| **B. Twilio webhook** | SMS webhook URL matches `EXPECTED_TWILIO_WEBHOOK_URL` | Reads phone number config from Twilio REST API |
+| **C. App health** | `/api/health` returns `200 { ok: true }` | Fetches production health endpoint (retries 3x with 10s delay) |
+| **D. Env vars** | All required env vars are set in CI | Checks presence before running any network calls |
+
+**If any check fails, the entire deploy workflow is red.**
+
+**Troubleshooting failures:**
+- **Check A fails (missing tables)**: `deploy.sql` migration likely errored — check the "Run Supabase schema migration" step output
+- **Check B fails (webhook mismatch)**: Twilio credentials may have rotated — verify `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` in workflow env
+- **Check C fails (health endpoint)**: App didn't deploy or Supabase is unreachable from app — check Vercel deploy logs and Supabase dashboard status
+- **Check D fails (missing env vars)**: A required variable was removed from the workflow `env:` block — add it back
+
+**Key files:**
+- `scripts/post-deploy-verify.mjs` — the verification script
+- `src/app/api/health/route.ts` — the health endpoint
+- `supabase/deploy.sql` — contains `list_public_tables()` RPC function

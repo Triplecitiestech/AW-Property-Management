@@ -30,6 +30,7 @@ env:
   RESEND_FROM_EMAIL: "onboarding@resend.dev"
   NOTIFY_EMAIL: "info@triplecitiestech.com"
   TWILIO_PHONE_NUMBER: "+18886219169"
+  EXPECTED_TWILIO_WEBHOOK_URL: "https://smartsumai.com/api/webhooks/sms"
   # Anthropic key fragment (prefix assembled in "Assemble credentials" step)
   _AK: "wUcSMPn9awDJVth1fw-NFCLCUCG16uE2Bzyq8RBD42-P8RR5l4Us9ozgihgrApy44-oI51tPUv8ysOV23ww6Qg-AxEaBgAA"
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
@@ -383,3 +384,13 @@ jobs:
         run: |
           APP_URL="https://smartsumai.com" \
           node scripts/smoke-test.mjs
+
+      - name: Post-deploy verification gate
+        # Comprehensive verification: Supabase schema via RPC, Twilio webhook
+        # URL match, /api/health endpoint, and env var presence.
+        # Fails the entire workflow if any check fails.
+        run: |
+          APP_URL="https://smartsumai.com" \
+          TWILIO_ACCOUNT_SID="AC${_TS}" \
+          TWILIO_AUTH_TOKEN="${_TA}" \
+          node scripts/post-deploy-verify.mjs

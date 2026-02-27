@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 
+// VERCEL_URL is set automatically by Vercel during every build to the deployment's
+// own hostname (e.g. "aw-property-management-abc123-triplecitiestech.vercel.app").
+// Adding it here lets server actions work on preview deployments without wildcards.
+const vercelUrl = process.env.VERCEL_URL ?? ""
+
 const securityHeaders = [
   // Prevent clickjacking — critical for PCI SAQ A (protects billing/checkout page)
   { key: "X-Frame-Options", value: "DENY" },
@@ -52,6 +57,10 @@ const nextConfig: NextConfig = {
         "localhost:3000",
         "property-manager-alpha-ecru.vercel.app",
         "aw-property-management.vercel.app",
+        "smartsumai.com",
+        "www.smartsumai.com",
+        // Preview deployments: baked in at build time via VERCEL_URL
+        ...(vercelUrl ? [vercelUrl] : []),
       ],
     },
   },

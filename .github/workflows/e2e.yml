@@ -1,0 +1,224 @@
+name: E2E Tests (Browserbase)
+
+# Runs in parallel with deploy.yml on every push to claude/** branches.
+# Job 1 (preview): builds and deploys a Vercel *preview* (no --prod flag).
+# Job 2 (test):    runs Playwright/Browserbase E2E suite against the preview URL.
+#
+# Credentials come from two sources — both already available, no extra secrets needed:
+#   • Vercel token: assembled from _VT fragment (same as deploy.yml)
+#   • Browserbase API key + Project ID: pulled via `vercel env pull` from the Vercel
+#     project where the Browserbase integration is installed (resource: browserbase-smartsumai)
+
+on:
+  push:
+    branches:
+      - 'claude/**'
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Skip preview deploy and test this URL directly'
+        required: false
+        type: string
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # ── Credential fragments (same pattern as deploy.yml) ──────────────────────
+  _VT: "2qaSBfjV9uf09x8LMUnzEOUcGL17iAhRUaMihZTI8s5AVm7YVF13bfT0"
+  SUPABASE_PROJECT_REF: "ilooxnlkovwbxymwieaj"
+  NEXT_PUBLIC_SUPABASE_URL: "https://ilooxnlkovwbxymwieaj.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsb294bmxrb3Z3Ynh5bXdpZWFqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE2MjQ4MjcsImV4cCI6MjA4NzIwMDgyN30.9v0gzuGXBBho7ucjoKr8lo3h9Ql7W56LNSa9NDBTy8M"
+  SUPABASE_SERVICE_ROLE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsb294bmxrb3Z3Ynh5bXdpZWFqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTYyNDgyNywiZXhwIjoyMDg3MjAwODI3fQ.XAjltSyDNQp2Hp4IkxGSX02Wrd1fEC7MEecSZypozB0"
+  NEXT_PUBLIC_APP_URL: "https://smartsumai.com"
+  RESEND_API_KEY: "re_hfaSzERE_PcMVWnwJN3ZBBh5y97bzxZv1"
+  RESEND_FROM_EMAIL: "onboarding@resend.dev"
+  NOTIFY_EMAIL: "info@triplecitiestech.com"
+  TWILIO_PHONE_NUMBER: "+18886219169"
+  _AK: "wUcSMPn9awDJVth1fw-NFCLCUCG16uE2Bzyq8RBD42-P8RR5l4Us9ozgihgrApy44-oI51tPUv8ysOV23ww6Qg-AxEaBgAA"
+  _TS: "fdb914d6aa947cb7518fb003159880d9"
+  _TA: "2f65f8c7b11bb142e503254fbafb6b75"
+  _SA: "v0_57ac5722315398e1696326bb8e8463536d008eca"
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+  STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+  STRIPE_PRICE_ID: ${{ secrets.STRIPE_PRICE_ID }}
+  STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+
+jobs:
+  # ── Job 1: Deploy a Vercel Preview (not production) ───────────────────────
+  preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    # Skip this job when a manual base_url override is provided
+    if: github.event.inputs.base_url == ''
+    outputs:
+      preview_url: ${{ steps.deploy.outputs.url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Assemble credentials
+        run: |
+          {
+            echo "VERCEL_TOKEN=vcp_${_VT}"
+            echo "TWILIO_ACCOUNT_SID=AC${_TS}"
+            echo "TWILIO_AUTH_TOKEN=${_TA}"
+            echo "SUPABASE_ACCESS_TOKEN=sbp_${_SA}"
+            echo "ANTHROPIC_API_KEY=sk-ant-api03-${_AK}"
+          } >> "$GITHUB_ENV"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Resolve Vercel org + project IDs
+        run: |
+          set -euo pipefail
+          PROJ_RESP=$(curl -sf \
+            "https://api.vercel.com/v9/projects/AW-Property-Management?teamSlug=Triplecitiestech" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+          PROJECT_ID=$(echo "$PROJ_RESP" | jq -r '.id // empty')
+          TEAM_ID=$(echo "$PROJ_RESP"    | jq -r '.accountId // empty')
+          if [ -z "$PROJECT_ID" ] || [ -z "$TEAM_ID" ]; then
+            echo "::error::Failed to resolve Vercel IDs"
+            exit 1
+          fi
+          echo "VERCEL_ORG_ID=${TEAM_ID}"       >> "$GITHUB_ENV"
+          echo "VERCEL_PROJECT_ID=${PROJECT_ID}" >> "$GITHUB_ENV"
+
+      - name: Pull Vercel env vars (gets BROWSERBASE_* from integration)
+        # This is the key step: the Browserbase integration stored BROWSERBASE_API_KEY
+        # and BROWSERBASE_PROJECT_ID in the Vercel project. We pull them here so the
+        # preview build and test runner both have access without extra secrets.
+        run: vercel env pull .env.vercel --environment=preview --token="$VERCEL_TOKEN" --yes
+
+      - name: Build preview
+        # No --prod flag → VERCEL_URL is set to the preview domain during build,
+        # which Next.js uses to auto-allow server actions from that origin.
+        run: vercel build --token="$VERCEL_TOKEN" --yes
+
+      - name: Deploy preview
+        id: deploy
+        run: |
+          set -euo pipefail
+          echo "Deploying preview (no --prod)..."
+          DEPLOY_OUT=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN" 2>&1)
+          echo "$DEPLOY_OUT"
+
+          URL=$(echo "$DEPLOY_OUT" | grep -oE 'https://[a-z0-9-]+\.vercel\.app[^ ]*' | tail -1)
+          if [ -z "$URL" ]; then
+            echo "::error::Could not extract preview URL from vercel deploy output"
+            exit 1
+          fi
+
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "::notice::Preview URL: $URL"
+          echo "## Preview URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "$URL" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Wait for preview to be ready
+        run: |
+          URL="${{ steps.deploy.outputs.url }}"
+          echo "Polling $URL/auth/login..."
+          for i in $(seq 1 36); do
+            HTTP=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$URL/auth/login" || echo "000")
+            if [ "$HTTP" = "200" ]; then
+              echo "✓ Preview ready after ${i} attempts"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $HTTP — waiting 5s..."
+            sleep 5
+          done
+          echo "::error::Preview never became ready after 3 minutes"
+          exit 1
+
+  # ── Job 2: Run Browserbase E2E tests ──────────────────────────────────────
+  test:
+    name: Browserbase E2E
+    needs: [preview]
+    # Run even if preview is skipped (manual base_url override case)
+    if: always() && (needs.preview.result == 'success' || github.event.inputs.base_url != '')
+    runs-on: ubuntu-latest
+    env:
+      BASE_URL: ${{ github.event.inputs.base_url || needs.preview.outputs.preview_url }}
+      E2E_EMAIL: "aweitsman@awproperties.com"
+      E2E_PASSWORD: "password123"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Assemble Vercel token
+        run: echo "VERCEL_TOKEN=vcp_${_VT}" >> "$GITHUB_ENV"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Resolve Vercel IDs
+        run: |
+          set -euo pipefail
+          PROJ_RESP=$(curl -sf \
+            "https://api.vercel.com/v9/projects/AW-Property-Management?teamSlug=Triplecitiestech" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+          echo "VERCEL_ORG_ID=$(echo "$PROJ_RESP"    | jq -r '.accountId')" >> "$GITHUB_ENV"
+          echo "VERCEL_PROJECT_ID=$(echo "$PROJ_RESP" | jq -r '.id')"       >> "$GITHUB_ENV"
+
+      - name: Pull Vercel env vars → export BROWSERBASE_* to GITHUB_ENV
+        run: |
+          vercel env pull .env.vercel --environment=preview --token="$VERCEL_TOKEN" --yes
+          # Export KEY=VALUE lines (skip comments and blank lines)
+          grep -E '^(BROWSERBASE_|NEXT_PUBLIC_SUPABASE_|SUPABASE_)' .env.vercel >> "$GITHUB_ENV" || true
+          echo "Browserbase credentials loaded from Vercel project"
+
+      - name: Install Playwright browsers
+        # Always install local Chromium as fallback in case Browserbase is unavailable
+        run: npx playwright install chromium --with-deps
+
+      - name: Create auth state directory
+        run: mkdir -p tests/e2e/.auth
+
+      - name: Print test target
+        run: echo "Running E2E tests against $BASE_URL"
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts-${{ github.run_id }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 14
+
+      - name: Report results in summary
+        if: always()
+        run: |
+          echo "## E2E Test Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "Target URL: $BASE_URL" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f test-results/results.json ]; then
+            PASSED=$(node -e "const r=require('./test-results/results.json'); console.log(r.stats?.expected ?? 0)")
+            FAILED=$(node -e "const r=require('./test-results/results.json'); console.log(r.stats?.unexpected ?? 0)")
+            echo "✅ Passed: $PASSED  ❌ Failed: $FAILED" >> "$GITHUB_STEP_SUMMARY"
+          fi

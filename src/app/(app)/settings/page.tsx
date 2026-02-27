@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getOrCreateUserOrg } from '@/lib/actions/organizations'
 import OrgSettings from '@/components/settings/OrgSettings'
+import MfaSection from '@/components/settings/MfaSection'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -46,6 +47,7 @@ export default async function SettingsPage() {
         currentUserId={user.id}
         currentRole={currentRole}
       />
+      <MfaSection />
     </div>
   )
 }

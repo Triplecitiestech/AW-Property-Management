@@ -122,7 +122,8 @@ export async function POST(req: NextRequest) {
 
   // Execute the action
   try {
-    if (action.type === 'create_work_order' || action.type === 'create_stay' || action.type === 'update_status' || action.type === 'create_contact') {
+    const executableTypes = ['create_work_order', 'create_stay', 'update_status', 'create_contact', 'close_work_order', 'update_work_order', 'repair_work_order']
+    if (executableTypes.includes(action.type)) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
       const result = await executeAiAction(action, profile.id, 'sms', body, appUrl)
 
@@ -130,7 +131,7 @@ export async function POST(req: NextRequest) {
         return twiml(`${action.reply}\n\n⚠ ${result.detail}`)
       }
 
-      if (action.type === 'create_work_order' && result.workOrderId) {
+      if (result.workOrderId) {
         const appUrl2 = process.env.NEXT_PUBLIC_APP_URL ?? ''
         return twiml(`${action.reply}\n${result.detail ?? ''}\n${appUrl2}/work-orders/${result.workOrderId}`)
       }

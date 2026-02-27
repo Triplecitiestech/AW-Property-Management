@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { updateProfile } from '@/lib/actions/profile'
+import DeleteAccountButton from '@/components/profile/DeleteAccountButton'
 
 export default async function ProfilePage({
   searchParams,
@@ -92,6 +93,15 @@ export default async function ProfilePage({
             <Link href="/settings" className="btn-secondary">Cancel</Link>
           </div>
         </form>
+      </div>
+
+      {/* Danger Zone — GDPR right to erasure */}
+      <div className="card p-6 border border-red-900/40">
+        <h2 className="text-base font-semibold text-red-400 mb-1">Danger Zone</h2>
+        <p className="text-sm text-[#6480a0] mb-4">
+          Permanently delete your account and all associated data. This cannot be undone.
+        </p>
+        <DeleteAccountButton />
       </div>
     </div>
   )

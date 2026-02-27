@@ -261,7 +261,18 @@ export async function executeAiAction(
   }
 
   if (action.type === 'close_work_order') {
-    const { data: tickets } = await svc
+    let closePropertyId: string | null = null
+    if (action.property_name) {
+      const { data: closeProps } = await svc
+        .from('properties')
+        .select('id')
+        .eq('owner_id', ownerId)
+        .ilike('name', `%${action.property_name}%`)
+        .limit(1)
+      closePropertyId = closeProps?.[0]?.id ?? null
+    }
+
+    let closeQuery = svc
       .from('service_requests')
       .select('id, title, status')
       .eq('created_by', ownerId)
@@ -269,7 +280,9 @@ export async function executeAiAction(
       .ilike('title', `%${action.work_order_title}%`)
       .order('created_at', { ascending: false })
       .limit(1)
+    if (closePropertyId) closeQuery = closeQuery.eq('property_id', closePropertyId)
 
+    const { data: tickets } = await closeQuery
     if (!tickets?.length) return { success: false, detail: `No open work order found matching: "${action.work_order_title}"` }
     const ticket = tickets[0]
 
@@ -288,20 +301,35 @@ export async function executeAiAction(
   }
 
   if (action.type === 'update_work_order') {
-    const { data: tickets } = await svc
+    // Build property filter if specified for disambiguation
+    let propertyId: string | null = null
+    if (action.property_name) {
+      const { data: props } = await svc
+        .from('properties')
+        .select('id')
+        .eq('owner_id', ownerId)
+        .ilike('name', `%${action.property_name}%`)
+        .limit(1)
+      propertyId = props?.[0]?.id ?? null
+    }
+
+    let ticketQuery = svc
       .from('service_requests')
-      .select('id, title, status, priority')
+      .select('id, title, status, priority, due_date')
       .eq('created_by', ownerId)
       .ilike('title', `%${action.work_order_title}%`)
       .order('created_at', { ascending: false })
       .limit(1)
+    if (propertyId) ticketQuery = ticketQuery.eq('property_id', propertyId)
 
+    const { data: tickets } = await ticketQuery
     if (!tickets?.length) return { success: false, detail: `No work order found matching: "${action.work_order_title}"` }
     const ticket = tickets[0]
 
     const updates: Record<string, string> = {}
     if (action.new_status) updates.status = action.new_status
     if (action.new_priority) updates.priority = action.new_priority
+    if (action.due_date) updates.due_date = action.due_date
     if (!Object.keys(updates).length) return { success: false, detail: 'No changes specified.' }
 
     await svc.from('service_requests').update(updates).eq('id', ticket.id)
@@ -310,13 +338,83 @@ export async function executeAiAction(
       entity_id: ticket.id,
       action: 'updated',
       changed_by: ownerId,
-      before_data: { status: ticket.status, priority: ticket.priority },
+      before_data: { status: ticket.status, priority: ticket.priority, due_date: ticket.due_date },
       after_data: { ...updates, source: `${source}_ai`, ai_action: 'update_work_order' },
       is_ai_action: true,
     }).then(undefined, () => {})
 
-    const changes = [action.new_status && `status → ${action.new_status}`, action.new_priority && `priority → ${action.new_priority}`].filter(Boolean).join(', ')
+    const changes = [
+      action.new_status && `status → ${action.new_status}`,
+      action.new_priority && `priority → ${action.new_priority}`,
+      action.due_date && `due → ${action.due_date}`,
+    ].filter(Boolean).join(', ')
     return { success: true, detail: `${ticket.title}: ${changes}` }
+  }
+
+  if (action.type === 'repair_work_order') {
+    // Step 1: Find and close the incorrect work order
+    let wrongPropertyId: string | null = null
+    if (action.wrong_property_name) {
+      const { data: wrongProps } = await svc
+        .from('properties')
+        .select('id')
+        .eq('owner_id', ownerId)
+        .ilike('name', `%${action.wrong_property_name}%`)
+        .limit(1)
+      wrongPropertyId = wrongProps?.[0]?.id ?? null
+    }
+
+    let wrongQuery = svc
+      .from('service_requests')
+      .select('id, title, status')
+      .eq('created_by', ownerId)
+      .neq('status', 'closed')
+      .ilike('title', `%${action.wrong_work_order_title}%`)
+      .order('created_at', { ascending: false })
+      .limit(3)
+    if (wrongPropertyId) wrongQuery = wrongQuery.eq('property_id', wrongPropertyId)
+
+    const { data: wrongWOs } = await wrongQuery
+    let removedTitle = ''
+    let removedCount = 0
+
+    for (const wo of wrongWOs ?? []) {
+      await svc.from('service_requests').update({ status: 'closed' }).eq('id', wo.id)
+      await svc.from('audit_log').insert({
+        entity_type: 'service_request',
+        entity_id: wo.id,
+        action: 'updated',
+        changed_by: ownerId,
+        before_data: { status: wo.status },
+        after_data: { status: 'closed', source: `${source}_ai`, ai_action: 'repair_work_order_remove' },
+        is_ai_action: true,
+      }).then(undefined, () => {})
+      removedTitle = wo.title
+      removedCount++
+    }
+
+    // Step 2: Create the correct work order on the correct property
+    const createAction: AiSmsAction = {
+      type: 'create_work_order',
+      reply: '',
+      property_name: action.correct_property_name,
+      title: action.correct_title,
+      priority: action.correct_priority,
+      category: action.correct_category,
+    }
+    const createResult = await executeAiAction(createAction, ownerId, source, originalMessage, appUrl)
+
+    if (!createResult.success) {
+      const removedMsg = removedCount > 0 ? `Removed "${removedTitle}". ` : ''
+      return { success: false, detail: `${removedMsg}But failed to create correct WO: ${createResult.detail}` }
+    }
+
+    const removedMsg = removedCount > 0 ? `Removed: "${removedTitle}" | ` : ''
+    return {
+      success: true,
+      workOrderId: createResult.workOrderId,
+      detail: `${removedMsg}Created: ${createResult.detail}`,
+    }
   }
 
   if (action.type === 'create_contact') {

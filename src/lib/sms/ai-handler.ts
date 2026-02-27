@@ -12,8 +12,9 @@ import { createServiceClient } from '@/lib/supabase/server'
 export type AiSmsAction =
   | { type: 'reply'; reply: string }
   | { type: 'create_work_order'; reply: string; property_name: string; title: string; priority: 'low' | 'medium' | 'high' | 'urgent'; category: string }
-  | { type: 'close_work_order'; reply: string; work_order_title: string }
-  | { type: 'update_work_order'; reply: string; work_order_title: string; new_status?: 'open' | 'in_progress' | 'resolved' | 'closed'; new_priority?: 'low' | 'medium' | 'high' | 'urgent' }
+  | { type: 'close_work_order'; reply: string; work_order_title: string; property_name?: string }
+  | { type: 'update_work_order'; reply: string; work_order_title: string; property_name?: string; new_status?: 'open' | 'in_progress' | 'resolved' | 'closed'; new_priority?: 'low' | 'medium' | 'high' | 'urgent'; due_date?: string }
+  | { type: 'repair_work_order'; reply: string; wrong_work_order_title: string; wrong_property_name?: string; correct_property_name: string; correct_title: string; correct_priority: 'low' | 'medium' | 'high' | 'urgent'; correct_category: string }
   | { type: 'create_stay'; reply: string; property_name: string; guest_name: string; start_date: string; end_date: string }
   | { type: 'update_status'; reply: string; property_name: string; status: 'clean' | 'needs_cleaning' | 'needs_maintenance' | 'needs_groceries' }
   | { type: 'create_contact'; reply: string; property_name: string; name: string; role: string; phone?: string; email?: string; notes?: string }
@@ -31,68 +32,86 @@ async function buildContext(userId: string) {
 
   const propertyIds: string[] = (properties ?? []).map((p: { id: string }) => p.id)
 
+  // Open + in-progress tickets for duplicate prevention
   const { data: tickets } = await svc
     .from('service_requests')
-    .select('id, title, priority, status, category, properties(name)')
-    .eq('status', 'open')
+    .select('id, title, priority, status, category, property_id, properties(name)')
+    .in('status', ['open', 'in_progress'])
     .in('property_id', propertyIds)
     .order('created_at', { ascending: false })
-    .limit(10)
+    .limit(15)
 
+  // All future stays sorted earliest-first for "next guest" queries
   const today = new Date().toISOString().split('T')[0]
   const { data: stays } = await svc
     .from('stays')
-    .select('id, guest_name, start_date, end_date, properties(name)')
+    .select('id, guest_name, start_date, end_date, property_id, properties(name)')
     .in('property_id', propertyIds)
     .gte('end_date', today)
-    .order('start_date')
-    .limit(10)
+    .order('start_date', { ascending: true })
+    .limit(15)
 
   const { data: contacts } = await svc
     .from('property_contacts')
-    .select('name, role, phone, email, properties(name)')
+    .select('name, role, phone, email, property_id, properties(name)')
     .in('property_id', propertyIds)
 
-  const { data: checklists } = await svc
-    .from('property_checklist_items')
-    .select('label, properties(name)')
-    .in('property_id', propertyIds)
+  // Last 5 AI actions for repair mode awareness
+  const { data: recentAiActions } = await svc
+    .from('audit_log')
+    .select('entity_id, action, after_data, changed_at')
+    .eq('changed_by', userId)
+    .eq('is_ai_action', true)
+    .order('changed_at', { ascending: false })
+    .limit(5)
 
-  return { properties: properties ?? [], tickets: tickets ?? [], stays: stays ?? [], contacts: contacts ?? [], checklists: checklists ?? [] }
+  return {
+    properties: properties ?? [],
+    tickets: tickets ?? [],
+    stays: stays ?? [],
+    contacts: contacts ?? [],
+    recentAiActions: recentAiActions ?? [],
+  }
 }
 
-function formatContext(ctx: Awaited<ReturnType<typeof buildContext>>): string {
+type BuildContextResult = Awaited<ReturnType<typeof buildContext>>
+
+function formatContext(ctx: BuildContextResult): string {
   const lines: string[] = []
 
+  // Properties with address for address-based matching
   lines.push('=== PROPERTIES ===')
   if (ctx.properties.length === 0) {
     lines.push('No properties yet.')
   } else {
     for (const p of ctx.properties) {
       const ps = Array.isArray(p.property_status) ? p.property_status[0] : p.property_status
-      const addressPart = p.address ? ` — ${p.address}` : ''
-      lines.push(`• "${p.name}"${addressPart} | status: ${ps?.status ?? 'unknown'} | occupancy: ${ps?.occupancy ?? 'unknown'}`)
+      const addressPart = p.address ? ` (address: ${p.address})` : ''
+      lines.push(`• "${p.name}"${addressPart} — status: ${ps?.status ?? 'unknown'}, occupancy: ${ps?.occupancy ?? 'unknown'}`)
     }
   }
 
-  lines.push('\n=== OPEN TICKETS ===')
+  // Open tickets — critical for duplicate prevention; AI must check this before creating
+  lines.push('\n=== OPEN / IN-PROGRESS WORK ORDERS ===')
   if (ctx.tickets.length === 0) {
-    lines.push('No open tickets.')
+    lines.push('None.')
   } else {
     for (const t of ctx.tickets) {
       const prop = (t.properties as { name: string } | null)?.name ?? 'unknown'
-      lines.push(`• [${t.priority.toUpperCase()}] ${t.title} — ${prop} (${t.category})`)
+      lines.push(`• [${t.priority.toUpperCase()}][${t.status}] "${t.title}" — ${prop} (${t.category})`)
     }
   }
 
-  lines.push('\n=== UPCOMING STAYS ===')
+  // Upcoming stays sorted earliest-first; first entry = next upcoming stay
+  lines.push('\n=== UPCOMING STAYS (earliest first) ===')
   if (ctx.stays.length === 0) {
     lines.push('No upcoming stays.')
   } else {
-    for (const s of ctx.stays) {
+    ctx.stays.forEach((s: { guest_name: string; start_date: string; end_date: string; properties: unknown }, idx: number) => {
       const prop = (s.properties as { name: string } | null)?.name ?? 'unknown'
-      lines.push(`• ${s.guest_name} at ${prop}: ${s.start_date} → ${s.end_date}`)
-    }
+      const label = idx === 0 ? ' ← NEXT UPCOMING' : ''
+      lines.push(`• ${s.guest_name} at ${prop}: ${s.start_date} → ${s.end_date}${label}`)
+    })
   }
 
   lines.push('\n=== CONTACTS ===')
@@ -101,102 +120,158 @@ function formatContext(ctx: Awaited<ReturnType<typeof buildContext>>): string {
   } else {
     for (const c of ctx.contacts) {
       const prop = (c.properties as { name: string } | null)?.name ?? 'unknown'
-      lines.push(`• ${c.name} (${c.role}) at ${prop}${c.phone ? ` — ${c.phone}` : ''}`)
+      lines.push(`• ${c.name} (${c.role}) at ${prop}${c.phone ? ` — ${c.phone}` : ''}${c.email ? ` / ${c.email}` : ''}`)
     }
   }
 
-  // Group checklist items by property
-  const checklistByProp: Record<string, string[]> = {}
-  for (const item of ctx.checklists) {
-    const prop = (item.properties as { name: string } | null)?.name ?? 'unknown'
-    if (!checklistByProp[prop]) checklistByProp[prop] = []
-    checklistByProp[prop].push(item.label)
-  }
-  if (Object.keys(checklistByProp).length > 0) {
-    lines.push('\n=== CLEANING CHECKLISTS ===')
-    for (const [prop, items] of Object.entries(checklistByProp)) {
-      lines.push(`• ${prop}: ${items.join(', ')}`)
+  // Recent AI actions for repair mode
+  if (ctx.recentAiActions.length > 0) {
+    lines.push('\n=== RECENT AI ACTIONS (newest first) ===')
+    for (const a of ctx.recentAiActions) {
+      const afterData = a.after_data as Record<string, unknown> | null
+      const aiAction = afterData?.ai_action ?? a.action
+      const title = afterData?.title ?? '(no title)'
+      const ts = new Date(a.changed_at as string).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+      lines.push(`• ${ts}: ${aiAction} — "${title}"`)
     }
   }
 
   return lines.join('\n')
 }
 
+// ─── Current property extraction from conversation history ───────────────────
+
+/**
+ * Scans recent conversation messages to find the most recently discussed
+ * property name. Used to inject "current session property context" into the prompt.
+ */
+function extractCurrentProperty(
+  history: Array<{ role: string; content: string }>,
+  properties: Array<{ name: string; address?: string | null }>
+): string | null {
+  if (!properties.length) return null
+  const recent = history.slice(-10).reverse()
+  for (const msg of recent) {
+    const lower = msg.content.toLowerCase()
+    for (const prop of properties) {
+      if (lower.includes(prop.name.toLowerCase())) return prop.name
+      if (prop.address) {
+        // Match significant address tokens (e.g. "165" or "lewis" from "165 Lewis Rd")
+        const tokens = prop.address.toLowerCase()
+          .split(/[\s,]+/)
+          .filter(t => t.length >= 3 && !/^(rd|st|ave|dr|ln|blvd|ct|pl|the|and)$/i.test(t))
+        if (tokens.some(token => lower.includes(token))) return prop.name
+      }
+    }
+  }
+  return null
+}
+
 // ─── System Prompt ────────────────────────────────────────────────────────────
 
-function buildSystemPrompt(userName: string, contextText: string): string {
-  return `You are the Smart Sumai AI Property Manager — an assistant helping ${userName} manage their short-term rental properties via SMS and web chat.
+function buildSystemPrompt(
+  userName: string,
+  contextText: string,
+  currentProperty: string | null
+): string {
+  const currentContextLine = currentProperty
+    ? `CURRENT SESSION PROPERTY: "${currentProperty}" — use this for any request that doesn't explicitly name a different property.`
+    : `CURRENT SESSION PROPERTY: None resolved yet. If a property-specific action is requested without naming one, ask which property and list options from PROPERTIES.`
 
-Keep replies concise (ideally under 320 characters for SMS). Be friendly, practical, and direct.
+  return `You are Smart Sumai, an operational property management AI for ${userName}.
+You act on behalf of the logged-in user — same permissions, same access.
+Keep replies concise (ideally under 320 characters for SMS). Be direct and confident.
+
+Do NOT tell users to type HELP. Never say "I had trouble understanding." Ask ONE specific question with options instead.
+Never fabricate guests, vendors, properties, dates, or records not shown in the data below.
 
 ${contextText}
 
+${currentContextLine}
+
 === YOUR CAPABILITIES ===
-- Answer questions about property status, work orders, stays, and contacts
-- Create work orders (maintenance, cleaning, plumbing, etc.) for properties
-- Close or delete work orders (marks them closed — always reversible)
-- Update work order status (open → in_progress → resolved → closed) or priority
-- Schedule guest stays at properties
-- Update property cleaning/maintenance status
-- Add new contacts (cleaners, plumbers, landscapers, etc.) to properties
+- Answer questions about properties, work orders, stays, contacts
+- Create, update, and close/cancel work orders
+- Schedule guest stays
+- Update property status (clean, needs_cleaning, needs_maintenance, needs_groceries)
+- Add service contacts to properties
 
 === RESPONSE FORMAT ===
 Always respond with valid JSON only (no markdown, no code blocks):
 
-For a simple reply or info query:
-{"type":"reply","reply":"Your message here"}
+Reply only (info, clarification, no action):
+{"type":"reply","reply":"Your message"}
 
-For creating a work order:
-{"type":"create_work_order","reply":"Work order created for [property]: [title]","property_name":"exact property name","title":"work order title","priority":"low|medium|high|urgent","category":"plumbing|electrical|hvac|cleaning|maintenance|landscaping|other"}
+Create a work order:
+{"type":"create_work_order","reply":"[summary]","property_name":"exact name from PROPERTIES","title":"title","priority":"low|medium|high|urgent","category":"plumbing|electrical|hvac|cleaning|maintenance|landscaping|supplies|other"}
 
-For closing/deleting a work order (soft close — reversible):
-{"type":"close_work_order","reply":"Work order closed: [title]","work_order_title":"title of the work order to close"}
+Close/cancel a work order:
+{"type":"close_work_order","reply":"Closed: [title]","work_order_title":"partial or full title","property_name":"optional — for disambiguation if multiple properties"}
 
-For updating a work order's status or priority:
-{"type":"update_work_order","reply":"Work order updated: [title]","work_order_title":"title of the work order","new_status":"open|in_progress|resolved|closed","new_priority":"low|medium|high|urgent"}
-(omit new_status or new_priority if not changing that field)
+Update a work order (include only fields that are changing):
+{"type":"update_work_order","reply":"Updated [title]","work_order_title":"partial or full title","property_name":"optional","new_status":"open|in_progress|resolved|closed","new_priority":"low|medium|high|urgent","due_date":"YYYY-MM-DD"}
 
-For scheduling a stay:
-{"type":"create_stay","reply":"Stay created for [guest] at [property]","property_name":"exact property name","guest_name":"Guest Full Name","start_date":"YYYY-MM-DD","end_date":"YYYY-MM-DD"}
+REPAIR MODE — fix wrong property or wrong item (triggered when user corrects a mistake):
+{"type":"repair_work_order","reply":"My mistake — [brief 1-sentence acknowledgment]. Removed [wrong] and created [correct].","wrong_work_order_title":"title of WO to remove","wrong_property_name":"optional — wrong property for disambiguation","correct_property_name":"exact correct property name from PROPERTIES","correct_title":"correct title","correct_priority":"low|medium|high|urgent","correct_category":"cleaning|maintenance|plumbing|electrical|hvac|landscaping|supplies|other"}
 
-For updating property status:
-{"type":"update_status","reply":"[property] status updated to [status]","property_name":"exact property name","status":"clean|needs_cleaning|needs_maintenance|needs_groceries"}
+Schedule a stay:
+{"type":"create_stay","reply":"Stay scheduled for [guest] at [property]","property_name":"exact name","guest_name":"Full Name","start_date":"YYYY-MM-DD","end_date":"YYYY-MM-DD"}
 
-For adding a contact:
-{"type":"create_contact","reply":"Added [name] as [role] for [property]","property_name":"exact property name","name":"Contact Name","role":"primary|cleaning|maintenance|plumbing|hvac|electrical|landscaping|groceries|other","phone":"optional","email":"optional","notes":"optional"}
+Update property status:
+{"type":"update_status","reply":"[property] → [status]","property_name":"exact name","status":"clean|needs_cleaning|needs_maintenance|needs_groceries"}
 
-=== RULES ===
-PROPERTY IDENTIFICATION:
-- Users often refer to properties informally — by partial name, street number, nickname, or address fragment. Use your best judgment to match to the right property.
-  Examples: "165 lewis" → the property at 165 Lewis Rd; "vestal" → Vestal Home; "my house" → the only property or most recently discussed one.
-- If you are confident (reasonable certainty), proceed with that property — do NOT ask for confirmation unless genuinely ambiguous.
-- If the user's description could match two or more properties, ask: "Did you mean [A] or [B]?"
-- The property_name field in action JSON must be the quoted name exactly as shown in PROPERTIES (e.g. "Home", "Vestal Home"). Never put an address in property_name.
+Add a contact:
+{"type":"create_contact","reply":"Added [name] as [role] at [property]","property_name":"exact name","name":"Full Name","role":"cleaning|maintenance|plumbing|hvac|electrical|landscaping|primary|other","phone":"optional","email":"optional","notes":"optional"}
 
-PROPERTY CONTINUITY:
-- Once a property is identified in the conversation, it stays active for all subsequent turns.
-- Only switch properties if the user explicitly names a different one.
-- NEVER silently switch to a different property between turns.
+=== OPERATING RULES ===
 
-CONVERSATION CONTEXT:
-- You have the full conversation history above. ALWAYS check prior messages before asking for information.
-- Never ask for something the user has already provided in this conversation.
+PROPERTY RESOLUTION — before every property-specific action:
+1. Normalize input: "165 lewis" → "165 Lewis Rd", "vestal" → "Vestal Home" (case-insensitive, ignore punctuation/abbreviations)
+2. One clear match → proceed immediately, do NOT ask for confirmation
+3. Multiple possible matches → ask: "Did you mean (1) [Property A] or (2) [Property B]?"
+4. No match → state what you searched and ask which property they mean
+5. "property_name" in JSON must be the EXACT name shown in PROPERTIES (copy verbatim — never use an address)
 
-CONTACT CHECK:
-- Before creating a work order that requires an external service provider (cleaning, maintenance, plumbing, electrical, hvac, landscaping), check CONTACTS for a matching contact at that property.
-- If NONE exists, do NOT create the work order yet. Reply: "No [category] contact on file for [property]. Provide their name and phone/email to add them, or reply 'skip' to create the work order without assigning a contact."
-- If the user replies "skip" or says to proceed without a contact, create the work order immediately.
+CURRENT PROPERTY CONTINUITY:
+- Once a property is identified in this conversation, it stays active for ALL subsequent turns
+- "my place", "home", "there", "it", "asap", "the property" → use CURRENT SESSION PROPERTY
+- Only switch if user explicitly names a different property
+- NEVER silently switch properties between turns
+
+DUPLICATE WORK ORDER PREVENTION:
+Before creating a work order, check OPEN / IN-PROGRESS WORK ORDERS:
+- Similar open WO for same property + category already exists → ask:
+  "I see an open [category] WO for [property]: '[title]'. Update that one or create a new one?"
+- User repeats same request (without explicitly saying "new") → prefer updating existing
+- User says "new" or explicitly asks for another → create it
+- User says "update" or "change" → use update_work_order
+
+REPAIR MODE — trigger when user corrects you ("wrong property", "we said X not Y", "why did you use", "fix that", "undo that", "that was for the wrong"):
+1. Acknowledge the mistake in ≤1 sentence
+2. Use type "repair_work_order" to atomically: (1) remove the wrong WO, (2) create the correct one on the right property
+3. Confirm both actions clearly in the "reply" field
+
+NEXT GUEST / NEXT STAY:
+"next guest", "who's next", "next stay", "next check-in", "upcoming guests":
+- Check UPCOMING STAYS — the entry marked ← NEXT UPCOMING is the answer
+- Reply: guest name, property, check-in date, check-out date
+- If no upcoming stays: "No upcoming stays scheduled."
+
+SERVICE WORK ORDERS — CONTACT CHECK:
+For categories: cleaning, maintenance, plumbing, electrical, hvac, landscaping:
+- Check CONTACTS for a matching role at that property
+- No contact found: "No [category] contact on file for [property]. Add one (name + phone/email), or say 'skip' to create without assigning a contact."
+- User says "skip" or "proceed" → create the work order immediately
 
 STAY CREATION:
-- You MUST have a guest name before creating a stay. If missing, ask: "What is the guest's name?" Once you have it, create the stay — do not ask for anything else.
+- Must have guest name first. If missing: "What is the guest's name?" Then create immediately — don't ask for anything else.
 
 ACTIONS:
-- Reply text must use past tense — "Work order closed" not "I will close".
-- NEVER announce a creation/change with type "reply". Only action types actually do things.
-- Dates must be YYYY-MM-DD format. Today is ${new Date().toISOString().split('T')[0]}.
-- If a request is unclear, ask for clarification using type "reply".
-- Closing a work order is always reversible — the owner can undo it from the activity log. No need to ask for confirmation.
-- Match work_order_title using the same fuzzy judgment as property matching — partial match is fine.`
+- Use past tense in reply: "Work order created", "Status updated", "Closed: [title]"
+- NEVER announce an action with type "reply" — only action types actually do things
+- Dates must be YYYY-MM-DD. Today is ${new Date().toISOString().split('T')[0]}
+- Closing a WO is reversible — no confirmation needed
+- Fuzzy title matching: partial match is fine for work_order_title`
 }
 
 // ─── Main Handler ─────────────────────────────────────────────────────────────
@@ -225,8 +300,13 @@ export async function handleAiSms(params: {
     const ctx = await buildContext(params.userId)
     step = 'formatContext'
     const contextText = formatContext(ctx)
+    step = 'extractCurrentProperty'
+    const currentProperty = extractCurrentProperty(
+      params.conversationHistory ?? [],
+      ctx.properties.map((p: { name: string; address?: string | null }) => ({ name: p.name, address: (p.address as string | null) ?? null }))
+    )
     step = 'buildSystemPrompt'
-    const systemPrompt = buildSystemPrompt(params.userName, contextText)
+    const systemPrompt = buildSystemPrompt(params.userName, contextText, currentProperty)
 
     step = 'anthropic.messages.create'
     const client = new Anthropic({ apiKey })
@@ -245,7 +325,7 @@ export async function handleAiSms(params: {
 
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 512,
+      max_tokens: 600,
       system: systemPrompt,
       messages: [
         ...priorMessages,

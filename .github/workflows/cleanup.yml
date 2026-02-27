@@ -1,0 +1,49 @@
+name: Data Retention Cleanup
+
+on:
+  schedule:
+    # Run daily at 03:00 UTC (SOC 2 — data minimization / retention enforcement)
+    - cron: '0 3 * * *'
+  workflow_dispatch: {}
+
+env:
+  APP_URL: "https://smartsumai.com"
+  _SA: "v0_57ac5722315398e1696326bb8e8463536d008eca"
+  SUPABASE_SERVICE_ROLE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlsb294bmxrb3Z3Ynh5bXdpZWFqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTYyNDgyNywiZXhwIjoyMDg3MjAwODI3fQ.XAjltSyDNQp2Hp4IkxGSX02Wrd1fEC7MEecSZypozB0"
+
+jobs:
+  cleanup:
+    name: Run Data Retention Cleanup
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger cleanup endpoint
+        run: |
+          echo "Running data retention cleanup at $(date -u)..."
+          RESP=$(curl -s -o /tmp/cleanup_resp.json -w "%{http_code}" -X POST \
+            "${APP_URL}/api/cleanup" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Content-Type: application/json")
+          echo "HTTP status: $RESP"
+          echo "Response: $(cat /tmp/cleanup_resp.json)"
+
+          if [ "$RESP" = "200" ]; then
+            OK=$(cat /tmp/cleanup_resp.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('ok','?'))" 2>/dev/null || echo "?")
+            if [ "$OK" = "True" ] || [ "$OK" = "true" ]; then
+              echo "✓ Cleanup succeeded"
+              cat /tmp/cleanup_resp.json | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print('Deleted records:')
+for k, v in d.get('deleted', {}).items():
+    print(f'  {k}: {v}')
+" 2>/dev/null || true
+            else
+              echo "::warning::Cleanup returned ok=false"
+              cat /tmp/cleanup_resp.json
+            fi
+          else
+            echo "::error::Cleanup endpoint returned HTTP $RESP"
+            cat /tmp/cleanup_resp.json
+            exit 1
+          fi

@@ -15,6 +15,21 @@ export async function POST(req: NextRequest) {
 
     const svc = createServiceClient()
 
+    // Rate limit: max 20 user messages per minute (SOC 2 — abuse prevention)
+    const oneMinuteAgo = new Date(Date.now() - 60_000).toISOString()
+    const { count: recentCount } = await svc
+      .from('conversations')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .eq('role', 'user')
+      .gte('created_at', oneMinuteAgo)
+    if ((recentCount ?? 0) >= 20) {
+      return NextResponse.json(
+        { reply: 'Too many messages. Please wait a moment before sending more.', action: 'error' },
+        { status: 429 }
+      )
+    }
+
     // Get user profile
     const { data: profile } = await svc.from('profiles').select('id, full_name').eq('id', user.id).single()
     const userName = profile?.full_name || user.email || 'User'

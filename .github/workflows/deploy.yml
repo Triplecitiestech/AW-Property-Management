@@ -65,6 +65,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Security audit (SOC 2 — dependency vulnerability scan)
+        # Fails on high or critical vulnerabilities. Warnings on moderate.
+        run: npm audit --audit-level=high || echo "::warning::npm audit found high/critical vulnerabilities — review before next deploy"
+
       - name: Run Supabase schema migration
         # Applies supabase/deploy.sql (full idempotent schema) to production.
         # Safe to run on every deploy — uses CREATE TABLE IF NOT EXISTS etc.

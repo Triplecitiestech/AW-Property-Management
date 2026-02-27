@@ -1,5 +1,6 @@
 import Sidebar from '@/components/nav/Sidebar'
 import AiChatBubble from '@/components/chat/AiChatBubble'
+import InactivityTimer from '@/components/auth/InactivityTimer'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
@@ -48,6 +49,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </main>
       <AiChatBubble />
+      <InactivityTimer />
     </div>
   )
 }

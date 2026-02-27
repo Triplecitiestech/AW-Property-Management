@@ -57,7 +57,7 @@ export default function AddWorkOrderCommentForm({ requestId }: { requestId: stri
         </label>
       </div>
       {!isInternal && (
-        <p className="text-xs text-amber-400/80 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+        <p className="text-xs text-sky-400/80 bg-sky-500/10 border border-sky-500/20 rounded-lg px-3 py-2">
           This message will be emailed to the assigned contact on this work order.
         </p>
       )}

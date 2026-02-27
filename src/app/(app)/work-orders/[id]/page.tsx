@@ -211,11 +211,11 @@ export default async function WorkOrderDetailPage({ params, searchParams }: { pa
                   const isAi = !!(entry as Record<string,unknown>).is_ai_action
                   const alreadyReverted = !!(entry as Record<string,unknown>).reverted_at
                   return (
-                    <div key={entry.id} className={`text-sm rounded-lg px-3 py-2 ${isAi ? 'bg-amber-950/20 border border-amber-500/20' : 'bg-[#0f1829]'}`}>
+                    <div key={entry.id} className={`text-sm rounded-lg px-3 py-2 ${isAi ? 'bg-violet-950/20 border border-violet-500/20' : 'bg-[#0f1829]'}`}>
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            {isAi && <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">AI</span>}
+                            {isAi && <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-400 bg-violet-500/10 px-1.5 py-0.5 rounded">AI</span>}
                             <span className="font-medium text-[#e2e8f0]">{actor}</span>
                             {statusChange ? (
                               <span className="text-[#6480a0]">changed status: <span className="text-[#94a3b8]">{String(beforeData.status)}</span> → <span className="text-[#94a3b8]">{String(afterData.status)}</span></span>
@@ -302,7 +302,7 @@ export default async function WorkOrderDetailPage({ params, searchParams }: { pa
                   <p className="text-xs text-red-400 mb-2">{notify_error}</p>
                 )}
                 {!assignedContact.email && (
-                  <p className="text-xs text-amber-400 mb-2">No email on file — add an email to enable notifications.</p>
+                  <p className="text-xs text-sky-400 mb-2">No email on file — add an email to enable notifications.</p>
                 )}
                 <form action={async () => {
                   'use server'

@@ -16,10 +16,10 @@ type Contact = {
 
 const ROLE_STYLES: Record<string, string> = {
   primary:     'bg-violet-950  text-violet-300  ring-1 ring-violet-700/50',
-  maintenance: 'bg-orange-950  text-orange-300  ring-1 ring-orange-700/50',
+  maintenance: 'bg-rose-950    text-rose-300    ring-1 ring-rose-700/50',
   plumbing:    'bg-blue-950    text-blue-300    ring-1 ring-blue-700/50',
   hvac:        'bg-cyan-950    text-cyan-300    ring-1 ring-cyan-700/50',
-  electrical:  'bg-amber-950   text-amber-300   ring-1 ring-amber-700/50',
+  electrical:  'bg-sky-950     text-sky-300     ring-1 ring-sky-700/50',
   cleaning:    'bg-emerald-950 text-emerald-300 ring-1 ring-emerald-700/50',
   landscaping: 'bg-lime-950    text-lime-300    ring-1 ring-lime-700/50',
   groceries:   'bg-green-950   text-green-300   ring-1 ring-green-700/50',

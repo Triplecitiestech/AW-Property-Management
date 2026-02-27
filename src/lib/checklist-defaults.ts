@@ -51,7 +51,7 @@ export const DEFAULT_CATEGORY_CHECKLISTS: DefaultCategoryChecklist[] = [
 
 export const CATEGORY_COLORS: Record<string, { border: string; text: string; bg: string; badge: string }> = {
   cleaning: { border: 'border-teal-500/30', text: 'text-teal-400', bg: 'bg-teal-500/10', badge: 'bg-teal-500/20 text-teal-300' },
-  maintenance: { border: 'border-amber-500/30', text: 'text-amber-400', bg: 'bg-amber-500/10', badge: 'bg-amber-500/20 text-amber-300' },
+  maintenance: { border: 'border-sky-500/30', text: 'text-sky-400', bg: 'bg-sky-500/10', badge: 'bg-sky-500/20 text-sky-300' },
   landscaping: { border: 'border-emerald-500/30', text: 'text-emerald-400', bg: 'bg-emerald-500/10', badge: 'bg-emerald-500/20 text-emerald-300' },
   general: { border: 'border-violet-500/30', text: 'text-violet-400', bg: 'bg-violet-500/10', badge: 'bg-violet-500/20 text-violet-300' },
   other: { border: 'border-[#2a3d58]', text: 'text-[#8aa0be]', bg: 'bg-[#1a2436]', badge: 'bg-[#2a3d58] text-[#94a3b8]' },

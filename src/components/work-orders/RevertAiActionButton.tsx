@@ -24,7 +24,7 @@ export default function RevertAiActionButton({ auditId, alreadyReverted }: { aud
             else setDone(true)
           })
         }}
-        className="text-xs text-amber-400 hover:text-amber-300 border border-amber-500/30 hover:border-amber-400/50
+        className="text-xs text-sky-400 hover:text-sky-300 border border-sky-500/30 hover:border-sky-400/50
                    px-2 py-0.5 rounded transition-all disabled:opacity-50"
       >
         {isPending ? 'Undoing…' : 'Undo'}

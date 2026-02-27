@@ -100,7 +100,7 @@ export default async function StayDetailPage({ params }: { params: Promise<{ id:
                   return (
                     <div key={i} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-1.5">
-                        {isAi && <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">AI</span>}
+                        {isAi && <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-400 bg-violet-500/10 px-1.5 py-0.5 rounded">AI</span>}
                         <span className="font-medium text-[#e2e8f0]">{actor}</span>
                         <span className="text-[#6480a0]">{entry.action} this stay</span>
                       </div>

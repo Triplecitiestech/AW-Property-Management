@@ -439,8 +439,8 @@ export default async function Home({
                       d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                   </svg>
                 ),
-                color: 'from-amber-600 to-amber-400',
-                glow: 'group-hover:shadow-amber-900/40',
+                color: 'from-sky-600 to-sky-400',
+                glow: 'group-hover:shadow-sky-900/40',
                 title: 'Work Orders',
                 desc: 'Create, assign, and track maintenance, cleaning, plumbing, HVAC, electrical, landscaping, and supply requests. AI auto-routes to the right contact with full audit history.',
               },

@@ -120,7 +120,7 @@ export default async function GuestStayPage({ params }: { params: Promise<{ toke
         {property?.quick_notes && !stay.wifi_name && !stay.door_code && !stay.host_instructions && (
           <div className="bg-[#1a2436] border border-[#2a3d58] rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3">
-              <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <h2 className="font-semibold text-white text-sm">Property Info</h2>

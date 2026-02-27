@@ -63,8 +63,8 @@
 
   /* Priority */
   .badge-urgent { @apply bg-red-950   text-red-300     ring-1 ring-red-700/50; }
-  .badge-high   { @apply bg-orange-950 text-orange-300  ring-1 ring-orange-700/50; }
-  .badge-medium { @apply bg-amber-950  text-amber-300   ring-1 ring-amber-700/50; }
+  .badge-high   { @apply bg-rose-950   text-rose-300    ring-1 ring-rose-700/50; }
+  .badge-medium { @apply bg-sky-950    text-sky-300     ring-1 ring-sky-700/50; }
   .badge-low    { @apply bg-emerald-950 text-emerald-300 ring-1 ring-emerald-700/50; }
 
   /* Ticket status */
@@ -75,9 +75,9 @@
 
   /* Property status */
   .badge-clean             { @apply bg-emerald-950 text-emerald-300 ring-1 ring-emerald-700/50; }
-  .badge-needs_cleaning    { @apply bg-amber-950   text-amber-300   ring-1 ring-amber-700/50; }
+  .badge-needs_cleaning    { @apply bg-sky-950     text-sky-300     ring-1 ring-sky-700/50; }
   .badge-needs_maintenance { @apply bg-red-950     text-red-300     ring-1 ring-red-700/50; }
-  .badge-needs_groceries   { @apply bg-orange-950  text-orange-300  ring-1 ring-orange-700/50; }
+  .badge-needs_groceries   { @apply bg-rose-950    text-rose-300    ring-1 ring-rose-700/50; }
   .badge-occupied          { @apply bg-cyan-950    text-cyan-300    ring-1 ring-cyan-700/50; }
   .badge-unoccupied        { @apply bg-[#162030]  text-[#4a6080]   ring-1 ring-[#2a3d58]; }
 }
@@ -106,11 +106,11 @@
 
 /* Status accent colors */
 .text-red-600    { color: #f87171 !important; }
-.text-orange-600 { color: #fb923c !important; }
+.text-orange-600 { color: #fb7185 !important; }
 .text-green-600  { color: #34d399 !important; }
 .bg-red-50       { background-color: #2d0a0a !important; }
 .bg-green-50     { background-color: #0a2d1c !important; }
-.bg-orange-50    { background-color: #2d1500 !important; }
+.bg-orange-50    { background-color: #0f1a2d !important; }
 .border-red-200  { border-color: #4a1515 !important; }
 .border-green-200 { border-color: #104528 !important; }
 

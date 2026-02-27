@@ -13,7 +13,7 @@ type Request = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-amber-900/40 text-amber-400 border-amber-800/40',
+  pending: 'bg-sky-900/40 text-sky-400 border-sky-800/40',
   reviewing: 'bg-blue-900/40 text-blue-400 border-blue-800/40',
   planned: 'bg-violet-900/40 text-violet-400 border-violet-800/40',
   done: 'bg-emerald-900/40 text-emerald-400 border-emerald-800/40',

@@ -61,7 +61,7 @@ export default async function DashboardPage() {
         <StatCard label="Total Properties" value={properties?.length ?? 0} color="text-gray-900" />
         <StatCard label="Active Stays" value={activeStays?.length ?? 0} sub="checked in today" color="text-blue-600" />
         <StatCard label="Open Tickets" value={openTickets?.length ?? 0} sub={`${urgentTickets.length} high/urgent`} color={urgentTickets.length > 0 ? 'text-red-600' : 'text-gray-900'} />
-        <StatCard label="Need Attention" value={needsAttention.length} sub="properties with issues" color={needsAttention.length > 0 ? 'text-orange-600' : 'text-green-600'} />
+        <StatCard label="Need Attention" value={needsAttention.length} sub="properties with issues" color={needsAttention.length > 0 ? 'text-rose-400' : 'text-green-600'} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

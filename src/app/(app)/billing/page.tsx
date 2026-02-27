@@ -56,7 +56,7 @@ export default function BillingPage() {
       {message && (
         <div className={`p-4 rounded-xl text-sm border ${message.includes('activated') || message.includes('Thank')
           ? 'bg-emerald-950/60 border-emerald-800/50 text-emerald-300'
-          : 'bg-amber-950/60 border-amber-800/50 text-amber-300'}`}>
+          : 'bg-sky-950/60 border-sky-800/50 text-sky-300'}`}>
           {message}
         </div>
       )}

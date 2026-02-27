@@ -7,8 +7,8 @@ function woLabel(num: number | null) {
 
 const PRIORITY_STYLES: Record<string, string> = {
   urgent: 'bg-red-500/20 text-red-300 border border-red-500/30',
-  high:   'bg-orange-500/20 text-orange-300 border border-orange-500/30',
-  medium: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
+  high:   'bg-rose-500/20 text-rose-300 border border-rose-500/30',
+  medium: 'bg-sky-500/20 text-sky-300 border border-sky-500/30',
   low:    'bg-slate-500/20 text-slate-300 border border-slate-500/30',
 }
 

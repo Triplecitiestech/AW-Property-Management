@@ -106,19 +106,19 @@ export default function BulkUnitCreateModal({
 
               {/* Duplicates */}
               {duplicates.length > 0 && (
-                <div className="rounded-lg bg-amber-950/20 border border-amber-500/20 px-4 py-3">
-                  <p className="text-xs font-semibold text-amber-400 mb-2">
+                <div className="rounded-lg bg-sky-950/20 border border-sky-500/20 px-4 py-3">
+                  <p className="text-xs font-semibold text-sky-400 mb-2">
                     {duplicates.length} duplicate{duplicates.length !== 1 ? 's' : ''} will be skipped
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {duplicates.slice(0, 20).map(id => (
-                      <span key={id} className="text-[11px] px-1.5 py-0.5 rounded bg-amber-900/30
-                                                 border border-amber-700/30 text-amber-300 font-mono">
+                      <span key={id} className="text-[11px] px-1.5 py-0.5 rounded bg-sky-900/30
+                                                 border border-sky-700/30 text-sky-300 font-mono">
                         {id}
                       </span>
                     ))}
                     {duplicates.length > 20 && (
-                      <span className="text-[11px] text-amber-500">+{duplicates.length - 20} more</span>
+                      <span className="text-[11px] text-sky-500">+{duplicates.length - 20} more</span>
                     )}
                   </div>
                 </div>

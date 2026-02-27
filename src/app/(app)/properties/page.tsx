@@ -95,7 +95,7 @@ export default async function PropertiesPage({
               {/* Badges + arrow */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 {ticketCount > 0 && (
-                  <span className="text-xs font-medium text-orange-300 bg-orange-500/20 px-2 py-0.5 rounded-full border border-orange-500/30">
+                  <span className="text-xs font-medium text-rose-300 bg-rose-500/20 px-2 py-0.5 rounded-full border border-rose-500/30">
                     {ticketCount} open ticket{ticketCount !== 1 ? 's' : ''}
                   </span>
                 )}

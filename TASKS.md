@@ -1,89 +1,79 @@
 # TASKS.md — AW Property Management
+# Last updated: 2026-02-27
 
-Living task list. Updated by each agent as work progresses.
+Living task list. All v1 work is complete. This file tracks v2 features and ongoing improvements.
 
 Legend: ✅ Done | 🔄 In Progress | ⬜ Pending | ❌ Blocked
 
 ---
 
-## STEP 1: ARCHITECT
+## V1 — ALL COMPLETE ✅
 
-| # | Task | Owner | Status | Verification |
-|---|------|-------|--------|--------------|
-| A1 | Write SPEC.md with data model, roles, acceptance criteria | ARCHITECT | ✅ Done | Review SPEC.md |
-| A2 | Write TASKS.md | ARCHITECT | ✅ Done | Review TASKS.md |
-| A3 | Define data model (all tables, columns, enums) | ARCHITECT | ✅ Done | Embedded in SPEC.md |
+All original spec items (ARCHITECT, BACKEND, FRONTEND, INTEGRATIONS, QA/DEVOPS) are shipped and live at:
+`https://aw-property-management.vercel.app`
 
----
-
-## STEP 2: BACKEND
-
-| # | Task | Owner | Status | Verification |
-|---|------|-------|--------|--------------|
-| B1 | Next.js project bootstrap (package.json, tsconfig, tailwind, next.config) | BACKEND | ✅ Done | `npm install && npm run build` |
-| B2 | SQL migration 001: initial schema | BACKEND | ✅ Done | Apply in Supabase SQL editor; check tables exist |
-| B3 | SQL migration 002: RLS policies | BACKEND | ✅ Done | Test as owner/manager/anon in Supabase |
-| B4 | SQL migration 003: seed data | BACKEND | ✅ Done | Run seed; check rows in tables |
-| B5 | Supabase client helpers (server + browser) | BACKEND | ✅ Done | Import and use in pages without error |
-| B6 | TypeScript types generated from schema | BACKEND | ✅ Done | `database.types.ts` present and accurate |
-| B7 | Server actions: properties CRUD | BACKEND | ✅ Done | Create/update/delete a property |
-| B8 | Server actions: stays CRUD | BACKEND | ✅ Done | Create stay; check guest_link_token generated |
-| B9 | Server actions: service_requests CRUD + comments | BACKEND | ✅ Done | Create ticket, add comment |
-| B10 | Server actions: property_status upsert | BACKEND | ✅ Done | Update status, verify audit_log entry |
-| B11 | Server actions: guest report submit | BACKEND | ✅ Done | Submit via token, verify stored |
-| B12 | Audit log trigger / helper | BACKEND | ✅ Done | After any key action, row appears in audit_log |
+Multi-tenancy, SMS AI, work orders, contacts, stays, properties, billing, guest pages, onboarding,
+SOC 2 / PCI compliance items — all deployed as of 2026-02-27.
 
 ---
 
-## STEP 3: FRONTEND
+## V2 ROADMAP
 
-| # | Task | Owner | Status | Verification |
-|---|------|-------|--------|--------------|
-| F1 | Layout + nav (sidebar/topbar, auth-aware) | FRONTEND | ✅ Done | Navigate between pages; shows active route |
-| F2 | Auth pages: login + callback | FRONTEND | ✅ Done | Sign in redirects to /dashboard |
-| F3 | Dashboard page: stats cards + property table | FRONTEND | ✅ Done | Open /dashboard; see live stats |
-| F4 | Properties list page | FRONTEND | ✅ Done | See all properties with status badges |
-| F5 | Property detail + status update widget | FRONTEND | ✅ Done | Update status inline |
-| F6 | Stays list + create stay form | FRONTEND | ✅ Done | Create stay; guest link shown |
-| F7 | Tickets list + filters | FRONTEND | ✅ Done | Filter by property/status/priority |
-| F8 | Ticket detail + comments + status change | FRONTEND | ✅ Done | Add comment; change status; see audit trail |
-| F9 | Create ticket form | FRONTEND | ✅ Done | Fill form; ticket appears in list |
-| F10 | Guest report page `/guest/[token]` (public) | FRONTEND | ✅ Done | Visit link; submit checklist; see confirmation |
-| F11 | Responsive design (mobile-friendly) | FRONTEND | ✅ Done | Test at 375px; usable layout |
+### P1 — High Value / Next Up
 
----
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| V2-1 | **Photo uploads on work orders** | ⬜ Pending | Supabase Storage; attach from WO detail page |
+| V2-2 | **Photo uploads on guest reports** | ⬜ Pending | Guest submits photos at checkout; stored per stay |
+| V2-3 | **Recurring tasks** | ⬜ Pending | Scheduled WO auto-creation (weekly/monthly); cron via Vercel |
+| V2-4 | **Weekly email digest** | ⬜ Pending | Sunday AM summary: open tickets, upcoming stays, statuses |
+| V2-5 | **SMS delivery status tracking** | ⬜ Pending | Twilio status webhook → show delivered/failed on WO detail |
 
-## STEP 4: INTEGRATIONS
+### P2 — Growth Features
 
-| # | Task | Owner | Status | Verification |
-|---|------|-------|--------|--------------|
-| I1 | Resend client setup + email helper | INTEGRATIONS | ✅ Done | Send test email via Resend dashboard |
-| I2 | Email template: new ticket | INTEGRATIONS | ✅ Done | Create ticket → email received |
-| I3 | Email template: ticket status changed | INTEGRATIONS | ✅ Done | Change status → email received |
-| I4 | Email template: guest report submitted | INTEGRATIONS | ✅ Done | Submit guest report → email received |
-| I5 | Email: guest link delivery | INTEGRATIONS | ✅ Done | Create stay w/ email → guest receives link |
-| I6 | Telegram webhook endpoint | INTEGRATIONS | ✅ Done | POST to /api/webhooks/telegram; check logs |
-| I7 | Telegram command parser (status / ticket / stay) | INTEGRATIONS | ✅ Done | Send test message; record created in DB |
-| I8 | Telegram bot reply (success + error messages) | INTEGRATIONS | ✅ Done | Bot replies in chat |
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| V2-6 | **Airbnb / Vrbo calendar sync** | ⬜ Pending | iCal feed import → auto-create stays |
+| V2-7 | **QR codes per property** | ⬜ Pending | Printable QR → guest welcome page; use `qrcode` npm package |
+| V2-8 | **Property summary email to guests** | ⬜ Pending | Send guest welcome email with link + key info on stay creation |
+
+### P3 — Compliance & Security
+
+| # | Feature | Status | Notes |
+|---|---------|--------|-------|
+| V2-9 | **Password policy: 12-char minimum** | ⬜ Pending | Enforce at signup UI; PCI v4.0 requires 12+ for admin interfaces |
+| V2-10 | **Mandatory MFA for admin roles** | ⬜ Pending | SOC 2 Type II; Supabase supports TOTP — enforce for org owners |
 
 ---
 
-## STEP 5: QA / DEVOPS
+## Completed SOC 2 / Compliance Items
 
-| # | Task | Owner | Status | Verification |
-|---|------|-------|--------|--------------|
-| Q1 | .env.example with all required vars | QA/DEVOPS | ✅ Done | Review .env.example |
-| Q2 | docs/SUPABASE_SETUP.md | QA/DEVOPS | ✅ Done | Follow guide end-to-end |
-| Q3 | docs/EMAIL_SETUP_RESEND.md | QA/DEVOPS | ✅ Done | Follow guide; receive test email |
-| Q4 | docs/TELEGRAM_SETUP.md | QA/DEVOPS | ✅ Done | Follow guide; bot responds |
-| Q5 | docs/DEPLOY_VERCEL.md | QA/DEVOPS | ✅ Done | Follow guide; app live on Vercel |
-| Q6 | Smoke test script for key flows | QA/DEVOPS | ✅ Done | `npm run smoke` passes |
-| Q7 | README.md updated with quick-start | QA/DEVOPS | ✅ Done | README accurate and complete |
+| Item | Completed |
+|------|-----------|
+| Security headers (CSP, HSTS, X-Frame-Options, etc.) | 2026-02-27 |
+| Privacy Policy page at `/privacy` | 2026-02-27 |
+| Session timeout (Supabase token max 24h) | 2026-02-27 |
+| MFA UI exposed to users | 2026-02-27 |
+| Account deletion flow | 2026-02-27 |
+| Rate limiting on auth endpoints | 2026-02-27 |
+| Data retention cleanup (90d conversations, 30d error_logs) | 2026-02-27 |
+| `npm audit` in CI pipeline | 2026-02-27 |
 
 ---
 
-## Open Issues / Decisions
+## Open Bugs / Issues
 
-- Guest photos: deferred to v2 (use Supabase Storage)
-- Multi-tenancy: deferred to v2 (current: single-team per deployment)
-- Manager property scoping: current default is all-properties access; per-property scoping is v2
+_Add issues here as they are discovered. Remove when resolved._
+
+| # | Route | Issue | Priority |
+|---|-------|-------|----------|
+| — | — | No open bugs as of 2026-02-27 | — |
+
+---
+
+## Notes for Claude
+
+- When starting a new feature from V2 ROADMAP, move it to 🔄 In Progress and note the date
+- When complete, mark ✅ Done with the date
+- If a bug is found during session-start error log check, add it to Open Bugs before fixing
+- Always update this file when the v2 roadmap changes

@@ -56,7 +56,7 @@ export default async function WorkOrderDetailPage({ params, searchParams }: { pa
   const creator = workOrder.creator as {full_name:string}|null
   const assignedContact = workOrder.assigned_contact as {id:string; name:string; role:string; email:string|null; phone:string|null}|null
   const woNum = workOrder.work_order_number ? `WO-${String(workOrder.work_order_number).padStart(4, '0')}` : null
-  const isAiComment = (content: string) => content.startsWith('[Smart Sumai AI')
+  const isAiComment = (content: string) => content.startsWith('[Smart Sumi AI')
 
   // Outbound message metadata
   const outboundMessage = workOrder.outbound_message as string | null
@@ -124,7 +124,7 @@ export default async function WorkOrderDetailPage({ params, searchParams }: { pa
                       {aiComment ? (
                         <>
                           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-0.5">
-                            <span>🤖</span> Smart Sumai AI
+                            <span>🤖</span> Smart Sumi AI
                           </span>
                           <span className="text-xs text-[#4a6080]"><LocalDate iso={comment.created_at} showTime /></span>
                         </>

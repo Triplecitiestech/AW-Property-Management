@@ -1,5 +1,5 @@
 // ============================================================
-// Database Types — AW Property Management
+// Database Types — Smart Sumi
 // Manually maintained; regenerate with: supabase gen types typescript
 // ============================================================
 

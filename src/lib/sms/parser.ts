@@ -106,7 +106,7 @@ export function parseCommand(text: string): ParsedCommand {
 
 export function helpMessage(): string {
   return [
-    'AW Property Management — SMS Commands',
+    'Smart Sumi — SMS Commands',
     '',
     'Update property status:',
     '  status: Lake Cabin | needs cleaning',

@@ -3,18 +3,18 @@ import MarketingNav from '@/components/marketing/MarketingNav'
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Smart Sumai — AI Property Manager for Short-Term Rentals',
-  description: 'Smart Sumai is your AI property manager. Text it to create work orders, schedule cleanings, track guests, and manage your team — all from any phone. $50/month includes 3 properties.',
+  title: 'Smart Sumi — AI Property Manager for Short-Term Rentals',
+  description: 'Smart Sumi is your AI property manager. Text it to create work orders, schedule cleanings, track guests, and manage your team — all from any phone. $50/month includes 3 properties.',
   openGraph: {
-    title: 'Smart Sumai — AI Property Manager for Short-Term Rentals',
+    title: 'Smart Sumi — AI Property Manager for Short-Term Rentals',
     description: 'Text in plain English to create work orders, schedule stays, manage contacts, and check property status. Your AI handles the details so you can focus on what matters.',
-    url: 'https://aw-property-management.vercel.app',
-    siteName: 'Smart Sumai',
+    url: 'https://smartsumai.com',
+    siteName: 'Smart Sumi',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Smart Sumai — AI Property Manager',
+    title: 'Smart Sumi — AI Property Manager',
     description: 'Your AI property manager. Text it to manage your properties from anywhere. $50/month includes 3 properties.',
   },
   robots: {
@@ -61,7 +61,7 @@ export default async function Home({
             <br />You just own them.
           </h1>
           <p className="text-xl text-[#8aa0be] max-w-2xl mx-auto mb-4 leading-relaxed">
-            Smart Sumai is an AI property manager you text like a person. It creates work orders,
+            Smart Sumi is an AI property manager you text like a person. It creates work orders,
             schedules cleanings, contacts your vendors, tracks stays, and updates property
             status — automatically, from any phone.
           </p>
@@ -180,7 +180,7 @@ export default async function Home({
                   </svg>
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-semibold text-white">Smart Sumai AI</p>
+                  <p className="text-sm font-semibold text-white">Smart Sumi AI</p>
                   <p className="text-xs text-teal-400">● Online — SMS &amp; Web Chat</p>
                 </div>
               </div>
@@ -209,14 +209,14 @@ export default async function Home({
         </div>
       </section>
 
-      {/* ── WHAT IS SMART SUMAI ──────────────────────────────────────── */}
+      {/* ── WHAT IS SMART SUMI ───────────────────────────────────────── */}
       <section className="py-20 border-t border-white/5 bg-gradient-to-b from-violet-950/10 to-transparent">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-5">
             One platform. Every part of property management.
           </h2>
           <p className="text-[#8aa0be] text-lg max-w-3xl mx-auto mb-12 leading-relaxed">
-            Smart Sumai is a complete property management system with an AI at the center.
+            Smart Sumi is a complete property management system with an AI at the center.
             Add your properties, your team, and your service vendors — then let the AI handle
             day-to-day operations while you keep full visibility from the dashboard.
           </p>
@@ -647,7 +647,7 @@ export default async function Home({
                   <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <span className="font-bold text-white">Smart <span className="text-teal-400">Sumai</span></span>
+              <span className="font-bold text-white">Smart <span className="text-teal-400">Sumi</span></span>
             </div>
             <div className="flex items-center gap-6 text-sm text-[#4a6080]">
               <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
@@ -658,7 +658,7 @@ export default async function Home({
               <Link href="/auth/login?mode=signup" className="hover:text-white transition-colors">Sign Up</Link>
             </div>
             <p className="text-sm text-[#4a6080]">
-              © {new Date().getFullYear()} Smart Sumai. All rights reserved.
+              © {new Date().getFullYear()} Smart Sumi. All rights reserved.
             </p>
           </div>
         </div>

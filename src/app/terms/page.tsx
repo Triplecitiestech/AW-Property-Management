@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-export const metadata = { title: 'Terms of Use — Smart Sumai' }
+export const metadata = { title: 'Terms of Use — Smart Sumi' }
 
 export default function TermsPage() {
   const updated = 'February 27, 2026'
@@ -13,7 +13,7 @@ export default function TermsPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Smart Sumai
+            Back to Smart Sumi
           </Link>
           <h1 className="text-3xl font-bold text-white mb-2">Terms of Use</h1>
           <p className="text-[#6480a0] text-sm">Last updated: {updated}</p>
@@ -23,7 +23,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-3">1. Acceptance of Terms</h2>
             <p>
-              By accessing or using Smart Sumai (&ldquo;the Service&rdquo;), you agree to be bound by these Terms of Use.
+              By accessing or using Smart Sumi (&ldquo;the Service&rdquo;), you agree to be bound by these Terms of Use.
               If you do not agree to all of these terms, do not use the Service. These terms apply to all users,
               including property owners, managers, and any other individuals who access the Service.
             </p>
@@ -32,7 +32,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-3">2. Description of Service</h2>
             <p>
-              Smart Sumai is an AI-powered property management platform that provides tools for managing residential
+              Smart Sumi is an AI-powered property management platform that provides tools for managing residential
               and commercial properties of any type, including work order tracking, guest and tenant scheduling, contact management, and AI-assisted
               communication via SMS and web chat. The Service is provided by Triplecitiestech LLC (&ldquo;Company,&rdquo;
               &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;).
@@ -65,7 +65,7 @@ export default function TermsPage() {
             <h2 className="text-lg font-semibold text-white mb-3">5. SMS Communications</h2>
             <p className="mb-2">
               By providing your phone number and opting in to SMS communications, you consent to receive
-              automated text messages from Smart Sumai related to your property management activities, including
+              automated text messages from Smart Sumi related to your property management activities, including
               work order updates, AI responses, and system notifications.
             </p>
             <p className="mb-2">
@@ -186,7 +186,7 @@ export default function TermsPage() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-[#2a3d58] text-center text-xs text-[#6480a0]">
-          <p>Smart Sumai · AI-Powered Property Management · Triplecitiestech LLC</p>
+          <p>Smart Sumi · AI-Powered Property Management · Triplecitiestech LLC</p>
           <p className="mt-1">
             <Link href="/sms-policy" className="text-violet-400 hover:text-violet-300">SMS Consent &amp; Privacy Policy</Link>
             {' '}·{' '}

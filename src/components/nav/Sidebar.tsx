@@ -110,7 +110,7 @@ export default function Sidebar({ isSuperAdmin = false }: { isSuperAdmin?: boole
             </svg>
           </div>
           <div>
-            <p className="font-bold text-white text-sm tracking-wide">Smart <span className="text-teal-400">Sumai</span></p>
+            <p className="font-bold text-white text-sm tracking-wide">Smart <span className="text-teal-400">Sumi</span></p>
             <p className="text-xs text-[#4a6080]">Property Management</p>
           </div>
         </Link>
@@ -208,7 +208,7 @@ export default function Sidebar({ isSuperAdmin = false }: { isSuperAdmin?: boole
                 d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
           </div>
-          <span className="font-bold text-white text-sm">Smart Sumai</span>
+          <span className="font-bold text-white text-sm">Smart Sumi</span>
         </div>
       </header>
 

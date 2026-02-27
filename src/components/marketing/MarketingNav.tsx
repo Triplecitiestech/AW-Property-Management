@@ -20,7 +20,7 @@ export default function MarketingNav() {
                 <path d="M12 7l1 2.5L15.5 10.5 13 11.5 12 14 11 11.5 8.5 10.5 11 9.5z" fill="white" opacity="0.9"/>
               </svg>
             </div>
-            <span className="font-bold text-white text-lg tracking-tight">Smart <span className="text-teal-400">Sumai</span></span>
+            <span className="font-bold text-white text-lg tracking-tight">Smart <span className="text-teal-400">Sumi</span></span>
           </Link>
 
           {/* Desktop nav */}

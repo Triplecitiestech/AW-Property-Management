@@ -83,7 +83,7 @@ export default function LoginPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold text-white group-hover:opacity-90 transition-opacity">Smart <span className="text-teal-400">Sumai</span></h1>
+            <h1 className="text-2xl font-bold text-white group-hover:opacity-90 transition-opacity">Smart <span className="text-teal-400">Sumi</span></h1>
           </a>
           <p className="text-[#60608a] mt-1 text-sm">AI-powered property management</p>
         </div>
@@ -142,7 +142,7 @@ export default function LoginPage() {
                       className="mt-0.5 h-4 w-4 rounded border-[#2a3d58] bg-[#0f1829] text-violet-500 focus:ring-violet-500 flex-shrink-0"
                     />
                     <span className="text-[11px] text-[#60608a] leading-relaxed">
-                      I consent to receive automated SMS messages from Smart Sumai at this number for property
+                      I consent to receive automated SMS messages from Smart Sumi at this number for property
                       management purposes. Message &amp; data rates may apply. Text STOP to opt out.{' '}
                       <Link href="/sms-policy" target="_blank" className="text-violet-400 hover:text-violet-300 underline">SMS Policy</Link>
                     </span>

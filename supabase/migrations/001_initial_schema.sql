@@ -1,6 +1,6 @@
 -- ============================================================
 -- Migration 001: Initial Schema
--- AW Property Management
+-- Smart Sumi
 -- ============================================================
 
 -- Enable UUID extension

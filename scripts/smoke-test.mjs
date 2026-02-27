@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Smoke Test Script — AW Property Management
+ * Smoke Test Script — Smart Sumi
  *
  * Tests key flows against a running local or deployed instance.
  * Requires: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, APP_URL environment variables
@@ -45,7 +45,7 @@ async function supabaseQuery(path, options = {}) {
 }
 
 async function run() {
-  console.log('\n🔍 AW Property Management — Smoke Tests\n')
+  console.log('\n🔍 Smart Sumi — Smoke Tests\n')
   console.log(`App URL: ${APP_URL}`)
   console.log(`Supabase: ${SUPABASE_URL}\n`)
 

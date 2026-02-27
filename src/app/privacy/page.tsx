@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Privacy Policy — Smart Sumai',
-  description: 'How Smart Sumai collects, uses, and protects your personal information.',
+  title: 'Privacy Policy — Smart Sumi',
+  description: 'How Smart Sumi collects, uses, and protects your personal information.',
 }
 
 export default function PrivacyPage() {
@@ -23,7 +23,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-3">1. Who We Are</h2>
             <p>
-              Smart Sumai (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) is an AI-powered property management
+              Smart Sumi (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) is an AI-powered property management
               platform operated by Triple Cities Tech. Our registered address and contact email:
               {' '}<a href="mailto:support@smartsumai.com" className="text-violet-400 hover:text-violet-300">support@smartsumai.com</a>.
             </p>
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-3">3. How We Use Your Information</h2>
             <ul className="list-disc pl-6 space-y-2">
-              <li>Provide, operate, and improve the Smart Sumai platform</li>
+              <li>Provide, operate, and improve the Smart Sumi platform</li>
               <li>Process AI requests via SMS and in-app chat (your messages are sent to Anthropic&rsquo;s Claude API)</li>
               <li>Send email notifications related to work orders, guest reports, and account activity</li>
               <li>Send SMS messages related to property management via Twilio (with your consent)</li>
@@ -141,7 +141,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-3">9. Children</h2>
             <p>
-              Smart Sumai is not intended for use by individuals under the age of 18. We do not knowingly
+              Smart Sumi is not intended for use by individuals under the age of 18. We do not knowingly
               collect personal data from children.
             </p>
           </section>
@@ -160,7 +160,7 @@ export default function PrivacyPage() {
               For privacy questions, data requests, or security concerns:
             </p>
             <div className="mt-3 p-4 rounded-xl border border-[#2a3d58] bg-[#0f1829]">
-              <p className="text-white font-medium">Smart Sumai / Triple Cities Tech</p>
+              <p className="text-white font-medium">Smart Sumi / Triple Cities Tech</p>
               <p>Email: <a href="mailto:support@smartsumai.com" className="text-violet-400 hover:text-violet-300">support@smartsumai.com</a></p>
             </div>
           </section>

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Smart Sumai — Property Management',
+  title: 'Smart Sumi — Property Management',
   description: 'AI-powered property management for any property type — rentals, estates, and more.',
 }
 

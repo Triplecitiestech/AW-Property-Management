@@ -1,5 +1,5 @@
 -- ============================================================
--- AW Property Management — Full Deploy Script
+-- Smart Sumi — Full Deploy Script
 -- Paste this entire file into:
 --   Supabase Dashboard → SQL Editor → New Query → Run
 -- ============================================================

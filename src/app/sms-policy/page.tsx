@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-export const metadata = { title: 'SMS Consent & Privacy Policy — Smart Sumai' }
+export const metadata = { title: 'SMS Consent & Privacy Policy — Smart Sumi' }
 
 export default function SmsPolicyPage() {
   const updated = 'February 27, 2026'
@@ -15,7 +15,7 @@ export default function SmsPolicyPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back to Smart Sumai
+            Back to Smart Sumi
           </Link>
           <h1 className="text-3xl font-bold text-white mb-2">SMS Consent &amp; Privacy Policy</h1>
           <p className="text-[#6480a0] text-sm">Last updated: {updated}</p>
@@ -25,7 +25,7 @@ export default function SmsPolicyPage() {
         <div className="mb-8 p-5 rounded-xl border border-violet-500/30 bg-violet-500/10">
           <h2 className="text-base font-semibold text-violet-300 mb-3">Summary — What You&apos;re Agreeing To</h2>
           <ul className="space-y-2 text-sm text-[#cbd5e1]">
-            <li className="flex gap-2"><span className="text-teal-400 flex-shrink-0">✓</span>You consent to receive automated text messages from Smart Sumai at the phone number you provide</li>
+            <li className="flex gap-2"><span className="text-teal-400 flex-shrink-0">✓</span>You consent to receive automated text messages from Smart Sumi at the phone number you provide</li>
             <li className="flex gap-2"><span className="text-teal-400 flex-shrink-0">✓</span>Messages relate to your property management activity (work orders, AI responses, updates)</li>
             <li className="flex gap-2"><span className="text-teal-400 flex-shrink-0">✓</span>Message and data rates may apply</li>
             <li className="flex gap-2"><span className="text-teal-400 flex-shrink-0">✓</span>You can opt out at any time by texting STOP</li>
@@ -38,7 +38,7 @@ export default function SmsPolicyPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-3">1. Who We Are</h2>
             <p>
-              Smart Sumai is an AI-powered property management platform operated by Triplecitiestech LLC.
+              Smart Sumi is an AI-powered property management platform operated by Triplecitiestech LLC.
               Our SMS service is powered by Twilio and allows users to interact with their AI property manager
               via text message. Our SMS number is <strong className="text-white">{twilioPhone}</strong>.
             </p>
@@ -50,12 +50,12 @@ export default function SmsPolicyPage() {
               We collect your mobile phone number when you:
             </p>
             <ul className="list-disc list-inside space-y-1 text-[#94a3b8] ml-2">
-              <li>Create an account on Smart Sumai and provide your phone number during sign-up</li>
+              <li>Create an account on Smart Sumi and provide your phone number during sign-up</li>
               <li>Add or update your phone number in your profile settings</li>
             </ul>
             <p className="mt-2">
               By providing your phone number and checking the consent box during sign-up (or saving your phone
-              number in your profile), you expressly consent to receive SMS messages from Smart Sumai.
+              number in your profile), you expressly consent to receive SMS messages from Smart Sumi.
             </p>
           </section>
 
@@ -76,7 +76,7 @@ export default function SmsPolicyPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-3">4. Message and Data Rates</h2>
             <p>
-              Standard message and data rates may apply from your mobile carrier. Smart Sumai does not charge
+              Standard message and data rates may apply from your mobile carrier. Smart Sumi does not charge
               separately for SMS messages, but your carrier&apos;s standard rates apply. Check with your carrier if
               you are unsure about your plan.
             </p>
@@ -169,7 +169,7 @@ export default function SmsPolicyPage() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-[#2a3d58] text-center text-xs text-[#6480a0]">
-          <p>Smart Sumai · AI-Powered Property Management · Triplecitiestech LLC</p>
+          <p>Smart Sumi · AI-Powered Property Management · Triplecitiestech LLC</p>
           <p className="mt-1">
             <Link href="/terms" className="text-violet-400 hover:text-violet-300">Terms of Use</Link>
             {' '}·{' '}

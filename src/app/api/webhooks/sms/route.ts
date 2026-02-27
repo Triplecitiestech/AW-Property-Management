@@ -3,6 +3,8 @@ import crypto from 'crypto'
 import { createServiceClient } from '@/lib/supabase/server'
 import { handleAiSms } from '@/lib/sms/ai-handler'
 import { executeAiAction } from '@/lib/actions/execute-ai-action'
+import { buildWorkOrderConfirmation, buildErrorMessage } from '@/lib/confirmation-builder'
+import { BRAND_AI_NAME } from '@/lib/branding'
 
 const AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN ?? ''
 
@@ -86,12 +88,12 @@ export async function POST(req: NextRequest) {
   // Quick HELP shortcut
   if (/^(help|\/help|\/start|hi|hello|hey)$/i.test(body)) {
     return twiml(
-      `Hi ${profile.full_name?.split(' ')[0] ?? 'there'}! I'm your Smart Sumai AI. I can:\n\n` +
-      `• Check property status\n` +
-      `• Create work orders\n` +
-      `• Schedule guest stays\n` +
-      `• Add contacts\n\n` +
-      `Just text me naturally! e.g. "Leaking faucet at Lake Cabin, urgent"`
+      `Hi ${profile.full_name?.split(' ')[0] ?? 'there'}! I'm your ${BRAND_AI_NAME}. I can:\n\n` +
+      `- Check property status\n` +
+      `- Create work orders\n` +
+      `- Schedule guest stays\n` +
+      `- Add contacts\n\n` +
+      `Just text me naturally. Example: "Leaking faucet at Lake Cabin, urgent"`
     )
   }
 
@@ -128,12 +130,19 @@ export async function POST(req: NextRequest) {
       const result = await executeAiAction(action, profile.id, 'sms', body, appUrl)
 
       if (!result.success) {
-        return twiml(`${action.reply}\n\n⚠ ${result.detail}`)
+        return twiml(buildErrorMessage(action.reply, result.detail ?? 'Unknown error'))
       }
 
       if (result.workOrderId) {
-        const appUrl2 = process.env.NEXT_PUBLIC_APP_URL ?? ''
-        return twiml(`${action.reply}\n${result.detail ?? ''}\n${appUrl2}/work-orders/${result.workOrderId}`)
+        const a = action as Record<string, unknown>
+        return twiml(buildWorkOrderConfirmation({
+          title: (a.title as string) ?? '',
+          propertyName: (a.property_name as string) ?? '',
+          category: (a.category as string) ?? 'other',
+          priority: (a.priority as string) ?? 'medium',
+          workOrderId: result.workOrderId,
+          detail: result.detail ?? undefined,
+        }))
       }
 
       if (result.detail) {

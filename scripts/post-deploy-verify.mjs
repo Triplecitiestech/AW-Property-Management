@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Post-Deploy Verification — AW Property Management
+ * Post-Deploy Verification — Smart Sumi
  *
  * Runs AFTER a Vercel deploy to verify the production environment is healthy.
  * Exits 0 only if ALL checks pass; otherwise prints a clear error and exits 1.

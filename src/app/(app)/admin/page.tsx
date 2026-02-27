@@ -183,7 +183,7 @@ export default async function AdminPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/workflow-diagram.svg"
-            alt="SmartSumai system workflow diagram"
+            alt="Smart Sumi system workflow diagram"
             className="w-full h-auto"
           />
         </div>

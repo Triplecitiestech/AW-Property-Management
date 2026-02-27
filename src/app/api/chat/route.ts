@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { handleAiSms } from '@/lib/sms/ai-handler'
 import { executeAiAction } from '@/lib/actions/execute-ai-action'
+import { buildWorkOrderConfirmation, buildErrorMessage } from '@/lib/confirmation-builder'
+import { BASE_URL } from '@/lib/branding'
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,13 +62,18 @@ export async function POST(req: NextRequest) {
     if (action.type !== 'reply' && action.type !== 'error') {
       const result = await executeAiAction(action, user.id, 'web', message, appUrl)
       if (!result.success) {
-        reply = `${action.reply}\n\n⚠ Could not complete: ${result.detail}`
+        reply = buildErrorMessage(action.reply, result.detail ?? 'Unknown error')
       } else if (result.workOrderId) {
         workOrderId = result.workOrderId
-        // Use actual DB property name in reply to avoid AI property-name confusion
-        reply = result.detail
-          ? `Work order created: ${result.detail}\n\n👉 ${appUrl}/work-orders/${workOrderId}`
-          : `${action.reply}\n\n👉 ${appUrl}/work-orders/${workOrderId}`
+        const a = action as Record<string, unknown>
+        reply = buildWorkOrderConfirmation({
+          title: (a.title as string) ?? '',
+          propertyName: (a.property_name as string) ?? '',
+          category: (a.category as string) ?? 'other',
+          priority: (a.priority as string) ?? 'medium',
+          workOrderId,
+          detail: result.detail ?? undefined,
+        })
       } else if (result.detail) {
         reply = result.detail
       }

@@ -101,11 +101,10 @@ This is **Anthropic's sandbox security system** — it is expected and normal. I
 Git push/pull routes through a local proxy at `127.0.0.1`. It restricts pushes to **only `claude/` prefixed branches**. Attempting to push to `main` directly will fail with 403. Always push to the feature branch.
 
 ### Supabase MCP
-- The Supabase MCP server (`mcp__supabase__*`) is listed in the Claude Code marketplace but is **NOT installed by default**.
-- The Vercel-Supabase integration (connecting Vercel deployments to Supabase) is **separate** — it does not install MCP tools.
+- The Supabase MCP server (`mcp__supabase__*`) is listed in the Claude Code marketplace but is **not active in this environment**.
+- **Claude connectors** (connected via claude.ai) are separate from Claude Code MCP tools — connecting Supabase as a Claude connector does NOT make `mcp__supabase__*` tools available here.
 - **Workaround (always works)**: use the Supabase REST API directly with `SUPABASE_SERVICE_ROLE_KEY` from `.env.local`. See session-start SQL above.
-- **To install MCP**: user must add Supabase MCP server in Claude Code settings with a personal access token from app.supabase.com → Settings → Access Tokens.
-- If `mcp__supabase__execute_sql` IS available, prefer it over REST for SQL queries.
+- If `mcp__supabase__execute_sql` IS available in a future session, prefer it over REST for SQL queries.
 
 ### Vercel MCP
 - If `mcp__vercel__*` tools are available, use them to deploy and set env vars.

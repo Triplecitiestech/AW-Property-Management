@@ -19,22 +19,25 @@ export async function POST(req: NextRequest) {
     const userName = profile?.full_name || user.email || 'User'
 
     // Save the user message to conversations (non-fatal if it fails)
-    await svc.from('conversations').insert({ user_id: user.id, role: 'user', content: message, channel: 'web' }).catch(() => {})
+    // NOTE: Supabase PostgrestFilterBuilder doesn't have .catch() — use try/catch
+    try { await svc.from('conversations').insert({ user_id: user.id, role: 'user', content: message, channel: 'web' }) } catch { /* non-fatal */ }
 
     // Use the same AI handler as SMS for consistent behavior
     const action = await handleAiSms({ userId: user.id, userName, message })
     const reply = action.reply
 
     // Save the assistant reply (non-fatal)
-    await svc.from('conversations').insert({ user_id: user.id, role: 'assistant', content: reply, channel: 'web' }).catch(() => {})
+    try { await svc.from('conversations').insert({ user_id: user.id, role: 'assistant', content: reply, channel: 'web' }) } catch { /* non-fatal */ }
 
     // Track token usage (non-fatal)
-    await svc.from('ai_usage').insert({
-      user_id: user.id,
-      feature: 'chat',
-      tokens_in: Math.ceil(message.length / 4),
-      tokens_out: Math.ceil(reply.length / 4),
-    }).catch(() => {})
+    try {
+      await svc.from('ai_usage').insert({
+        user_id: user.id,
+        feature: 'chat',
+        tokens_in: Math.ceil(message.length / 4),
+        tokens_out: Math.ceil(reply.length / 4),
+      })
+    } catch { /* non-fatal */ }
 
     return NextResponse.json({ reply, action: action.type })
   } catch (err) {
@@ -52,8 +55,7 @@ export async function POST(req: NextRequest) {
         resolved: false,
       })
     } catch { /* best-effort */ }
-    // Return actual error so we can diagnose — will be reverted once root cause is found
-    return NextResponse.json({ reply: `⚠ Error [${new Date().toISOString()}]: ${msg}` }, { status: 200 })
+    return NextResponse.json({ reply: 'Sorry, something went wrong. Please try again in a moment.' }, { status: 200 })
   }
 }
 

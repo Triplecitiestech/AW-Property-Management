@@ -19,11 +19,23 @@ export async function POST(req: NextRequest) {
     const { data: profile } = await svc.from('profiles').select('id, full_name').eq('id', user.id).single()
     const userName = profile?.full_name || user.email || 'User'
 
-    // Save the user message (non-fatal — PostgrestFilterBuilder has no .catch(), use try/catch)
+    // Fetch recent conversation history for context (last 10 exchanges = 20 messages)
+    const { data: historyRows } = await svc
+      .from('conversations')
+      .select('role, content')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20)
+
+    const conversationHistory = (historyRows ?? [])
+      .reverse()
+      .map((m: { role: string; content: string }) => ({ role: m.role as 'user' | 'assistant', content: m.content as string }))
+
+    // Save the user message (non-fatal)
     try { await svc.from('conversations').insert({ user_id: user.id, role: 'user', content: message, channel: 'web' }) } catch { /* non-fatal */ }
 
-    // Get AI action
-    const action = await handleAiSms({ userId: user.id, userName, message })
+    // Get AI action — pass full conversation history for context memory
+    const action = await handleAiSms({ userId: user.id, userName, message, conversationHistory })
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
 
     // Execute the action if it's not a plain reply

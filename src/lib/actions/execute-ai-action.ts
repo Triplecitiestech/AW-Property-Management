@@ -24,6 +24,13 @@ function mapCategory(cat: string): string {
   return CATEGORY_MAP[cat?.toLowerCase()] ?? 'other'
 }
 
+/** Map work order category to a property status that should be automatically set */
+function categoryToPropertyStatus(cat: string): string | null {
+  if (cat === 'cleaning') return 'needs_cleaning'
+  if (['maintenance', 'plumbing', 'electrical', 'hvac', 'landscaping'].includes(cat)) return 'needs_maintenance'
+  return null
+}
+
 function formatTimestamp(d = new Date()): string {
   return d.toLocaleString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
@@ -34,6 +41,7 @@ function formatTimestamp(d = new Date()): string {
 /**
  * Build a category-specific external-facing message to send to the assigned contact.
  * This message is sent on behalf of the property owner and includes specifics per category.
+ * For cleaning, uses real property checklist items if available; falls back to generic list.
  */
 function buildOutboundMessage(params: {
   category: string
@@ -44,8 +52,9 @@ function buildOutboundMessage(params: {
   ownerEmail: string | null
   ownerPhone: string | null
   source: 'web' | 'sms'
+  checklistItems?: string[]
 }): string {
-  const { category, title, priority, propertyName, ownerName, ownerEmail, ownerPhone } = params
+  const { category, title, priority, propertyName, ownerName, ownerEmail, ownerPhone, checklistItems } = params
 
   const replyLine = ownerEmail
     ? `Please reply to this email with confirmation, updates, and payment info.`
@@ -57,21 +66,25 @@ function buildOutboundMessage(params: {
   const details = `Work Order: ${title}\nPriority: ${priority.toUpperCase()}\nProperty: ${propertyName}\n\n`
 
   let specifics = ''
-
   const cat = category.toLowerCase()
 
   if (cat === 'cleaning') {
-    specifics = `Cleaning Checklist:\n` +
-      `□ Vacuum/sweep all floors\n` +
-      `□ Mop hard surface floors\n` +
-      `□ Clean and sanitize all bathrooms\n` +
-      `□ Clean kitchen (counters, appliances, sink)\n` +
-      `□ Change all bed linens and towels\n` +
-      `□ Empty trash in all rooms\n` +
-      `□ Dust surfaces and ceiling fans\n` +
-      `□ Wipe down windows and mirrors\n` +
-      `□ Restock any supplies (soap, toilet paper, etc.)\n` +
-      `□ Lock up securely when finished\n\n`
+    // Use real property checklist if available; otherwise use generic fallback
+    const items: string[] = checklistItems && checklistItems.length > 0
+      ? checklistItems
+      : [
+          'Vacuum/sweep all floors',
+          'Mop hard surface floors',
+          'Clean and sanitize all bathrooms',
+          'Clean kitchen (counters, appliances, sink)',
+          'Change all bed linens and towels',
+          'Empty trash in all rooms',
+          'Dust surfaces and ceiling fans',
+          'Wipe down windows and mirrors',
+          'Restock any supplies (soap, toilet paper, etc.)',
+          'Lock up securely when finished',
+        ]
+    specifics = `Cleaning Checklist:\n${items.map(i => `□ ${i}`).join('\n')}\n\n`
   } else if (cat === 'plumbing') {
     specifics = `Issue Details:\n` +
       `${title}\n\n` +
@@ -178,7 +191,20 @@ export async function executeAiAction(
       ?? (contacts as ContactRow[] | null)?.[0]
       ?? null
 
-    // Build outbound message
+    // For cleaning orders, fetch the real property checklist items
+    let checklistItems: string[] | undefined
+    if (category === 'cleaning') {
+      const { data: checklist } = await svc
+        .from('property_checklist_items')
+        .select('label')
+        .eq('property_id', property.id)
+        .order('sort_order')
+      if (checklist && checklist.length > 0) {
+        checklistItems = checklist.map((c: { label: string }) => c.label)
+      }
+    }
+
+    // Build outbound message with real checklist if available
     const outboundMessage = buildOutboundMessage({
       category,
       title: action.title,
@@ -188,6 +214,7 @@ export async function executeAiAction(
       ownerEmail,
       ownerPhone,
       source,
+      checklistItems,
     })
 
     const outboundSentAt = new Date()
@@ -203,7 +230,7 @@ export async function executeAiAction(
         source,
         created_by: ownerId,
         assigned_contact_id: assignedContact?.id ?? null,
-        description: `Created by Smart Sumai AI via ${source === 'sms' ? 'SMS' : 'web chat'}.\\n\\nOriginal request: "${originalMessage}"`,
+        description: `Created by Smart Sumai AI via ${source === 'sms' ? 'SMS' : 'web chat'}.\n\nOriginal request: "${originalMessage}"`,
         outbound_message: outboundMessage,
         outbound_sent_to: assignedContact
           ? `${assignedContact.name}${assignedContact.email ? ` <${assignedContact.email}>` : ''}${assignedContact.phone ? ` / ${assignedContact.phone}` : ''}`
@@ -216,6 +243,18 @@ export async function executeAiAction(
 
     if (error || !ticket) {
       return { success: false, detail: error?.message ?? 'Insert failed' }
+    }
+
+    // Auto-update property status based on work order category
+    const newStatus = categoryToPropertyStatus(category)
+    if (newStatus) {
+      await svc
+        .from('property_status')
+        .upsert(
+          { property_id: property.id, status: newStatus, updated_at: new Date().toISOString() },
+          { onConflict: 'property_id' }
+        )
+        .then(undefined, () => {})
     }
 
     // Save AI conversation as an internal comment on the work order

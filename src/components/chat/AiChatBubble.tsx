@@ -10,6 +10,31 @@ type Message = {
   created_at: string
 }
 
+/** Render message text with URLs converted to clickable links */
+function MessageContent({ content }: { content: string }) {
+  const URL_RE = /(https?:\/\/[^\s]+)/g
+  const parts = content.split(URL_RE)
+  return (
+    <p className="whitespace-pre-wrap break-words">
+      {parts.map((part, i) =>
+        URL_RE.test(part) ? (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-teal-300 hover:text-teal-200 transition-colors"
+          >
+            {part}
+          </a>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </p>
+  )
+}
+
 export default function AiChatBubble() {
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
@@ -111,7 +136,7 @@ export default function AiChatBubble() {
               <div className="text-center text-[#60608a] text-sm mt-8">
                 <p className="text-2xl mb-2">🏠</p>
                 <p className="font-medium text-white mb-1">Hi! I&apos;m your AI Property Manager</p>
-                <p className="text-xs leading-relaxed">Ask me about your properties, create tickets, schedule stays, or anything else. I&apos;m the same AI you text!</p>
+                <p className="text-xs leading-relaxed">Ask me about your properties, create work orders, schedule stays, or anything else. I&apos;m the same AI you text!</p>
               </div>
             )}
             {messages.map(msg => (
@@ -127,7 +152,7 @@ export default function AiChatBubble() {
                   {msg.channel === 'sms' && msg.role === 'assistant' && (
                     <span className="text-[10px] text-teal-400 block mb-1">SMS reply</span>
                   )}
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  <MessageContent content={msg.content} />
                 </div>
               </div>
             ))}

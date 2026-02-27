@@ -6,9 +6,6 @@ import { executeAiAction } from '@/lib/actions/execute-ai-action'
 
 const AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN ?? ''
 
-// -------------------------------------------------------
-// Validate that the request genuinely came from Twilio
-// -------------------------------------------------------
 function validateTwilioSignature(
   signature: string,
   url: string,
@@ -28,9 +25,6 @@ function validateTwilioSignature(
   }
 }
 
-// -------------------------------------------------------
-// Reply to Twilio with TwiML
-// -------------------------------------------------------
 function twiml(message: string): NextResponse {
   const safe = message
     .replace(/&/g, '&amp;')
@@ -43,9 +37,6 @@ function twiml(message: string): NextResponse {
   })
 }
 
-// -------------------------------------------------------
-// POST handler — called by Twilio on every inbound SMS
-// -------------------------------------------------------
 export async function POST(req: NextRequest) {
   const raw = await req.text()
   const params = Object.fromEntries(new URLSearchParams(raw).entries())
@@ -53,7 +44,6 @@ export async function POST(req: NextRequest) {
   const from: string = params['From'] ?? ''
   const body: string = params['Body']?.trim() ?? ''
 
-  // Validate Twilio signature
   if (AUTH_TOKEN) {
     const signature = req.headers.get('x-twilio-signature') ?? ''
     const proto = req.headers.get('x-forwarded-proto') ?? 'https'
@@ -78,7 +68,6 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServiceClient()
 
-  // Look up sender by phone number — only registered users can use SMS AI
   const { data: profile } = await supabase
     .from('profiles')
     .select('id, full_name, email, role')
@@ -92,7 +81,6 @@ export async function POST(req: NextRequest) {
   }
 
   // Save inbound SMS to conversation history (fire-and-forget)
-  // Note: PostgrestFilterBuilder has .then() but not .catch() — use .then(ok, err) form
   supabase.from('conversations').insert({ user_id: profile.id, role: 'user', content: body, channel: 'sms' }).then(undefined, () => {})
 
   // Quick HELP shortcut
@@ -107,11 +95,25 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Route to AI handler
+  // Fetch recent SMS conversation history for context memory (last 10 exchanges)
+  const { data: historyRows } = await supabase
+    .from('conversations')
+    .select('role, content')
+    .eq('user_id', profile.id)
+    .eq('channel', 'sms')
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  const conversationHistory = (historyRows ?? [])
+    .reverse()
+    .map((m: { role: string; content: string }) => ({ role: m.role as 'user' | 'assistant', content: m.content as string }))
+
+  // Route to AI handler with conversation history
   const action = await handleAiSms({
     userId: profile.id,
     userName: profile.full_name ?? 'User',
     message: body,
+    conversationHistory,
   })
 
   // Save AI reply to conversation history (fire-and-forget)
@@ -140,7 +142,6 @@ export async function POST(req: NextRequest) {
       return twiml(action.reply)
     }
 
-    // Plain reply or error
     return twiml(action.reply || 'Something went wrong. Please try again.')
   } catch (err) {
     console.error('[SMS webhook execution error]', err)

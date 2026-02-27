@@ -22,7 +22,6 @@ export type AiSmsAction =
 async function buildContext(userId: string) {
   const svc = createServiceClient()
 
-  // Get user's properties with status
   const { data: properties } = await svc
     .from('properties')
     .select('id, name, address, property_status(status, occupancy)')
@@ -30,7 +29,6 @@ async function buildContext(userId: string) {
 
   const propertyIds: string[] = (properties ?? []).map((p: { id: string }) => p.id)
 
-  // Get open tickets
   const { data: tickets } = await svc
     .from('service_requests')
     .select('id, title, priority, status, category, properties(name)')
@@ -39,7 +37,6 @@ async function buildContext(userId: string) {
     .order('created_at', { ascending: false })
     .limit(10)
 
-  // Get upcoming/active stays
   const today = new Date().toISOString().split('T')[0]
   const { data: stays } = await svc
     .from('stays')
@@ -49,7 +46,6 @@ async function buildContext(userId: string) {
     .order('start_date')
     .limit(10)
 
-  // Get contacts per property
   const { data: contacts } = await svc
     .from('property_contacts')
     .select('name, role, phone, email, properties(name)')
@@ -143,15 +139,15 @@ For adding a contact:
 - Dates must be YYYY-MM-DD format. Today is ${new Date().toISOString().split('T')[0]}
 - Reply text must use past tense — say "Work order created" not "I will create"
 - If a property doesn't exist, say so and list available properties
-- IMPORTANT: If the user asks to create a work order but does NOT specify which property, ask them which property before creating. Use type "reply" to ask.
-- IMPORTANT: If a cleaning or maintenance request lacks enough detail to be actionable, ask one clarifying question before creating. Use type "reply" to ask.
+- CRITICAL: You have the full conversation history in the messages above. ALWAYS reference prior messages before asking for info. Never ask for something already provided.
+- If the user asks to create a work order but the property was NOT mentioned in any prior message, ask which property. Otherwise use the property from context.
+- For cleaning requests, ask ONE question about special instructions/focus areas before creating — unless the user already gave specifics.
 - If a request is otherwise unclear, ask for clarification using type "reply"`
 }
 
 // ─── Main Handler ─────────────────────────────────────────────────────────────
 
 // XOR-encoded fallback — decoded at runtime, never a scannable literal in source.
-// Server-side only: this module is only imported by API routes, never by client code.
 const _xk = '445c1a5659431a56475e07041a406254647a67590e5640737d61435f0651401a7971747b746274700601427205754d4e460f65757303051a670f6565025b0362440e584d505e5f504576474e03031a587e0206436762410f4e447861050440400166501a764f725675507676'
 
 function _rk(): string {
@@ -165,6 +161,7 @@ export async function handleAiSms(params: {
   userId: string
   userName: string
   message: string
+  conversationHistory?: Array<{ role: 'user' | 'assistant'; content: string }>
 }): Promise<AiSmsAction> {
   const apiKey = process.env.ANTHROPIC_API_KEY || _rk()
 
@@ -178,17 +175,27 @@ export async function handleAiSms(params: {
 
     step = 'anthropic.messages.create'
     const client = new Anthropic({ apiKey })
+
+    // Build multi-turn messages: prior history (last 10) + current message
+    const priorMessages: Array<{ role: 'user' | 'assistant'; content: string }> =
+      (params.conversationHistory ?? []).slice(-10).map(m => ({
+        role: m.role,
+        content: m.content,
+      }))
+
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 512,
       system: systemPrompt,
-      messages: [{ role: 'user', content: params.message }],
+      messages: [
+        ...priorMessages,
+        { role: 'user', content: params.message },
+      ],
     })
 
     step = 'parseResponse'
     const raw = response.content[0].type === 'text' ? response.content[0].text.trim() : ''
 
-    // Extract JSON robustly: find first { and last } to handle any preamble/postamble
     const start = raw.indexOf('{')
     const end = raw.lastIndexOf('}')
     const jsonStr = start !== -1 && end > start ? raw.slice(start, end + 1) : raw
@@ -199,7 +206,6 @@ export async function handleAiSms(params: {
     const msg = err instanceof Error ? err.message : String(err)
     const stack = err instanceof Error ? (err.stack ?? '') : ''
     console.error(`[AI SMS handler error at step=${step}]`, err)
-    // Log to error_logs so it's queryable
     try {
       const { createClient: createSupabaseClient } = require('@supabase/supabase-js')
       const svc = createSupabaseClient(

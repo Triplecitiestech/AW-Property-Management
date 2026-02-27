@@ -14,7 +14,7 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Smart Sumai — AI Property Manager for Short-Term Rentals',
+    title: 'Smart Sumai — AI Property Manager',
     description: 'Your AI property manager. Text it to manage your properties from anywhere. $50/month includes 3 properties.',
   },
   robots: {
@@ -41,8 +41,9 @@ export default async function Home({
 
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <section className="relative min-h-[100vh] flex items-center pt-16">
+        {/* Background glows */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[600px]
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[500px]
                           bg-gradient-radial from-violet-600/20 via-violet-900/5 to-transparent blur-3xl" />
           <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px]
                           bg-teal-600/10 rounded-full blur-3xl" />
@@ -50,88 +51,144 @@ export default async function Home({
             style={{backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '60px 60px'}} />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left: Copy */}
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full
-                              bg-violet-500/15 border border-violet-500/30 text-violet-300 text-sm font-medium mb-6">
-                <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
-                AI Property Manager
-              </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6 leading-[1.05]">
-                Your AI runs<br />your properties.{' '}
-                <span className="bg-gradient-to-r from-violet-400 via-violet-300 to-teal-400 bg-clip-text text-transparent">
-                  You just own them.
-                </span>
-              </h1>
-              <p className="text-xl text-[#8aa0be] mb-4 leading-relaxed">
-                Smart Sumai is an AI property manager you text like a person. It creates work orders,
-                schedules cleanings, contacts your vendors, tracks guest stays, and updates property
-                status — automatically, from any phone.
-              </p>
-              <p className="text-base text-[#6480a0] mb-10 leading-relaxed">
-                No app for guests. No training for your team. Just text in plain English and your AI handles the rest.
-              </p>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full
+                          bg-violet-500/15 border border-violet-500/30 text-violet-300 text-sm font-medium mb-6">
+            <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+            AI Property Manager
+          </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/auth/login?mode=signup"
-                  className="px-8 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-violet-500
-                             text-white font-semibold text-lg hover:from-violet-500 hover:to-violet-400
-                             transition-all shadow-2xl shadow-violet-900/50 hover:shadow-violet-700/40 text-center">
-                  Start Free — No credit card needed
-                </Link>
-                <Link href="/pricing"
-                  className="px-8 py-4 rounded-xl border border-white/10 bg-white/5
-                             text-white font-semibold text-lg hover:bg-white/10 transition-all text-center">
-                  See Pricing →
-                </Link>
-              </div>
-            </div>
+          {/* Headline */}
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-[1.05]">
+            AI that manages{' '}
+            <span className="bg-gradient-to-r from-violet-400 via-violet-300 to-teal-400 bg-clip-text text-transparent">
+              your properties.
+            </span>
+            <br />You just own them.
+          </h1>
+          <p className="text-xl text-[#8aa0be] max-w-2xl mx-auto mb-4 leading-relaxed">
+            Smart Sumai is an AI property manager you text like a person. It creates work orders,
+            schedules cleanings, contacts your vendors, tracks stays, and updates property
+            status — automatically, from any phone.
+          </p>
+          <p className="text-base text-[#6480a0] max-w-xl mx-auto mb-10 leading-relaxed">
+            No app for guests. No training for your team. Just text in plain English and your AI handles the rest.
+          </p>
 
-            {/* Right: AI Chat Demo */}
-            <div className="relative">
-              <div className="absolute -inset-4 bg-violet-600/10 rounded-3xl blur-2xl" />
-              <div className="relative rounded-2xl border border-white/10 bg-[#0c1525] shadow-2xl shadow-black/60 overflow-hidden">
-                {/* Phone header */}
-                <div className="flex items-center gap-3 px-5 py-4 bg-[#0f1829] border-b border-white/5">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-teal-400
-                                  flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                        d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">Smart Sumai AI</p>
-                    <p className="text-xs text-teal-400">● Online — SMS &amp; Web Chat</p>
-                  </div>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20">
+            <Link href="/auth/login?mode=signup"
+              className="px-8 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-violet-500
+                         text-white font-semibold text-lg hover:from-violet-500 hover:to-violet-400
+                         transition-all shadow-2xl shadow-violet-900/50 hover:shadow-violet-700/40">
+              Start Free — No credit card needed
+            </Link>
+            <Link href="/pricing"
+              className="px-8 py-4 rounded-xl border border-white/10 bg-white/5
+                         text-white font-semibold text-lg hover:bg-white/10 transition-all">
+              See Pricing →
+            </Link>
+          </div>
+
+          {/* ── Dashboard mockup ── */}
+          <div className="relative max-w-5xl mx-auto">
+            <div className="rounded-2xl border border-white/10 bg-[#0f1829] shadow-2xl shadow-black/60 overflow-hidden">
+              {/* Fake browser bar */}
+              <div className="flex items-center gap-2 px-4 py-3 bg-[#0c1220] border-b border-white/5">
+                <div className="w-3 h-3 rounded-full bg-red-500/60" />
+                <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
+                <div className="w-3 h-3 rounded-full bg-green-500/60" />
+                <div className="flex-1 mx-4 h-6 rounded-md bg-white/5 flex items-center px-3">
+                  <span className="text-xs text-[#6480a0]">app.smartsumai.com/dashboard</span>
                 </div>
-                {/* Conversation */}
-                <div className="p-5 space-y-4 text-sm">
+              </div>
+              {/* Dashboard preview */}
+              <div className="p-4 sm:p-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                   {[
-                    { from: 'user', text: 'Leaking faucet under the kitchen sink at Beach House — pretty urgent' },
-                    { from: 'ai',   text: 'Urgent plumbing work order created at Beach House. Mike\'s Plumbing has been notified with full details.' },
-                    { from: 'user', text: 'Schedule a cleaning after the guests check out Friday' },
-                    { from: 'ai',   text: 'Cleaning work order created for Saturday morning at Beach House. Sarah (cleaner) has been notified.' },
-                    { from: 'user', text: 'Who\'s checking in next week?' },
-                    { from: 'ai',   text: 'Jake Miller at Beach House (Fri Jun 14) and Sarah Chen at Lake Cabin (Mon Jun 17).' },
-                    { from: 'user', text: 'Mark Lake Cabin as clean' },
-                    { from: 'ai',   text: 'Lake Cabin → clean ✓' },
-                  ].map((m, i) => (
-                    <div key={i} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed
-                        ${m.from === 'user'
-                          ? 'bg-violet-600/80 text-white rounded-br-md'
-                          : 'bg-[#1a2d44] text-[#c0d4e8] rounded-bl-md border border-white/5'}`}>
-                        {m.text}
-                      </div>
+                    { label: 'Properties', value: '12', color: 'text-violet-400' },
+                    { label: 'Active Stays', value: '4',  color: 'text-teal-400' },
+                    { label: 'Open Tickets', value: '2',  color: 'text-red-400' },
+                    { label: 'Team Members', value: '5',  color: 'text-emerald-400' },
+                  ].map(s => (
+                    <div key={s.label} className="rounded-xl bg-[#1a2436] border border-[#2a3d58] p-3 sm:p-4">
+                      <p className="text-xs text-[#6480a0] font-medium">{s.label}</p>
+                      <p className={`text-2xl font-bold mt-1 ${s.color}`}>{s.value}</p>
                     </div>
                   ))}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-xl bg-[#1a2436] border border-[#2a3d58] p-4 space-y-3">
+                    <p className="text-sm font-semibold text-white">Recent Properties</p>
+                    {[
+                      { name: 'Lakeside Cottage',  status: 'Clean',           color: 'bg-emerald-900/40 text-emerald-400 border-emerald-800/40' },
+                      { name: 'Downtown Loft',     status: 'Occupied',        color: 'bg-blue-900/40 text-blue-400 border-blue-800/40' },
+                      { name: 'Beach House A',     status: 'Needs Cleaning',  color: 'bg-violet-900/40 text-violet-400 border-violet-800/40' },
+                    ].map(p => (
+                      <div key={p.name} className="flex items-center justify-between">
+                        <span className="text-sm text-[#8aa0be]">{p.name}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${p.color}`}>{p.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="rounded-xl bg-[#1a2436] border border-[#2a3d58] p-4 space-y-3">
+                    <p className="text-sm font-semibold text-white">Open Tickets</p>
+                    {[
+                      { title: 'Fix kitchen faucet',  priority: 'Urgent', color: 'bg-red-900/40 text-red-400 border-red-800/40' },
+                      { title: 'Restock linens',       priority: 'Medium', color: 'bg-sky-900/40 text-sky-400 border-sky-800/40' },
+                      { title: 'HVAC filter check',    priority: 'Low',    color: 'bg-[#1e2d3d] text-[#6480a0] border-[#2a3d58]' },
+                    ].map(t => (
+                      <div key={t.title} className="flex items-center justify-between">
+                        <span className="text-sm text-[#8aa0be]">{t.title}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${t.color}`}>
+                          {t.priority}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* ── AI Chat demo (below dashboard) ── */}
+          <div className="relative max-w-2xl mx-auto mt-6">
+            <div className="rounded-2xl border border-white/10 bg-[#0c1525] shadow-2xl shadow-black/60 overflow-hidden">
+              <div className="flex items-center gap-3 px-5 py-3.5 bg-[#0f1829] border-b border-white/5">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-teal-400
+                                flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-white">Smart Sumai AI</p>
+                  <p className="text-xs text-teal-400">● Online — SMS &amp; Web Chat</p>
+                </div>
+              </div>
+              <div className="p-5 space-y-3 text-sm">
+                {[
+                  { from: 'user', text: 'Leaking faucet at Beach House — pretty urgent' },
+                  { from: 'ai',   text: 'Urgent plumbing work order created at Beach House. Mike\'s Plumbing has been notified.' },
+                  { from: 'user', text: 'Schedule a cleaning after guests check out Friday' },
+                  { from: 'ai',   text: 'Cleaning work order created for Saturday morning. Sarah (cleaner) has been notified.' },
+                  { from: 'user', text: 'Mark Lake Cabin as clean' },
+                  { from: 'ai',   text: 'Lake Cabin → clean ✓' },
+                ].map((m, i) => (
+                  <div key={i} className={`flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[78%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed
+                      ${m.from === 'user'
+                        ? 'bg-violet-600/80 text-white rounded-br-md'
+                        : 'bg-[#1a2d44] text-[#c0d4e8] rounded-bl-md border border-white/5'}`}>
+                      {m.text}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -206,7 +263,7 @@ export default async function Home({
                 badgeColor: 'bg-teal-500/20 text-teal-300 border-teal-500/30',
                 badge: 'Cleaning',
                 example: '"Schedule a cleaning at Beach House after the guests check out this Friday"',
-                outcome: 'Creates a cleaning work order for the correct property, assigns your cleaner as the contact, sends them a notification, and marks the property as needs_cleaning.',
+                outcome: 'Creates a cleaning work order for the correct property, assigns your cleaner as the contact, sends them a notification, and marks the property as needs cleaning.',
                 icon: '🧹',
               },
               {
@@ -218,8 +275,8 @@ export default async function Home({
                 icon: '🛎️',
               },
               {
-                color: 'border-amber-500/20 bg-amber-950/10',
-                badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+                color: 'border-sky-500/20 bg-sky-950/10',
+                badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/30',
                 badge: 'Status Updates',
                 example: '"Mark the Vestal property clean" or "Beach House needs groceries"',
                 outcome: 'Updates property status instantly across your dashboard. Your whole team sees the current state in real time — no calls, no texts to the group chat.',

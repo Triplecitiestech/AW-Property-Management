@@ -52,7 +52,11 @@ All credentials live in `.env.local` (gitignored). If that file exists, read it 
 - **MCP**: If `mcp__supabase__*` tools are available, use them — they have full DB access.
 - **Project ref**: stored in `.env.local` as `NEXT_PUBLIC_SUPABASE_URL` (extract the ref from `https://<ref>.supabase.co`)
 - **Migration approach**: run `supabase/deploy.sql` as a single idempotent script, or use the MCP execute_sql tool.
-- **Schema**: all tables defined in `supabase/deploy.sql`. Current tables: `profiles`, `properties`, `property_status`, `stays`, `service_requests`, `service_request_comments`, `guest_reports`, `audit_log`, `property_checklist_items`, `property_contacts`, `organizations`, `org_members`, `property_access`, `invitations`, `error_logs`
+- **Schema**: all tables defined in `supabase/deploy.sql`. Current tables:
+  `profiles`, `properties`, `property_status`, `stays`, `service_requests`, `service_request_comments`,
+  `guest_reports`, `audit_log`, `property_checklist_items`, `property_contacts`,
+  `organizations`, `org_members`, `property_access`, `invitations`, `error_logs`,
+  `conversations`, `ai_usage`
 - **Types**: manually maintained in `src/lib/supabase/types.ts` — update when schema changes.
 
 ### Vercel
@@ -77,6 +81,14 @@ All credentials live in `.env.local` (gitignored). If that file exists, read it 
   verified on every smoke test run.
 - **Supabase types** (`src/lib/supabase/types.ts`) are manually maintained. Update them
   when adding new tables or columns.
+- **Conversation history in AI handler**: assistant messages stored in `conversations` table
+  are human-friendly text, NOT raw JSON. When passing history back to Claude as multi-turn
+  messages, wrap assistant content in `JSON.stringify({ type: 'reply', reply: m.content })`
+  so Claude's context format stays consistent and JSON parse errors don't break follow-up turns.
+- **CopyLinkButton pattern**: use `navigator.clipboard.writeText()` in a `'use client'`
+  component. Never use `onClick={undefined}` as a stub.
+- **List pages**: all list pages (properties, stays, work orders, contacts) use clickable
+  card rows with dark theme — NOT tables. Use `<Link>` wrapping a flex card row.
 
 ## Tech stack
 - Next.js 16 App Router (Server Components + Server Actions)
@@ -84,12 +96,11 @@ All credentials live in `.env.local` (gitignored). If that file exists, read it 
 - Tailwind CSS
 - TypeScript strict mode
 
-## Current state (as of 2026-02-25)
+## Current state (as of 2026-02-27)
 The app is a **fully deployed** multi-tenant property management SaaS.
 
 ### App is live ✅
 - Production URL: `https://aw-property-management.vercel.app`
-- CI run #21 passed all 17 steps (migration ✓, build ✓, deploy ✓, verification ✓)
 - `deploy.yml` triggers on push to `main` OR `claude/**` branches — both deploy to production
 
 ### Multi-tenant architecture ✅ FULLY DEPLOYED
@@ -98,25 +109,83 @@ The app is a **fully deployed** multi-tenant property management SaaS.
 - Properties auto-assigned to an org via `getOrCreateUserOrg()` on creation
 - `deploy.yml` runs `supabase/deploy.sql` (full idempotent schema) as part of every deploy — schema is always in sync
 
-### Migration notes
-- `run-migration.mjs` uses Node.js `https` module (NOT undici `fetch`) — undici had TLS issues with `api.supabase.com`
-- `api.supabase.com` must be reachable from the GitHub Actions runner (confirmed working in run #21)
+### Sign-up flow ✅
+- Login page at `/auth/login` toggles between Login and Sign Up modes
+- Phone number is **required** on sign up (needed for SMS AI)
+- ToS checkbox required; SMS consent checkbox shown when phone is provided
+- Sign up creates Supabase auth user + profile + org automatically
+- `/terms` and `/sms-policy` pages exist (public, dark theme)
 
-### Sign-up flow ✅ IMPLEMENTED
-- Login page at `/auth/login` has a toggle between Login and Sign Up modes
-- Sign up creates a Supabase auth user + profile + org automatically
+### SMS & AI handler ✅
+- SMS webhook at `/api/webhooks/sms` — receives Twilio SMS, responds via AI
+- Web chat at `/api/chat` — same AI handler for in-app chat bubble
+- AI handler: `src/lib/sms/ai-handler.ts` — uses Claude Haiku 4.5 with structured JSON responses
+- Conversation history stored in `conversations` table; last 10 exchanges passed as multi-turn messages
+- **History wrapping**: old assistant messages wrapped as `{"type":"reply","reply":"..."}` before
+  passing to Claude API to prevent JSON parse errors on follow-up messages
+- Action executor: `src/lib/actions/execute-ai-action.ts` — handles `create_work_order`,
+  `create_stay`, `update_status`, `create_contact`
+- AI rules enforced in system prompt:
+  - EXACT property name required (verbatim from PROPERTIES context)
+  - CONTACT CHECK: must have matching contact before creating service work orders; asks user to add or skip
+  - STAY CREATION: must have guest name before creating stay; asks if missing
+  - Must use action types to create things — never announce creation via `type:"reply"`
+  - Auto-updates property status (cleaning → needs_cleaning, maintenance → needs_maintenance)
+  - Uses real property checklist items for cleaning outbound messages
 
-### Settings & invites ✅
-- `/settings` — org name editing, team member management, invite link generation
-- `/invite/[token]` — public invite acceptance page
+### Work Orders ✅
+- List at `/work-orders` — clickable card rows (WO#, priority badge, status, property, category)
+- Detail at `/work-orders/[id]` — full dark theme, comments section
+- Comments have **internal/external toggle** (default: internal)
+  - Internal = team-only note
+  - External = emailed to assigned contact; stored with `is_internal = false`
+- `is_internal BOOLEAN NOT NULL DEFAULT true` column on `service_request_comments`
+- Outbound message fields on `service_requests`: `outbound_message`, `outbound_sent_to`,
+  `outbound_method`, `outbound_sent_at` — shows who was notified and how
 
-### Property onboarding wizard ✅
-- Triggered when clicking "Add Property" — multi-step wizard
-- Steps: Property Details → Primary Contact → Service Contacts → Checklist → Notes/AI
+### Contacts ✅
+- List at `/contacts` — clickable card rows with avatar, role, property, phone, email
+- Detail at `/contacts/[id]` — edit form (admins only), work orders list, reach-out sidebar
+- Add contact at `/contacts/new` — select properties and roles
 
-### UI
-- Dark navy-slate theme (body `#0f1829`, card `#1a2436`, borders `#2a3d58`)
-- Sidebar includes: Dashboard, Properties, Stays, Tickets, Settings
+### Stays ✅
+- List at `/stays` — clickable card rows with guest avatar, dates, status
+- Detail at `/stays/[id]`:
+  - Notes renamed to "Notes for Your Guest" (hidden on guest view if blank)
+  - "Guest Link" renamed to "Guest Welcome Page"
+  - "Open Guest Checklist" renamed to "Open Guest Welcome Page"
+  - "Danger Zone" removed; replaced with plain "Remove Stay" card
+  - Copy Link button uses `CopyLinkButton` client component (navigator.clipboard)
+
+### Properties ✅
+- List at `/properties` — clickable card rows with dark theme, status badges, open ticket count
+- Detail at `/properties/[id]` — tabs: Overview, Contacts, Checklist, AI Instructions, Notes
+
+### Settings ✅
+- `/settings` — org name, team members, invitations
+- **General AI Instructions**: editable textarea with amber warning banner + "Restore defaults" button
+  (admins only). Restore button fills with recommended default instructions via `confirm()` dialog.
+
+### Admin ✅
+- `/admin` — usage stats, token usage progress bar (80% amber warning, 95% red critical, 5M limit)
+
+### Getting Started ✅
+- `/welcome` — 6-step onboarding guide
+  - Step 1 → Add Property (`/properties/new`)
+  - Step 2 → Add Contacts (`/contacts`)
+  - Steps 3-6 → Checklists, Stays, Work Orders, Team
+
+### Guest pages ✅
+- `/guest/[token]` — public guest welcome page (no auth required)
+  - Shows property info, wifi/codes from stay notes (if provided)
+  - Guests can submit checkout report
+
+### Schema additions (recent)
+- `service_request_comments.is_internal` — BOOLEAN NOT NULL DEFAULT true
+- `service_requests.outbound_message`, `.outbound_sent_to`, `.outbound_method`, `.outbound_sent_at`
+- `profiles.tos_agreed_at`, `.sms_consent`
+- `conversations` — stores AI chat history (role, content, channel, user_id, created_at)
+- `ai_usage` — tracks token consumption per user per feature
 
 ### Deployment
 - GitHub Actions: `.github/workflows/deploy.yml` (auto-deploy + auto-migrate on push to `main` OR `claude/**`)
@@ -157,28 +226,52 @@ Run this via the Supabase MCP tool (`mcp__supabase__execute_sql`) or via the man
 
 ## What still needs to be done
 - Nothing critical. The app is fully functional.
-- **v2 ideas**: photo uploads on tickets/guest reports, recurring tasks, weekly email digest, QR codes per property
+- **v2 ideas**: photo uploads on tickets/guest reports, recurring tasks, weekly email digest,
+  QR codes per property, SMS delivery status tracking, Stripe billing per property
 
 ## Project structure
 ```
 src/
   app/(app)/          # Authenticated app pages
-  app/auth/           # Login / auth callback
-  app/guest/          # Public guest checklist pages
+    admin/            # Usage stats + token bar
+    contacts/         # List + [id] detail page
+    dashboard/
+    properties/       # List + [id] detail + [id]/onboard wizard
+    stays/            # List + [id] detail (guest welcome page link)
+    welcome/          # 6-step getting started guide
+    work-orders/      # List + [id] detail + new
+    settings/
+  app/auth/           # Login / auth callback (phone required on signup)
+  app/guest/          # Public guest welcome page
   app/invite/         # Public invite acceptance
-  components/         # React components
+  app/terms/          # Public Terms of Use
+  app/sms-policy/     # Public SMS consent policy
+  components/
+    stays/
+      CopyLinkButton.tsx    # 'use client' clipboard copy button
+      DeleteStayButton.tsx
+    work-orders/
+      AddWorkOrderCommentForm.tsx  # internal/external toggle
+    settings/
+      OrgSettings.tsx       # AI instructions + restore defaults button
   lib/
     actions/          # 'use server' files (server actions only)
+      contacts.ts
+      execute-ai-action.ts  # AI action executor (WO, stay, status, contact)
+      organizations.ts
+      stays.ts
+      tickets.ts      # addTicketComment with isInternal param + email for external
+    sms/
+      ai-handler.ts   # Claude Haiku AI handler with conversation history
     contact-roles.ts  # Shared constants (no 'use server' directive)
     supabase/         # Supabase client helpers + types
 scripts/
   smoke-test.mjs      # End-to-end smoke test
-  create-user.mjs     # One-time user provisioning
 supabase/
   migrations/         # Incremental SQL migrations
-  deploy.sql          # Full schema (all migrations concatenated)
+  deploy.sql          # Full schema (all migrations concatenated, idempotent)
 .github/
   workflows/
-    deploy.yml        # Vercel auto-deploy on push to main
+    deploy.yml        # Vercel auto-deploy on push to main OR claude/**
     migrate.yml       # Manual migration runner
 ```

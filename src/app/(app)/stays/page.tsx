@@ -28,14 +28,16 @@ export default async function StaysPage({
     return { label: 'Upcoming', cls: 'badge-in_progress' }
   }
 
+  const hasFilters = !!(property_id || q)
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1>Stays</h1>
-          <p className="text-gray-500 mt-1">{stays?.length ?? 0} stays</p>
+          <h1 className="text-2xl font-bold text-white">Stays</h1>
+          <p className="text-[#6480a0] text-sm mt-1">{stays?.length ?? 0} stays</p>
         </div>
-        <Link href="/stays/new" className="btn-primary">
+        <Link href="/stays/new" className="btn-primary text-sm flex items-center gap-2">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -51,7 +53,7 @@ export default async function StaysPage({
             type="search"
             defaultValue={q ?? ''}
             placeholder="Search guest name…"
-            className="form-input text-sm w-auto flex-1 min-w-[160px]"
+            className="form-input text-sm flex-1 min-w-[160px]"
           />
           <select name="property_id" className="form-select text-sm w-auto" defaultValue={property_id ?? ''}>
             <option value="">All Properties</option>
@@ -60,58 +62,71 @@ export default async function StaysPage({
             ))}
           </select>
           <button type="submit" className="btn-secondary text-sm">Filter</button>
-          {(property_id || q) && <Link href="/stays" className="text-sm text-gray-500 hover:text-gray-700">Clear</Link>}
+          {hasFilters && (
+            <Link href="/stays" className="text-sm text-[#6480a0] hover:text-[#94a3b8]">Clear</Link>
+          )}
         </form>
       </div>
 
-      {/* Table */}
-      <div className="card overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Guest</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Property</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Dates</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {stays?.map(stay => {
-              const { label, cls } = getStayStatus(stay.start_date, stay.end_date)
-              const nights = Math.ceil((new Date(stay.end_date).getTime() - new Date(stay.start_date).getTime()) / (1000 * 60 * 60 * 24))
-              return (
-                <tr key={stay.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-gray-900">{stay.guest_name}</p>
-                    {stay.guest_email && <p className="text-xs text-gray-400">{stay.guest_email}</p>}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {(stay.properties as {name:string}|null)?.name ?? '—'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    <p>{stay.start_date} → {stay.end_date}</p>
-                    <p className="text-xs text-gray-400">{nights} night{nights !== 1 ? 's' : ''}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`badge ${cls}`}>{label}</span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link href={`/stays/${stay.id}`} className="text-blue-600 hover:underline text-xs">View</Link>
-                  </td>
-                </tr>
-              )
-            })}
-            {(!stays || stays.length === 0) && (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-gray-400">
-                  No stays found.{' '}
-                  <Link href="/stays/new" className="text-blue-600 hover:underline">Add one</Link>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      {/* Stay Cards */}
+      <div className="space-y-2">
+        {stays?.map(stay => {
+          const { label, cls } = getStayStatus(stay.start_date, stay.end_date)
+          const nights = Math.ceil((new Date(stay.end_date).getTime() - new Date(stay.start_date).getTime()) / (1000 * 60 * 60 * 24))
+          const propName = (stay.properties as { name: string } | null)?.name ?? '—'
+          return (
+            <Link
+              key={stay.id}
+              href={`/stays/${stay.id}`}
+              className="card flex items-center gap-4 px-5 py-4 hover:bg-[#1e2d42] hover:border-[#3a5070] transition-all cursor-pointer group"
+            >
+              {/* Guest avatar */}
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-600 to-blue-500
+                              flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                {stay.guest_name.charAt(0).toUpperCase()}
+              </div>
+
+              {/* Main info */}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-white group-hover:text-teal-300 transition-colors">
+                  {stay.guest_name}
+                </p>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  <span className="text-xs text-[#6480a0]">{propName}</span>
+                  <span className="text-[#2a3d58]">·</span>
+                  <span className="text-xs text-[#6480a0]">{stay.start_date} → {stay.end_date}</span>
+                  <span className="text-[#2a3d58]">·</span>
+                  <span className="text-xs text-[#6480a0]">{nights} night{nights !== 1 ? 's' : ''}</span>
+                  {stay.guest_email && (
+                    <>
+                      <span className="text-[#2a3d58]">·</span>
+                      <span className="text-xs text-[#6480a0] truncate">{stay.guest_email}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Status + arrow */}
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <span className={`badge ${cls}`}>{label}</span>
+                <svg className="w-4 h-4 text-[#4a6080] group-hover:text-[#6480a0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </Link>
+          )
+        })}
+
+        {(!stays || stays.length === 0) && (
+          <div className="card p-10 text-center">
+            <p className="text-[#6480a0]">
+              No stays found.{' '}
+              {hasFilters
+                ? <Link href="/stays" className="text-violet-400 hover:text-violet-300">Clear filters</Link>
+                : <Link href="/stays/new" className="text-violet-400 hover:text-violet-300">Add one</Link>}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -143,7 +143,8 @@ For adding a contact:
 - If the user asks to create a work order but the property was NOT mentioned in any prior message, ask which property. Otherwise use the property from context.
 - CONTACT CHECK: Before creating a work order that requires a service provider (cleaning, maintenance, plumbing, electrical, hvac, landscaping), check the CONTACTS section for a matching contact at that property. If NONE exists for that category and property, DO NOT create the work order yet. Instead use type "reply" to say: "No [category] contact is on file for [property]. Please provide their name and phone/email so I can add them, or reply 'skip' to create the work order without a contact."
 - If the user replies "skip" or says to proceed without a contact, then create the work order immediately.
-- For cleaning requests, if a cleaning contact exists, ask ONE question about special instructions before creating — unless the user already gave specifics. If no contact exists, trigger the CONTACT CHECK above first.
+- STAY CREATION: Before creating a stay, you MUST have a guest name. If the user did not provide one, use type "reply" to ask: "What is the guest's name?" Do not create the stay without a guest name. Once you have the guest name, create the stay immediately — do not ask for anything else.
+- DO NOT say "work order created" or "stay created" unless you are actually using the create_work_order or create_stay action type. Never use type "reply" to announce a creation — only action types create things.
 - If a request is otherwise unclear, ask for clarification using type "reply"`
 }
 
@@ -179,10 +180,15 @@ export async function handleAiSms(params: {
     const client = new Anthropic({ apiKey })
 
     // Build multi-turn messages: prior history (last 10) + current message
+    // IMPORTANT: assistant messages are stored as human-friendly text in the DB,
+    // but Claude expects its own prior turns to be valid JSON (matching the response format).
+    // We wrap old assistant replies in a JSON envelope so Claude's context remains consistent.
     const priorMessages: Array<{ role: 'user' | 'assistant'; content: string }> =
       (params.conversationHistory ?? []).slice(-10).map(m => ({
         role: m.role,
-        content: m.content,
+        content: m.role === 'assistant'
+          ? JSON.stringify({ type: 'reply', reply: m.content })  // keep format consistent
+          : m.content,
       }))
 
     const response = await client.messages.create({

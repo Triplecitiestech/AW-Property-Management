@@ -1,16 +1,22 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 
-function PriorityBadge({ priority }: { priority: string }) {
-  return <span className={`badge badge-${priority}`}>{priority}</span>
-}
-
-function StatusBadge({ status }: { status: string }) {
-  return <span className={`badge badge-${status}`}>{status.replace('_', ' ')}</span>
-}
-
 function woLabel(num: number | null) {
   return num ? `WO-${String(num).padStart(4, '0')}` : '—'
+}
+
+const PRIORITY_STYLES: Record<string, string> = {
+  urgent: 'bg-red-500/20 text-red-300 border border-red-500/30',
+  high:   'bg-orange-500/20 text-orange-300 border border-orange-500/30',
+  medium: 'bg-amber-500/20 text-amber-300 border border-amber-500/30',
+  low:    'bg-slate-500/20 text-slate-300 border border-slate-500/30',
+}
+
+const STATUS_STYLES: Record<string, string> = {
+  open:        'badge-open',
+  in_progress: 'badge-in_progress',
+  resolved:    'badge-closed',
+  closed:      'badge-closed',
 }
 
 export default async function WorkOrdersPage({
@@ -30,7 +36,6 @@ export default async function WorkOrdersPage({
   if (filters.status) query = query.eq('status', filters.status)
   if (filters.priority) query = query.eq('priority', filters.priority)
   if (filters.q) {
-    // Search by title OR work order number (e.g. "WO-0001" or "1")
     const numMatch = filters.q.replace(/^wo-?/i, '')
     const num = parseInt(numMatch, 10)
     if (!isNaN(num)) {
@@ -42,15 +47,16 @@ export default async function WorkOrdersPage({
 
   const { data: workOrders } = await query
   const { data: properties } = await supabase.from('properties').select('id, name').order('name')
+  const hasFilters = !!(filters.property_id || filters.status || filters.priority || filters.q)
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1>Work Orders</h1>
-          <p className="text-gray-500 mt-1">{workOrders?.length ?? 0} work orders</p>
+          <h1 className="text-2xl font-bold text-white">Work Orders</h1>
+          <p className="text-[#6480a0] text-sm mt-1">{workOrders?.length ?? 0} work orders</p>
         </div>
-        <Link href="/work-orders/new" className="btn-primary">
+        <Link href="/work-orders/new" className="btn-primary text-sm flex items-center gap-2">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -66,7 +72,7 @@ export default async function WorkOrdersPage({
             type="search"
             defaultValue={filters.q ?? ''}
             placeholder="Search by title or WO number…"
-            className="form-input text-sm w-auto flex-1 min-w-[200px]"
+            className="form-input text-sm flex-1 min-w-[200px]"
           />
           <select name="property_id" className="form-select text-sm w-auto" defaultValue={filters.property_id ?? ''}>
             <option value="">All Properties</option>
@@ -87,61 +93,78 @@ export default async function WorkOrdersPage({
             <option value="low">Low</option>
           </select>
           <button type="submit" className="btn-secondary text-sm">Apply</button>
-          {(filters.property_id || filters.status || filters.priority || filters.q) && (
-            <Link href="/work-orders" className="text-sm text-gray-500 hover:text-gray-700">Clear</Link>
+          {hasFilters && (
+            <Link href="/work-orders" className="text-sm text-[#6480a0] hover:text-[#94a3b8]">Clear</Link>
           )}
         </form>
       </div>
 
-      {/* Work Orders Table */}
-      <div className="card overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-600 w-20">WO#</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Work Order</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Property</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Priority</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Assignee</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Due</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {workOrders?.map(wo => (
-              <tr key={wo.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3">
-                  <span className="font-mono text-xs text-gray-400">{woLabel(wo.work_order_number)}</span>
-                </td>
-                <td className="px-4 py-3">
-                  <p className="font-medium text-gray-900">{wo.title}</p>
-                  <p className="text-xs text-gray-400 capitalize">{wo.category}</p>
-                </td>
-                <td className="px-4 py-3 text-gray-600">{(wo.properties as {name:string}|null)?.name ?? '—'}</td>
-                <td className="px-4 py-3"><PriorityBadge priority={wo.priority} /></td>
-                <td className="px-4 py-3"><StatusBadge status={wo.status} /></td>
-                <td className="px-4 py-3 text-gray-500 text-xs">
-                  {(wo.assignee as {full_name:string}|null)?.full_name ?? <span className="text-gray-300">Unassigned</span>}
-                </td>
-                <td className="px-4 py-3 text-gray-500 text-xs">
-                  {wo.due_date ?? <span className="text-gray-300">—</span>}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <Link href={`/work-orders/${wo.id}`} className="text-blue-600 hover:underline text-xs">View</Link>
-                </td>
-              </tr>
-            ))}
-            {(!workOrders || workOrders.length === 0) && (
-              <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-gray-400">
-                  No work orders found.{' '}
-                  <Link href="/work-orders/new" className="text-blue-600 hover:underline">Create one</Link>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      {/* Work Order Cards */}
+      <div className="space-y-2">
+        {workOrders?.map(wo => {
+          const propName = (wo.properties as { name: string } | null)?.name ?? '—'
+          const assigneeName = (wo.assignee as { full_name: string } | null)?.full_name
+          return (
+            <Link
+              key={wo.id}
+              href={`/work-orders/${wo.id}`}
+              className="card flex items-center gap-4 px-5 py-4 hover:bg-[#1e2d42] hover:border-[#3a5070] transition-all cursor-pointer group"
+            >
+              {/* WO number + priority indicator */}
+              <div className="flex flex-col items-center gap-1 flex-shrink-0 w-16">
+                <span className="font-mono text-xs text-[#4a6080]">{woLabel(wo.work_order_number)}</span>
+                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${PRIORITY_STYLES[wo.priority] ?? PRIORITY_STYLES.low}`}>
+                  {wo.priority}
+                </span>
+              </div>
+
+              {/* Main info */}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-white group-hover:text-violet-300 transition-colors truncate">
+                  {wo.title}
+                </p>
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  <span className="text-xs text-[#6480a0]">{propName}</span>
+                  <span className="text-[#2a3d58]">·</span>
+                  <span className="text-xs text-[#6480a0] capitalize">{wo.category}</span>
+                  {assigneeName && (
+                    <>
+                      <span className="text-[#2a3d58]">·</span>
+                      <span className="text-xs text-[#6480a0]">{assigneeName}</span>
+                    </>
+                  )}
+                  {wo.due_date && (
+                    <>
+                      <span className="text-[#2a3d58]">·</span>
+                      <span className="text-xs text-[#6480a0]">Due {wo.due_date}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Status + arrow */}
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <span className={`badge ${STATUS_STYLES[wo.status] ?? 'badge-closed'}`}>
+                  {wo.status.replace('_', ' ')}
+                </span>
+                <svg className="w-4 h-4 text-[#4a6080] group-hover:text-[#6480a0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </Link>
+          )
+        })}
+
+        {(!workOrders || workOrders.length === 0) && (
+          <div className="card p-10 text-center">
+            <p className="text-[#6480a0]">
+              No work orders found.{' '}
+              {hasFilters
+                ? <Link href="/work-orders" className="text-violet-400 hover:text-violet-300">Clear filters</Link>
+                : <Link href="/work-orders/new" className="text-violet-400 hover:text-violet-300">Create one</Link>}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

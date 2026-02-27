@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 
 function StatusBadge({ status }: { status: string }) {
-  const label = status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  const label = status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
   return <span className={`badge badge-${status}`}>{label}</span>
 }
 
@@ -37,10 +37,10 @@ export default async function PropertiesPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1>Properties</h1>
-          <p className="text-gray-500 mt-1">{properties?.length ?? 0} properties</p>
+          <h1 className="text-2xl font-bold text-white">Properties</h1>
+          <p className="text-[#6480a0] text-sm mt-1">{properties?.length ?? 0} properties</p>
         </div>
-        <Link href="/properties/new" className="btn-primary">
+        <Link href="/properties/new" className="btn-primary text-sm flex items-center gap-2">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -59,11 +59,11 @@ export default async function PropertiesPage({
             className="form-input text-sm flex-1"
           />
           <button type="submit" className="btn-secondary text-sm">Search</button>
-          {q && <Link href="/properties" className="text-sm text-gray-500 hover:text-gray-700">Clear</Link>}
+          {q && <Link href="/properties" className="text-sm text-[#6480a0] hover:text-[#94a3b8]">Clear</Link>}
         </form>
       </div>
 
-      <div className="grid gap-4">
+      <div className="space-y-2">
         {properties?.map(property => {
           const ps = Array.isArray(property.property_status)
             ? property.property_status[0]
@@ -73,30 +73,35 @@ export default async function PropertiesPage({
             <Link
               key={property.id}
               href={`/properties/${property.id}`}
-              className="card p-5 flex items-center justify-between hover:shadow-md transition-shadow"
+              className="card flex items-center gap-4 px-5 py-4 hover:bg-[#1e2d42] hover:border-[#3a5070] transition-all cursor-pointer group"
             >
-              <div className="min-w-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{property.name}</h3>
-                    <p className="text-sm text-gray-500">{property.address || 'No address'}</p>
-                  </div>
-                </div>
+              {/* Icon */}
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-violet-400
+                              flex items-center justify-center flex-shrink-0 shadow-lg">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
               </div>
-              <div className="flex items-center gap-3 ml-4 flex-shrink-0">
+
+              {/* Main info */}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-white group-hover:text-violet-300 transition-colors">
+                  {property.name}
+                </p>
+                <p className="text-xs text-[#6480a0] mt-0.5">{property.address || 'No address'}</p>
+              </div>
+
+              {/* Badges + arrow */}
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {ticketCount > 0 && (
-                  <span className="text-xs font-medium text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
-                    {ticketCount} ticket{ticketCount !== 1 ? 's' : ''}
+                  <span className="text-xs font-medium text-orange-300 bg-orange-500/20 px-2 py-0.5 rounded-full border border-orange-500/30">
+                    {ticketCount} open ticket{ticketCount !== 1 ? 's' : ''}
                   </span>
                 )}
                 {ps && <StatusBadge status={ps.occupancy} />}
                 {ps && <StatusBadge status={ps.status} />}
-                <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-[#4a6080] group-hover:text-[#6480a0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </div>
@@ -106,14 +111,15 @@ export default async function PropertiesPage({
 
         {(!properties || properties.length === 0) && (
           <div className="card p-12 text-center">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            <div className="w-12 h-12 bg-[#1a2436] rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-[#4a6080]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
             </div>
-            <h3 className="font-medium text-gray-900 mb-1">No properties yet</h3>
-            <p className="text-sm text-gray-500 mb-4">Add your first property to get started.</p>
-            <Link href="/properties/new" className="btn-primary">Add Property</Link>
+            <h3 className="font-semibold text-white mb-1">No properties yet</h3>
+            <p className="text-sm text-[#6480a0] mb-4">Add your first property to get started.</p>
+            <Link href="/properties/new" className="btn-primary text-sm">Add Property</Link>
           </div>
         )}
       </div>

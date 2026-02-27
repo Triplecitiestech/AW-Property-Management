@@ -5,9 +5,10 @@ import Link from 'next/link'
 import { createTicket } from '@/lib/actions/tickets'
 import { CONTACT_ROLES } from '@/lib/contact-roles'
 
-type Property = { id: string; name: string }
+type Property = { id: string; name: string; property_type?: string }
 type Manager = { id: string; full_name: string }
 type Contact = { id: string; property_id: string; name: string; role: string; email: string | null; phone: string | null }
+type Unit = { id: string; property_id: string; identifier: string; name: string | null }
 
 function roleLabel(role: string) {
   return CONTACT_ROLES.find(r => r.value === role)?.label ?? role
@@ -17,12 +18,14 @@ export default function NewWorkOrderForm({
   properties,
   managers,
   allContacts,
+  allUnits,
   defaultPropertyId,
   tomorrowStr,
 }: {
   properties: Property[]
   managers: Manager[]
   allContacts: Contact[]
+  allUnits: Unit[]
   defaultPropertyId: string
   tomorrowStr: string
 }) {
@@ -31,6 +34,7 @@ export default function NewWorkOrderForm({
   const [error, setError] = useState<string | null>(null)
 
   const propertyContacts = allContacts.filter(c => c.property_id === selectedPropertyId)
+  const propertyUnits = allUnits.filter(u => u.property_id === selectedPropertyId)
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -71,6 +75,20 @@ export default function NewWorkOrderForm({
               {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </div>
+
+          {propertyUnits.length > 0 && (
+            <div>
+              <label className="form-label" htmlFor="unit_id">Unit / Room</label>
+              <select id="unit_id" name="unit_id" className="form-select">
+                <option value="">All units / Property-wide</option>
+                {propertyUnits.map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.identifier}{u.name ? ` — ${u.name}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="form-label" htmlFor="title">Title *</label>

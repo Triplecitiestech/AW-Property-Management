@@ -6,6 +6,7 @@
 export type UserRole = 'owner' | 'manager'
 export type OrgRole = 'owner' | 'admin' | 'member'
 export type PropertyRole = 'manager' | 'viewer'
+export type PropertyType = 'single_family' | 'apartment_building' | 'hospitality'
 export type PropertyStatusEnum = 'clean' | 'needs_cleaning' | 'needs_maintenance' | 'needs_groceries'
 export type OccupancyEnum = 'occupied' | 'unoccupied'
 export type TicketCategory = 'maintenance' | 'cleaning' | 'supplies' | 'plumbing' | 'electrical' | 'hvac' | 'landscaping' | 'other'
@@ -78,8 +79,21 @@ export interface Property {
   check_in_time: string | null
   check_out_time: string | null
   house_rules: string | null
+  property_type: PropertyType
   owner_id: string
   org_id: string | null
+  created_at: string
+}
+
+export interface PropertyUnit {
+  id: string
+  property_id: string
+  identifier: string   // "101", "56A", "Suite 5"
+  name: string | null  // optional display name
+  floor: number | null
+  notes: string | null
+  is_active: boolean
+  sort_order: number
   created_at: string
 }
 
@@ -96,6 +110,7 @@ export interface PropertyStatus {
 export interface Stay {
   id: string
   property_id: string
+  unit_id: string | null
   guest_name: string
   guest_email: string | null
   start_date: string
@@ -114,6 +129,7 @@ export interface Stay {
 export interface ServiceRequest {
   id: string
   property_id: string
+  unit_id: string | null
   stay_id: string | null
   title: string
   description: string | null

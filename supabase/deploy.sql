@@ -918,3 +918,55 @@ ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS is_ai_action BOOLEAN NOT NULL DEF
 ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS reverted_at TIMESTAMPTZ;
 ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS reverted_by UUID REFERENCES profiles(id) ON DELETE SET NULL;
 
+-- ========================
+-- 016: Multi-unit property support
+-- ========================
+
+-- Property type: single_family (default), apartment_building, hospitality
+ALTER TABLE properties ADD COLUMN IF NOT EXISTS property_type TEXT NOT NULL DEFAULT 'single_family'
+  CHECK (property_type IN ('single_family', 'apartment_building', 'hospitality'));
+
+-- Units table — only populated for apartment_building / hospitality properties
+CREATE TABLE IF NOT EXISTS property_units (
+  id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  property_id UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+  identifier  TEXT NOT NULL,        -- "101", "56A", "Suite 5", etc.
+  name        TEXT,                 -- optional display name
+  floor       INT,                  -- optional floor number
+  notes       TEXT,
+  is_active   BOOLEAN NOT NULL DEFAULT true,
+  sort_order  INT NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (property_id, identifier)
+);
+
+CREATE INDEX IF NOT EXISTS idx_property_units_property
+  ON property_units(property_id, sort_order, identifier);
+
+ALTER TABLE property_units ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "units_select"  ON property_units;
+DROP POLICY IF EXISTS "units_insert"  ON property_units;
+DROP POLICY IF EXISTS "units_update"  ON property_units;
+DROP POLICY IF EXISTS "units_delete"  ON property_units;
+
+CREATE POLICY "units_select" ON property_units
+  FOR SELECT TO authenticated USING (can_access_property(property_id));
+CREATE POLICY "units_insert" ON property_units
+  FOR INSERT TO authenticated WITH CHECK (is_property_admin(property_id));
+CREATE POLICY "units_update" ON property_units
+  FOR UPDATE TO authenticated USING (is_property_admin(property_id)) WITH CHECK (is_property_admin(property_id));
+CREATE POLICY "units_delete" ON property_units
+  FOR DELETE TO authenticated USING (is_property_admin(property_id));
+
+-- Link units to service requests and stays (nullable — existing rows unaffected)
+ALTER TABLE service_requests
+  ADD COLUMN IF NOT EXISTS unit_id UUID REFERENCES property_units(id) ON DELETE SET NULL;
+
+ALTER TABLE stays
+  ADD COLUMN IF NOT EXISTS unit_id UUID REFERENCES property_units(id) ON DELETE SET NULL;
+
+-- Link units to checklists (nullable — existing checklists unaffected)
+ALTER TABLE property_checklists
+  ADD COLUMN IF NOT EXISTS unit_id UUID REFERENCES property_units(id) ON DELETE CASCADE;
+

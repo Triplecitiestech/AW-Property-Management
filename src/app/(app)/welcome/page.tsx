@@ -11,7 +11,7 @@ const steps = [
           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
       </svg>
     ),
-    title: 'Add your first property',
+    title: 'Add your properties',
     description: 'Start here — everything else connects to a property. The onboarding wizard walks you through each step.',
     bullets: [
       'Enter property name, address, and access info (WiFi, door codes)',
@@ -31,7 +31,7 @@ const steps = [
           d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     ),
-    title: 'Add your team & service contacts',
+    title: 'Add team & contacts',
     description: 'Your people are what make the AI powerful. Add external vendors for fully automated work order routing, and invite your co-hosts or staff for full platform access.',
     bullets: [
       'Add service contacts (cleaner, plumber, electrician, HVAC, landscaper) — the AI assigns them to work orders automatically',
@@ -44,63 +44,43 @@ const steps = [
   },
   {
     number: 3,
-    color: 'from-emerald-600 to-emerald-400',
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    ),
-    title: 'Track guest stays',
-    description: 'Log every check-in. Smart Sumai generates a unique welcome page for each stay that you can share with guests.',
-    bullets: [
-      'Record guest name, check-in and check-out dates',
-      'Add WiFi, door codes, and house rules — they appear on the guest welcome page',
-      'Guests can submit a checkout report — issues auto-create work orders',
-      'No account needed for guests',
-    ],
-    action: { label: 'Log a Stay →', href: '/stays/new' },
-    tip: 'Tip: Copy the guest link from the stay page and paste it into your Airbnb message.',
-  },
-  {
-    number: 4,
-    color: 'from-rose-600 to-rose-400',
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-      </svg>
-    ),
-    title: 'Manage work orders',
-    description: 'Create work orders for anything that needs attention. The AI assigns the right contact and sends them a detailed professional message automatically.',
-    bullets: [
-      'Categories: cleaning, maintenance, plumbing, HVAC, electrical, landscaping, supplies',
-      'Priority levels: urgent, high, medium, low',
-      'AI auto-notifies the assigned contact with a full work description',
-      'Add internal notes for your team, or send external updates to the contact',
-    ],
-    action: { label: 'Create a Work Order →', href: '/work-orders/new' },
-    tip: 'Tip: All AI actions are logged — so you can always review what the AI did and reverse a mistake.',
-  },
-  {
-    number: 5,
-    color: 'from-amber-600 to-amber-400',
+    color: 'from-violet-500 to-violet-400',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
           d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
       </svg>
     ),
-    title: 'Use the AI assistant',
-    description: 'Text your AI from anywhere via SMS or the chat bubble — create work orders, check status, add stays, and more using plain language.',
+    title: 'Text your AI',
+    description: 'Text your AI from anywhere via SMS or the in-app chat bubble — create work orders, check status, add stays, and more using plain language.',
     bullets: [
-      'Text "Schedule a cleaning at the Lewis house after checkout this Friday"',
-      'Text "Mark the Vestal property as clean" — status updates instantly',
+      'Text "Schedule a cleaning at the Lewis house after checkout this Friday" — AI creates the work order and notifies your cleaner',
+      'Text "Mark the Vestal property as clean" — status updates instantly across your whole team',
       'Text "Urgent leaking pipe at Beach House" — AI creates a ticket and contacts your plumber',
-      'All AI changes are logged with full history — never worry about mistakes',
+      'All AI changes are logged with full history — you can always review and reverse a mistake',
     ],
     action: { label: 'Open Dashboard →', href: '/dashboard' },
     tip: 'Tip: The AI learns your property names — even partial names and addresses work.',
+  },
+  {
+    number: 4,
+    color: 'from-teal-500 to-teal-400',
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+      </svg>
+    ),
+    title: 'Manage from anywhere',
+    description: 'Your dashboard stays current in real time. Track guest stays, open work orders, and property status from any device.',
+    bullets: [
+      'Log guest check-ins with dates — AI generates a shareable welcome page with WiFi, door codes, and house rules',
+      'Guests can submit a checkout report from their welcome page — issues auto-create work orders',
+      'Create work orders for cleaning, maintenance, plumbing, HVAC, electrical, landscaping, and supplies',
+      'Priority levels, assigned contacts, and full audit trail — the AI notifies the right person every time',
+    ],
+    action: { label: 'Go to Dashboard →', href: '/dashboard' },
+    tip: 'Tip: Copy the guest link from any stay page and paste it directly into your Airbnb or VRBO message.',
   },
 ]
 

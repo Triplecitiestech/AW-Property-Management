@@ -52,13 +52,6 @@ export default async function Home({
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full
-                          bg-violet-500/15 border border-violet-500/30 text-violet-300 text-sm font-medium mb-6">
-            <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
-            AI Property Manager
-          </div>
-
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-[1.05]">
             AI that manages{' '}
@@ -280,10 +273,6 @@ export default async function Home({
       <section className="py-24 border-t border-white/5" id="ai">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full
-                            bg-violet-500/15 border border-violet-500/30 text-violet-300 text-sm font-medium mb-4">
-              AI Property Manager
-            </div>
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
               Text it. It handles it.
             </h2>

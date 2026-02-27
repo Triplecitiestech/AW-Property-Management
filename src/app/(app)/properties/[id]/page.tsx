@@ -10,6 +10,7 @@ import PropertyContactsEditor from '@/components/properties/PropertyContactsEdit
 import ScrollToContactsButton from '@/components/properties/ScrollToContactsButton'
 import { seedDefaultCategoryChecklists } from '@/lib/actions/checklist'
 import LocalDate from '@/components/LocalDate'
+import PropertyUnitsManager from '@/components/properties/PropertyUnitsManager'
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -22,6 +23,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
     { data: propertyChecklists },
     { data: auditEntries },
     { data: contacts },
+    { data: units },
   ] = await Promise.all([
     supabase.from('properties').select('*, property_status(*)').eq('id', id).single(),
     supabase.from('service_requests').select('id, title, priority, status, category, created_at').eq('property_id', id).in('status', ['open', 'in_progress']).order('created_at', { ascending: false }).limit(8),
@@ -29,6 +31,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
     supabase.from('property_checklists').select('id, name, category, enabled, property_checklist_items(id, label, is_checked, sort_order)').eq('property_id', id).order('sort_order'),
     supabase.from('audit_log').select('*, profiles(full_name)').eq('entity_id', id).order('changed_at', { ascending: false }).limit(8),
     supabase.from('property_contacts').select('*').eq('property_id', id).order('sort_order'),
+    supabase.from('property_units').select('id, identifier, name, floor, notes, is_active, sort_order').eq('property_id', id).order('sort_order').order('identifier'),
   ])
 
   if (!property) notFound()
@@ -262,6 +265,18 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
           )}
         </div>
       </div>
+
+      {/* Units Manager — only for multi-unit property types */}
+      {((property as { property_type?: string }).property_type === 'apartment_building' ||
+        (property as { property_type?: string }).property_type === 'hospitality') && (
+        <div className="card p-5">
+          <PropertyUnitsManager
+            propertyId={property.id}
+            propertyType={(property as { property_type?: string }).property_type ?? 'single_family'}
+            initialUnits={units ?? []}
+          />
+        </div>
+      )}
 
       {/* Property Contacts */}
       <div id="contacts" className="card p-5">

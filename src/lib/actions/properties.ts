@@ -12,7 +12,8 @@ import { DEFAULT_CHECKLIST_LABELS } from '@/lib/checklist-defaults'
 export async function createPropertyForWizard(
   name: string,
   address: string,
-  description: string | null
+  description: string | null,
+  propertyType: 'single_family' | 'apartment_building' | 'hospitality' = 'single_family'
 ): Promise<{ propertyId: string } | { error: string }> {
   try {
     const supabase = await createClient()
@@ -32,6 +33,7 @@ export async function createPropertyForWizard(
         name: name.trim(),
         address: address?.trim() ?? '',
         description: description?.trim() || null,
+        property_type: propertyType,
         owner_id: user.id,
         org_id: orgId,
       })

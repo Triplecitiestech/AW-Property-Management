@@ -142,6 +142,7 @@ function PropertyDetailsStep({
   initialName = '',
   initialAddress = '',
   initialDescription = '',
+  initialPropertyType = 'single_family',
   onSave,
   onSkip,
 }: {
@@ -150,11 +151,13 @@ function PropertyDetailsStep({
   initialName?: string
   initialAddress?: string
   initialDescription?: string
-  onSave: (propertyId: string, name: string) => void
+  initialPropertyType?: string
+  onSave: (propertyId: string, name: string, propertyType: string) => void
   onSkip?: () => void
 }) {
   const [name, setName] = useState(initialName)
   const [address, setAddress] = useState(initialAddress)
+  const [propertyType, setPropertyType] = useState(initialPropertyType)
 
   // Create mode: structured property info fields
   const [bedrooms, setBedrooms] = useState('')
@@ -202,7 +205,7 @@ function PropertyDetailsStep({
     startTransition(async () => {
       if (isNew) {
         const desc = buildDescription(bedrooms, bathrooms, maxGuests, wifiName, wifiPass, amenities, extra)
-        const result = await createPropertyForWizard(name, address, desc || null)
+        const result = await createPropertyForWizard(name, address, desc || null, propertyType as 'single_family' | 'apartment_building' | 'hospitality')
         if ('error' in result) { setError(result.error); return }
         // Save AI summary if generated
         if (aiSummary) {
@@ -212,7 +215,7 @@ function PropertyDetailsStep({
             body: JSON.stringify({ propertyId: result.propertyId, summary: aiSummary }),
           }).catch(() => {})
         }
-        onSave(result.propertyId, name.trim())
+        onSave(result.propertyId, name.trim(), propertyType)
       } else {
         const fd = new FormData()
         fd.set('name', name)
@@ -220,7 +223,7 @@ function PropertyDetailsStep({
         fd.set('description', description)
         const result = await updateProperty(propertyId!, fd)
         if (result?.error) { setError(result.error); return }
-        onSave(propertyId!, name.trim())
+        onSave(propertyId!, name.trim(), propertyType)
       }
     })
   }
@@ -249,6 +252,23 @@ function PropertyDetailsStep({
             onChange={e => setAddress(e.target.value)}
             placeholder="123 Main St, City, State ZIP"
           />
+        </div>
+        <div>
+          <label className="form-label text-xs">Property Type</label>
+          <select
+            className="form-select text-sm"
+            value={propertyType}
+            onChange={e => setPropertyType(e.target.value)}
+          >
+            <option value="single_family">Single Family / Vacation Rental</option>
+            <option value="apartment_building">Apartment Building (Multi-Unit)</option>
+            <option value="hospitality">Hotel / Hospitality</option>
+          </select>
+          {propertyType !== 'single_family' && (
+            <p className="text-[11px] text-[#6480a0] mt-1">
+              You can add and manage individual units from the property page after creation.
+            </p>
+          )}
         </div>
       </div>
 
@@ -906,6 +926,7 @@ export default function OnboardingWizard({
   const [maxReached, setMaxReached] = useState(isNew ? 0 : STEPS.length - 1)
   const [resolvedPropertyId, setResolvedPropertyId] = useState<string | undefined>(propPropertyId)
   const [resolvedName, setResolvedName] = useState(initialName)
+  const [resolvedPropertyType, setResolvedPropertyType] = useState('single_family')
 
   const done = step >= STEPS.length
   const next = () => {
@@ -920,9 +941,10 @@ export default function OnboardingWizard({
     setStep(targetStep)
   }
 
-  function handleDetailsSave(id: string, name: string) {
+  function handleDetailsSave(id: string, name: string, propertyType: string) {
     setResolvedPropertyId(id)
     setResolvedName(name)
+    setResolvedPropertyType(propertyType)
     next()
   }
 

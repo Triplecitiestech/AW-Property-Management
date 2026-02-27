@@ -55,6 +55,7 @@ export async function createTicket(formData: FormData) {
   if (!user) redirect('/auth/login')
 
   const property_id = formData.get('property_id') as string
+  const unit_id = (formData.get('unit_id') as string) || null
   const stay_id = (formData.get('stay_id') as string) || null
   const title = formData.get('title') as string
   const description = (formData.get('description') as string) || null
@@ -83,6 +84,7 @@ export async function createTicket(formData: FormData) {
     .from('service_requests')
     .insert({
       property_id,
+      unit_id: unit_id || null,
       stay_id: stay_id || null,
       title: title.trim(),
       description: description?.trim() || null,

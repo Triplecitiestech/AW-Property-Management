@@ -13,6 +13,7 @@ export async function createStay(formData: FormData) {
   if (!user) redirect('/auth/login')
 
   const property_id = formData.get('property_id') as string
+  const unit_id = (formData.get('unit_id') as string) || null
   const guest_name = formData.get('guest_name') as string
   const guest_email = (formData.get('guest_email') as string) || null
   const start_date = formData.get('start_date') as string
@@ -32,6 +33,7 @@ export async function createStay(formData: FormData) {
     .from('stays')
     .insert({
       property_id,
+      unit_id: unit_id || null,
       guest_name: guest_name.trim(),
       guest_email: guest_email?.trim() || null,
       start_date,

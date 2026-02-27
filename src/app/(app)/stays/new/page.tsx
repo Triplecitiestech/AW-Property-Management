@@ -14,7 +14,12 @@ export default async function NewStayPage({
 }) {
   const { property_id } = await searchParams
   const supabase = await createClient()
-  const { data: properties } = await supabase.from('properties').select('id, name').order('name')
+  const [{ data: properties }, { data: units }] = await Promise.all([
+    supabase.from('properties').select('id, name').order('name'),
+    property_id
+      ? supabase.from('property_units').select('id, identifier, name').eq('property_id', property_id).eq('is_active', true).order('sort_order').order('identifier')
+      : Promise.resolve({ data: [] }),
+  ])
 
   const today = new Date().toISOString().split('T')[0]
 
@@ -40,6 +45,20 @@ export default async function NewStayPage({
               ))}
             </select>
           </div>
+
+          {units && units.length > 0 && (
+            <div>
+              <label className="form-label" htmlFor="unit_id">Unit / Room</label>
+              <select id="unit_id" name="unit_id" className="form-select">
+                <option value="">All units / Property-wide</option>
+                {units.map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.identifier}{u.name ? ` — ${u.name}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="form-label" htmlFor="stay_type">Stay Type *</label>

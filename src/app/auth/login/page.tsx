@@ -157,6 +157,8 @@ export default function LoginPage() {
                   <span className="text-[11px] text-[#60608a] leading-relaxed">
                     I have read and agree to the{' '}
                     <Link href="/terms" target="_blank" className="text-violet-400 hover:text-violet-300 underline">Terms of Use</Link>
+                    {' '}and{' '}
+                    <Link href="/privacy" target="_blank" className="text-violet-400 hover:text-violet-300 underline">Privacy Policy</Link>
                     . I am at least 18 years old.
                   </span>
                 </label>
@@ -185,7 +187,7 @@ export default function LoginPage() {
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                minLength={6}
+                minLength={mode === 'login' ? 6 : 8}
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               />
             </div>

@@ -5,6 +5,22 @@ import Link from 'next/link'
 export const metadata = {
   title: 'Smart Sumai — Property Management Made Smart',
   description: 'AI-powered property management for short-term rental hosts. Manage properties, guests, tickets, and teams — all in one place. $10/property/month.',
+  openGraph: {
+    title: 'Smart Sumai — Property Management Made Smart',
+    description: 'AI-powered property management for short-term rental hosts. Manage work orders, guest stays, checklists, and your whole team — all from one dashboard.',
+    url: 'https://aw-property-management.vercel.app',
+    siteName: 'Smart Sumai',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Smart Sumai — Property Management Made Smart',
+    description: 'AI-powered property management for short-term rental hosts. $10/property/month.',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default async function Home({
@@ -369,7 +385,8 @@ export default async function Home({
             </div>
             <div className="flex items-center gap-6 text-sm text-[#4a6080]">
               <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-              <Link href="/faq" className="hover:text-white transition-colors">FAQ</Link>
+              <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+              <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
               <Link href="/auth/login" className="hover:text-white transition-colors">Sign In</Link>
               <Link href="/auth/login?mode=signup" className="hover:text-white transition-colors">Sign Up</Link>
             </div>

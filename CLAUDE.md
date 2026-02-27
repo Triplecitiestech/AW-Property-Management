@@ -224,10 +224,47 @@ Run this via the Supabase MCP tool (`mcp__supabase__execute_sql`) or via the man
 - `metadata`: JSON with extras (digest, segment, etc.)
 - `resolved`: false = needs attention
 
+## SOC 2 & PCI DSS Compliance
+
+**Standing instruction:** If the user asks to implement something that violates SOC 2 or PCI DSS best practices, warn them explicitly before proceeding. Suggest the compliant alternative.
+
+### Compliance posture (as of 2026-02-27)
+- **PCI scope**: SAQ A (Stripe Checkout hosted redirect — no card data ever touches the server). ✅
+- **SOC 2 target**: Type II (Security, Availability, Confidentiality criteria)
+
+### What is already compliant ✅
+- All payments via Stripe Checkout (card data never on our servers)
+- Stripe webhook signature verification
+- Row-Level Security on all Supabase tables
+- SECURITY DEFINER functions prevent privilege escalation
+- HTTPS enforced by Vercel
+- Encryption at rest (Supabase) and in transit (Vercel TLS)
+- Audit log (`audit_log` table) for all changes
+- Error logging (`error_logs` table)
+- ToS and SMS consent captured at signup
+- Property-level and org-level RBAC
+
+### Compliance gaps & known items to address
+- **Security headers** — CSP, X-Frame-Options, HSTS, Referrer-Policy, Permissions-Policy must be set (critical for PCI + SOC 2)
+- **Privacy Policy** — required for GDPR, CCPA, and SOC 2 Privacy criteria; page must exist at `/privacy`
+- **Password policy** — Supabase default minimum is 6 chars; PCI v4.0 requires 12 for admin interfaces; enforce 8+ minimum at minimum, ideally 12
+- **MFA** — SOC 2 Type II and PCI DSS v4.0 require MFA for admin access; Supabase supports it but it is not yet exposed to users
+- **Session timeout** — No automatic logout after inactivity; configure Supabase token refresh max to 24h
+- **Data retention** — `conversations`, `error_logs`, and `guest_reports` IP addresses have no TTL/cleanup; add scheduled cleanup (90-day retention for conversations, 30-day for error_logs)
+- **Rate limiting** — Login endpoint has no brute-force protection; add `upstash/ratelimit` or middleware-based limiting
+- **Vulnerability scanning** — No automated SAST/dependency scanning in CI; add `npm audit` to deploy.yml
+
+### PCI-specific rules (never violate these)
+- NEVER store full card numbers, CVV, or PAN in any table, log, or variable
+- NEVER log Stripe secret keys, webhook secrets, or customer payment data
+- NEVER render cardholder data on any app page
+- ALWAYS verify Stripe webhook signatures before processing
+- ALWAYS use Stripe Checkout or Elements — never custom card input forms
+
 ## What still needs to be done
-- Nothing critical. The app is fully functional.
+- See compliance gaps above (security headers + privacy page were implemented 2026-02-27)
 - **v2 ideas**: photo uploads on tickets/guest reports, recurring tasks, weekly email digest,
-  QR codes per property, SMS delivery status tracking, Stripe billing per property
+  QR codes per property, SMS delivery status tracking, MFA for admin users, data retention cleanup jobs
 
 ## Project structure
 ```

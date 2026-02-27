@@ -5,6 +5,7 @@ import WorkOrderStatusSelect from '@/components/work-orders/WorkOrderStatusSelec
 import AddWorkOrderCommentForm from '@/components/work-orders/AddWorkOrderCommentForm'
 import DeleteWorkOrderButton from '@/components/work-orders/DeleteWorkOrderButton'
 import RevertAiActionButton from '@/components/work-orders/RevertAiActionButton'
+import LocalDate from '@/components/LocalDate'
 
 export default async function WorkOrderDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ notified?: string; notify_error?: string }> }) {
   const { id } = await params
@@ -80,7 +81,7 @@ export default async function WorkOrderDetailPage({ params, searchParams }: { pa
             {woNum && <p className="font-mono text-xs text-[#6480a0] mb-0.5">{woNum}</p>}
             <h1 className="text-2xl font-bold text-white truncate">{workOrder.title}</h1>
             <p className="text-[#6480a0] text-sm mt-0.5">
-              {propertyName} · <span className="capitalize">{workOrder.category}</span> · Created {new Date(workOrder.created_at).toLocaleDateString()} by {creator?.full_name ?? 'Unknown'}
+              {propertyName} · <span className="capitalize">{workOrder.category}</span> · Created <LocalDate iso={workOrder.created_at} /> by {creator?.full_name ?? 'Unknown'}
               {workOrder.source && <span className="ml-1 text-xs text-[#4a6080]">via {workOrder.source === 'sms' ? 'SMS' : 'web chat'} AI</span>}
             </p>
           </div>
@@ -125,7 +126,7 @@ export default async function WorkOrderDetailPage({ params, searchParams }: { pa
                           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-0.5">
                             <span>🤖</span> Smart Sumai AI
                           </span>
-                          <span className="text-xs text-[#4a6080]">{new Date(comment.created_at).toLocaleString()}</span>
+                          <span className="text-xs text-[#4a6080]"><LocalDate iso={comment.created_at} showTime /></span>
                         </>
                       ) : (
                         <>
@@ -135,7 +136,7 @@ export default async function WorkOrderDetailPage({ params, searchParams }: { pa
                           <span className="font-medium text-sm text-[#e2e8f0]">
                             {(comment.profiles as {full_name:string}|null)?.full_name ?? 'Unknown'}
                           </span>
-                          <span className="text-xs text-[#4a6080]">{new Date(comment.created_at).toLocaleString()}</span>
+                          <span className="text-xs text-[#4a6080]"><LocalDate iso={comment.created_at} showTime /></span>
                           {isExternal ? (
                             <span className="text-[10px] font-semibold text-teal-400 bg-teal-500/10 border border-teal-500/20 rounded-full px-2 py-0.5 ml-auto">External · sent to contact</span>
                           ) : (
@@ -185,7 +186,7 @@ export default async function WorkOrderDetailPage({ params, searchParams }: { pa
                   {outboundSentAt && (
                     <div className="flex items-center gap-1.5">
                       <span className="font-medium text-[#94a3b8]">Sent:</span>
-                      <span>{new Date(outboundSentAt).toLocaleString()}</span>
+                      <span><LocalDate iso={outboundSentAt} showTime /></span>
                     </div>
                   )}
                 </div>
@@ -225,7 +226,7 @@ export default async function WorkOrderDetailPage({ params, searchParams }: { pa
                             )}
                           </div>
                         </div>
-                        <span className="text-xs text-[#4a6080] flex-shrink-0">{new Date(entry.changed_at).toLocaleDateString()}</span>
+                        <span className="text-xs text-[#4a6080] flex-shrink-0"><LocalDate iso={entry.changed_at} /></span>
                       </div>
                       {isAi && (
                         <div className="mt-1.5">
@@ -290,7 +291,8 @@ export default async function WorkOrderDetailPage({ params, searchParams }: { pa
               <div className="mt-4 pt-4 border-t border-[#2a3d58]">
                 <p className="text-[#4a6080] text-xs mb-2">
                   {outboundSentAt
-                    ? `Last notified ${new Date(outboundSentAt).toLocaleDateString()} via ${outboundMethod}`
+                    ? <>Last notified <LocalDate iso={outboundSentAt} /> via {outboundMethod}</>
+
                     : 'Contact has not been notified yet'}
                 </p>
                 {notified && (

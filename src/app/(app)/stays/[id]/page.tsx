@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import DeleteStayButton from '@/components/stays/DeleteStayButton'
 import CopyLinkButton from '@/components/stays/CopyLinkButton'
+import LocalDate from '@/components/LocalDate'
 
 export default async function StayDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -103,7 +104,7 @@ export default async function StayDetailPage({ params }: { params: Promise<{ id:
                         <span className="font-medium text-[#e2e8f0]">{actor}</span>
                         <span className="text-[#6480a0]">{entry.action} this stay</span>
                       </div>
-                      <span className="text-xs text-[#4a6080]">{new Date(entry.changed_at).toLocaleDateString()}</span>
+                      <span className="text-xs text-[#4a6080]"><LocalDate iso={entry.changed_at} /></span>
                     </div>
                   )
                 })}
@@ -118,7 +119,7 @@ export default async function StayDetailPage({ params }: { params: Promise<{ id:
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                  <p className="text-sm text-teal-400 font-medium">Report submitted on {new Date(guestReport.submitted_at).toLocaleDateString()}</p>
+                  <p className="text-sm text-teal-400 font-medium">Report submitted on <LocalDate iso={guestReport.submitted_at} /></p>
                 </div>
                 <div className="space-y-2">
                   {(guestReport.checklist as Array<{label: string; checked: boolean}>).map((item, i) => (

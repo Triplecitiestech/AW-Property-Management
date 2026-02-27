@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
+import LocalDate from '@/components/LocalDate'
 
 function toLabel(s: string) {
   return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
@@ -148,7 +149,7 @@ export default async function DashboardPage() {
                   </p>
                 </div>
                 <p className="text-xs text-gray-400 ml-4 flex-shrink-0">
-                  {new Date(entry.changed_at).toLocaleDateString()}
+                  <LocalDate iso={entry.changed_at} />
                 </p>
               </div>
             )

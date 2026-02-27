@@ -9,6 +9,7 @@ import AiInstructionsEditor from '@/components/properties/AiInstructionsEditor'
 import PropertyContactsEditor from '@/components/properties/PropertyContactsEditor'
 import ScrollToContactsButton from '@/components/properties/ScrollToContactsButton'
 import { seedDefaultCategoryChecklists } from '@/lib/actions/checklist'
+import LocalDate from '@/components/LocalDate'
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -251,7 +252,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                         {detail && <span className="text-[#6480a0]"> · {String(detail)}</span>}
                       </span>
                       <span className="text-[#6480a0] text-xs flex-shrink-0 ml-3">
-                        {new Date(entry.changed_at).toLocaleDateString()}
+                        <LocalDate iso={entry.changed_at} />
                       </span>
                     </div>
                   )

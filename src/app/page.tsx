@@ -90,6 +90,18 @@ export default async function Home({
             </Link>
           </div>
 
+          {/* ── Dashboard label ── */}
+          <div className="mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full
+                            bg-teal-500/15 border border-teal-500/30 text-teal-300 text-xs font-medium mb-3">
+              Property Dashboard
+            </div>
+            <p className="text-white font-semibold text-lg">Every property, ticket, and stay — one view.</p>
+            <p className="text-[#6480a0] text-sm mt-1">
+              Real-time status badges, open work orders, and upcoming guests across your entire portfolio.
+            </p>
+          </div>
+
           {/* ── Dashboard mockup ── */}
           <div className="relative max-w-5xl mx-auto">
             <div className="rounded-2xl border border-white/10 bg-[#0f1829] shadow-2xl shadow-black/60 overflow-hidden">
@@ -149,6 +161,18 @@ export default async function Home({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* ── AI Chat label ── */}
+          <div className="mt-14 mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full
+                            bg-violet-500/15 border border-violet-500/30 text-violet-300 text-xs font-medium mb-3">
+              AI Assistant
+            </div>
+            <p className="text-white font-semibold text-lg">Text it. It takes action.</p>
+            <p className="text-[#6480a0] text-sm mt-1 max-w-md mx-auto">
+              Works over SMS and in-app chat. No login needed for your team — just send a text.
+            </p>
           </div>
 
           {/* ── AI Chat demo (below dashboard) ── */}

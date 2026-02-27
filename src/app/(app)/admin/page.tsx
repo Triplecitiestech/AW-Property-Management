@@ -2,6 +2,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import DeleteUserButton from '@/components/admin/DeleteUserButton'
 import FeatureRequestAdmin from '@/components/admin/FeatureRequestAdmin'
+import LocalDate from '@/components/LocalDate'
 
 export default async function AdminPage() {
   const svc = createServiceClient()
@@ -142,7 +143,7 @@ export default async function AdminPage() {
                   <td className="px-4 py-3 text-[#94a3b8]">{u.messageCount}</td>
                   <td className="px-4 py-3 text-[#94a3b8]">{u.activityCount}</td>
                   <td className="px-4 py-3 text-xs text-[#6480a0] whitespace-nowrap">
-                    {u.lastActive ? new Date(u.lastActive).toLocaleDateString() : 'Never'}
+                    {u.lastActive ? <LocalDate iso={u.lastActive} /> : 'Never'}
                   </td>
                   <td className="px-4 py-3">
                     {!u.is_super_admin && <DeleteUserButton userId={u.id} userName={u.full_name || u.email || ''} />}

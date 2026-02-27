@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { CONTACT_ROLES } from '@/lib/contact-roles'
+import LocalDate from '@/components/LocalDate'
 function roleLabel(role: string) {
   return CONTACT_ROLES.find(r => r.value === role)?.label ?? role
 }
@@ -206,7 +207,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
                           {wo.title}
                         </p>
                         <p className="text-xs text-[#6480a0]">
-                          {prop?.name} · {new Date(wo.created_at).toLocaleDateString()}
+                          {prop?.name} · <LocalDate iso={wo.created_at} />
                         </p>
                       </div>
                       <span className={`badge ${STATUS_STYLES[wo.status] ?? 'badge-closed'} flex-shrink-0`}>

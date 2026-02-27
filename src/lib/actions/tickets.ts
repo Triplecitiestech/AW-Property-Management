@@ -309,7 +309,7 @@ export async function updateTicket(id: string, formData: FormData) {
 
 // ---- Add Comment ----
 
-export async function addTicketComment(requestId: string, content: string) {
+export async function addTicketComment(requestId: string, content: string, isInternal = true) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
@@ -318,7 +318,7 @@ export async function addTicketComment(requestId: string, content: string) {
 
   const { data: comment, error } = await supabase
     .from('service_request_comments')
-    .insert({ request_id: requestId, author_id: user.id, content: content.trim() })
+    .insert({ request_id: requestId, author_id: user.id, content: content.trim(), is_internal: isInternal })
     .select()
     .single()
 
@@ -329,8 +329,35 @@ export async function addTicketComment(requestId: string, content: string) {
     entity_id: comment.id,
     action: 'created',
     changed_by: user.id,
-    after_data: { request_id: requestId, content: content.trim() },
+    after_data: { request_id: requestId, content: content.trim(), is_internal: isInternal },
   })
+
+  // For external comments, email the assigned contact
+  if (!isInternal) {
+    const { data: workOrder } = await supabase
+      .from('service_requests')
+      .select('title, properties(name), assigned_contact:property_contacts!service_requests_assigned_contact_id_fkey(name, email)')
+      .eq('id', requestId)
+      .single()
+
+    const contact = workOrder?.assigned_contact as unknown as { name: string; email: string | null } | null
+    const propertyName = (workOrder?.properties as unknown as { name: string } | null)?.name ?? 'Property'
+
+    if (contact?.email && workOrder) {
+      try {
+        await sendContactTicketEmail({
+          to: contact.email,
+          contactName: contact.name,
+          ticketId: requestId,
+          title: workOrder.title,
+          propertyName,
+          category: 'update',
+          priority: 'medium',
+          description: content.trim(),
+        })
+      } catch { /* non-fatal */ }
+    }
+  }
 
   revalidatePath(`/work-orders/${requestId}`)
   return { success: true, comment }

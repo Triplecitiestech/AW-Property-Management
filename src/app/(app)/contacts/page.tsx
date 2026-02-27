@@ -32,8 +32,8 @@ export default async function ContactsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1>Contacts</h1>
-          <p className="text-gray-500 mt-1">{contacts?.length ?? 0} contacts</p>
+          <h1 className="text-2xl font-bold text-white">Contacts</h1>
+          <p className="text-[#6480a0] text-sm mt-1">{contacts?.length ?? 0} contacts</p>
         </div>
         <Link href="/contacts/new" className="btn-primary text-sm">
           + Add Contact
@@ -59,72 +59,70 @@ export default async function ContactsPage({
             {CONTACT_ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
           </select>
           <button type="submit" className="btn-secondary text-sm">Filter</button>
-          {hasFilters && <Link href="/contacts" className="text-sm text-gray-500 hover:text-gray-700">Clear</Link>}
+          {hasFilters && <Link href="/contacts" className="text-sm text-[#6480a0] hover:text-[#94a3b8]">Clear</Link>}
         </form>
       </div>
 
-      {/* Table */}
-      <div className="card overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Name</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Role</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Property</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Phone</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Email</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Notes</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {contacts?.map(contact => {
-              const property = contact.properties as { id: string; name: string } | null
-              return (
-                <tr key={contact.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">{contact.name}</span>
-                      {contact.is_primary && (
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-violet-100 text-violet-700">Primary</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{roleLabel(contact.role)}</td>
-                  <td className="px-4 py-3">
-                    {property ? (
-                      <Link href={`/properties/${property.id}`} className="text-blue-600 hover:underline">
-                        {property.name}
-                      </Link>
-                    ) : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {contact.phone
-                      ? <a href={`tel:${contact.phone}`} className="hover:underline">{contact.phone}</a>
-                      : <span className="text-gray-300">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {contact.email
-                      ? <a href={`mailto:${contact.email}`} className="hover:underline text-xs">{contact.email}</a>
-                      : <span className="text-gray-300">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs max-w-[200px] truncate">
-                    {contact.notes ?? <span className="text-gray-300">—</span>}
-                  </td>
-                </tr>
-              )
-            })}
-            {(!contacts || contacts.length === 0) && (
-              <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-gray-400">
-                  No contacts found.{' '}
-                  {hasFilters
-                    ? <Link href="/contacts" className="text-blue-600 hover:underline">Clear filters</Link>
-                    : <span>Add contacts from a property page.</span>}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      {/* Contact Cards */}
+      <div className="space-y-2">
+        {contacts?.map(contact => {
+          const property = contact.properties as { id: string; name: string } | null
+          return (
+            <Link
+              key={contact.id}
+              href={`/contacts/${contact.id}`}
+              className="card flex items-center gap-4 px-5 py-4 hover:bg-[#1e2d42] hover:border-[#3a5070] transition-all cursor-pointer group"
+            >
+              {/* Avatar */}
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-teal-500
+                              flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                {contact.name.charAt(0).toUpperCase()}
+              </div>
+
+              {/* Main info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium text-white group-hover:text-violet-300 transition-colors">
+                    {contact.name}
+                  </span>
+                  {contact.is_primary && (
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                      Primary
+                    </span>
+                  )}
+                  <span className="text-xs text-[#6480a0]">{roleLabel(contact.role)}</span>
+                </div>
+                <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                  {property && (
+                    <span className="text-xs text-[#6480a0]">{property.name}</span>
+                  )}
+                  {contact.phone && (
+                    <span className="text-xs text-[#6480a0]">{contact.phone}</span>
+                  )}
+                  {contact.email && (
+                    <span className="text-xs text-[#6480a0] truncate">{contact.email}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Arrow */}
+              <svg className="w-4 h-4 text-[#4a6080] group-hover:text-[#6480a0] flex-shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          )
+        })}
+
+        {(!contacts || contacts.length === 0) && (
+          <div className="card p-10 text-center">
+            <p className="text-[#6480a0]">
+              No contacts found.{' '}
+              {hasFilters
+                ? <Link href="/contacts" className="text-violet-400 hover:text-violet-300">Clear filters</Link>
+                : <span>Add contacts from a property page or click <Link href="/contacts/new" className="text-violet-400 hover:text-violet-300">+ Add Contact</Link>.</span>}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

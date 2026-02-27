@@ -48,7 +48,12 @@ export async function POST(req: NextRequest) {
         reply = `${action.reply}\n\n⚠ Could not complete: ${result.detail}`
       } else if (result.workOrderId) {
         workOrderId = result.workOrderId
-        reply = `${action.reply}\n\n👉 ${appUrl}/work-orders/${workOrderId}`
+        // Use actual DB property name in reply to avoid AI property-name confusion
+        reply = result.detail
+          ? `Work order created: ${result.detail}\n\n👉 ${appUrl}/work-orders/${workOrderId}`
+          : `${action.reply}\n\n👉 ${appUrl}/work-orders/${workOrderId}`
+      } else if (result.detail) {
+        reply = result.detail
       }
     }
 

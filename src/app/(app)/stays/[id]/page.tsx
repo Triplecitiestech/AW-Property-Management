@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import DeleteStayButton from '@/components/stays/DeleteStayButton'
+import CopyLinkButton from '@/components/stays/CopyLinkButton'
 
 export default async function StayDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -10,11 +11,9 @@ export default async function StayDetailPage({ params }: { params: Promise<{ id:
   const [
     { data: stay },
     { data: guestReport },
-    { data: properties },
   ] = await Promise.all([
     supabase.from('stays').select('*, properties(id, name)').eq('id', id).single(),
     supabase.from('guest_reports').select('*').eq('stay_id', id).single(),
-    supabase.from('properties').select('id, name').order('name'),
   ])
 
   if (!stay) notFound()
@@ -31,14 +30,14 @@ export default async function StayDetailPage({ params }: { params: Promise<{ id:
   return (
     <div className="max-w-3xl space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/stays" className="text-gray-400 hover:text-gray-600">
+        <Link href="/stays" className="text-[#6480a0] hover:text-[#94a3b8] transition-colors">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
         <div>
-          <h1>{stay.guest_name}</h1>
-          <p className="text-gray-500 text-sm">{(stay.properties as {name:string}|null)?.name} · {stay.start_date} → {stay.end_date} ({nights} nights)</p>
+          <h1 className="text-xl font-bold text-white">{stay.guest_name}</h1>
+          <p className="text-[#6480a0] text-sm">{(stay.properties as {name:string}|null)?.name} · {stay.start_date} → {stay.end_date} ({nights} night{nights !== 1 ? 's' : ''})</p>
         </div>
         <span className={`badge ml-auto ${
           stayStatus === 'active' ? 'badge-open' : stayStatus === 'past' ? 'badge-closed' : 'badge-in_progress'
@@ -51,7 +50,7 @@ export default async function StayDetailPage({ params }: { params: Promise<{ id:
         {/* Stay Details */}
         <div className="lg:col-span-2 space-y-4">
           <div className="card p-6">
-            <h3 className="font-semibold mb-4">Stay Details</h3>
+            <h3 className="font-semibold text-white mb-4">Stay Details</h3>
             <form action={async (formData) => {
               'use server'
               const { updateStay } = await import('@/lib/actions/stays')
@@ -78,8 +77,10 @@ export default async function StayDetailPage({ params }: { params: Promise<{ id:
                 </div>
               </div>
               <div>
-                <label className="form-label">Notes</label>
-                <textarea name="notes" className="form-input" rows={3} defaultValue={stay.notes ?? ''} />
+                <label className="form-label">Notes for Your Guest</label>
+                <p className="text-xs text-[#6480a0] mb-1">Shown on the guest welcome page. Leave blank and it won&apos;t appear.</p>
+                <textarea name="notes" className="form-input" rows={3} defaultValue={stay.notes ?? ''}
+                  placeholder="e.g. WiFi: NetworkName / Password123 · Door code: 4521 · Quiet hours after 10pm…" />
               </div>
               <button type="submit" className="btn-primary text-sm">Save Changes</button>
             </form>
@@ -87,68 +88,62 @@ export default async function StayDetailPage({ params }: { params: Promise<{ id:
 
           {/* Guest Report */}
           <div className="card p-6">
-            <h3 className="font-semibold mb-3">Guest Report</h3>
+            <h3 className="font-semibold text-white mb-3">Guest Report</h3>
             {guestReport ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <p className="text-sm text-green-700 font-medium">Report submitted on {new Date(guestReport.submitted_at).toLocaleDateString()}</p>
+                  <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                  <p className="text-sm text-teal-400 font-medium">Report submitted on {new Date(guestReport.submitted_at).toLocaleDateString()}</p>
                 </div>
                 <div className="space-y-2">
                   {(guestReport.checklist as Array<{label: string; checked: boolean}>).map((item, i) => (
                     <div key={i} className="flex items-center gap-2 text-sm">
-                      <span className={item.checked ? 'text-green-600' : 'text-gray-400'}>
+                      <span className={item.checked ? 'text-teal-400' : 'text-[#6480a0]'}>
                         {item.checked ? '✓' : '✗'}
                       </span>
-                      <span className={item.checked ? 'text-gray-700' : 'text-gray-400'}>{item.label}</span>
+                      <span className={item.checked ? 'text-[#94a3b8]' : 'text-[#6480a0]'}>{item.label}</span>
                     </div>
                   ))}
                 </div>
                 {guestReport.notes && (
-                  <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                    <p className="text-xs font-medium text-gray-500 mb-1">Guest Notes</p>
-                    <p className="text-sm text-gray-700">{guestReport.notes}</p>
+                  <div className="mt-3 p-3 bg-[#0f1829] rounded-lg border border-[#1e2d42]">
+                    <p className="text-xs font-medium text-[#6480a0] mb-1">Guest Notes</p>
+                    <p className="text-sm text-[#94a3b8]">{guestReport.notes}</p>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-sm text-gray-400">No guest report submitted yet.</p>
+              <p className="text-sm text-[#6480a0]">No guest report submitted yet.</p>
             )}
           </div>
         </div>
 
         {/* Sidebar */}
         <div className="space-y-4">
-          {/* Guest Link */}
+          {/* Guest Welcome Page Link */}
           <div className="card p-5">
-            <h3 className="font-semibold mb-3">Guest Link</h3>
-            <p className="text-xs text-gray-500 mb-3">Share this link with the guest to access their checklist.</p>
-            <div className="p-3 bg-gray-50 rounded-lg mb-3">
-              <p className="text-xs text-gray-600 break-all">{guestLink}</p>
+            <h3 className="font-semibold text-white mb-1">Guest Welcome Page</h3>
+            <p className="text-xs text-[#6480a0] mb-3">Share this link with your guest — they&apos;ll see property info, door codes, WiFi, and can submit a checkout report.</p>
+            <div className="p-3 bg-[#0f1829] rounded-lg mb-3 border border-[#1e2d42]">
+              <p className="text-xs text-[#6480a0] break-all">{guestLink}</p>
             </div>
             <div className="space-y-2">
               <a
                 href={guestLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-secondary text-sm w-full justify-center"
+                className="btn-secondary text-sm w-full justify-center flex items-center gap-2"
               >
-                Open Guest Checklist
+                Open Guest Welcome Page
               </a>
-              <button
-                onClick={undefined}
-                className="btn-secondary text-sm w-full justify-center"
-                id="copy-link"
-                type="button"
-              >
-                Copy Link
-              </button>
+              <CopyLinkButton link={guestLink} />
             </div>
           </div>
 
-          {/* Danger Zone */}
-          <div className="card p-5 border-red-200">
-            <h3 className="font-semibold text-red-700 mb-3">Danger Zone</h3>
+          {/* Remove Stay */}
+          <div className="card p-5">
+            <h3 className="font-semibold text-white mb-1">Remove Stay</h3>
+            <p className="text-xs text-[#6480a0] mb-3">Permanently delete this stay and all associated reports.</p>
             <DeleteStayButton stayId={stay.id} guestName={stay.guest_name} />
           </div>
         </div>

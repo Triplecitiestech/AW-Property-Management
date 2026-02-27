@@ -114,9 +114,10 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
             <div className="divide-y divide-[#1e2d42]">
               {comments?.map(comment => {
                 const aiComment = isAiComment(comment.content)
+                const isExternal = comment.is_internal === false
                 return (
-                  <div key={comment.id} className={`px-5 py-4 ${aiComment ? 'bg-violet-500/5 border-l-2 border-violet-500/40' : ''}`}>
-                    <div className="flex items-center gap-2 mb-2">
+                  <div key={comment.id} className={`px-5 py-4 ${aiComment ? 'bg-violet-500/5 border-l-2 border-violet-500/40' : isExternal ? 'bg-teal-500/5 border-l-2 border-teal-500/40' : ''}`}>
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
                       {aiComment ? (
                         <>
                           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded-full px-2.5 py-0.5">
@@ -133,6 +134,11 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
                             {(comment.profiles as {full_name:string}|null)?.full_name ?? 'Unknown'}
                           </span>
                           <span className="text-xs text-[#4a6080]">{new Date(comment.created_at).toLocaleString()}</span>
+                          {isExternal ? (
+                            <span className="text-[10px] font-semibold text-teal-400 bg-teal-500/10 border border-teal-500/20 rounded-full px-2 py-0.5 ml-auto">External · sent to contact</span>
+                          ) : (
+                            <span className="text-[10px] font-semibold text-[#4a6080] bg-[#1a2436] rounded-full px-2 py-0.5 ml-auto">Internal</span>
+                          )}
                         </>
                       )}
                     </div>

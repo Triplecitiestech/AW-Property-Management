@@ -58,8 +58,8 @@ export default async function AdminPage() {
         {[
           { label: 'Total Users', value: profiles?.length ?? 0, color: 'text-violet-400' },
           { label: 'Total Properties', value: properties?.length ?? 0, color: 'text-teal-400' },
-          { label: 'AI Tokens Used', value: totalTokens.toLocaleString(), color: 'text-amber-400' },
           { label: 'Feature Requests', value: featureRequests?.length ?? 0, color: 'text-emerald-400' },
+          { label: 'Total Messages', value: conversations?.length ?? 0, color: 'text-blue-400' },
         ].map(s => (
           <div key={s.label} className="card p-5">
             <p className="text-xs text-[#6480a0] font-medium">{s.label}</p>
@@ -67,6 +67,52 @@ export default async function AdminPage() {
           </div>
         ))}
       </div>
+
+      {/* AI Token Usage */}
+      {(() => {
+        const TOKEN_LIMIT = 5_000_000 // 5M tokens/month platform limit
+        const pct = Math.min(100, Math.round((totalTokens / TOKEN_LIMIT) * 100))
+        const isWarning = pct >= 80
+        const isCritical = pct >= 95
+        return (
+          <div className={`card p-5 ${isCritical ? 'border border-red-500/40' : isWarning ? 'border border-amber-500/30' : ''}`}>
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <div>
+                <h2 className="font-semibold text-white">AI Token Usage</h2>
+                <p className="text-xs text-[#6480a0] mt-0.5">
+                  {totalTokens.toLocaleString()} of {TOKEN_LIMIT.toLocaleString()} tokens used ({pct}%)
+                </p>
+              </div>
+              <div className="text-right">
+                <p className={`text-2xl font-bold ${isCritical ? 'text-red-400' : isWarning ? 'text-amber-400' : 'text-teal-400'}`}>{pct}%</p>
+                <p className="text-xs text-[#6480a0]">{(TOKEN_LIMIT - totalTokens).toLocaleString()} remaining</p>
+              </div>
+            </div>
+            <div className="h-3 bg-[#0f1829] rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${isCritical ? 'bg-red-500' : isWarning ? 'bg-amber-500' : 'bg-teal-500'}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            {isWarning && !isCritical && (
+              <div className="mt-3 flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
+                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span><strong>80% threshold reached.</strong> AI usage is high — consider reviewing per-user activity below.</span>
+              </div>
+            )}
+            {isCritical && (
+              <div className="mt-3 flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-xs text-red-300">
+                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span><strong>Critical: 95%+ usage.</strong> Token limit nearly exhausted. Action required.</span>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Users Table */}
       <div className="card">

@@ -135,13 +135,15 @@ For adding a contact:
 {"type":"create_contact","reply":"Added [name] as [role] for [property]","property_name":"exact property name","name":"Contact Name","role":"primary|cleaning|maintenance|plumbing|hvac|electrical|landscaping|groceries|other","phone":"optional","email":"optional","notes":"optional"}
 
 === RULES ===
-- Use property names that closely match what's in the PROPERTIES list above
+- PROPERTY NAME: Always use the EXACT property name from the PROPERTIES list (copy it verbatim into property_name). Never use an address or partial name — use the full name like "Vestal Home" not "Home" or "165 Lewis Rd".
 - Dates must be YYYY-MM-DD format. Today is ${new Date().toISOString().split('T')[0]}
 - Reply text must use past tense — say "Work order created" not "I will create"
 - If a property doesn't exist, say so and list available properties
 - CRITICAL: You have the full conversation history in the messages above. ALWAYS reference prior messages before asking for info. Never ask for something already provided.
 - If the user asks to create a work order but the property was NOT mentioned in any prior message, ask which property. Otherwise use the property from context.
-- For cleaning requests, ask ONE question about special instructions/focus areas before creating — unless the user already gave specifics.
+- CONTACT CHECK: Before creating a work order that requires a service provider (cleaning, maintenance, plumbing, electrical, hvac, landscaping), check the CONTACTS section for a matching contact at that property. If NONE exists for that category and property, DO NOT create the work order yet. Instead use type "reply" to say: "No [category] contact is on file for [property]. Please provide their name and phone/email so I can add them, or reply 'skip' to create the work order without a contact."
+- If the user replies "skip" or says to proceed without a contact, then create the work order immediately.
+- For cleaning requests, if a cleaning contact exists, ask ONE question about special instructions before creating — unless the user already gave specifics. If no contact exists, trigger the CONTACT CHECK above first.
 - If a request is otherwise unclear, ask for clarification using type "reply"`
 }
 

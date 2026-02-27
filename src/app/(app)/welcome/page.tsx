@@ -37,8 +37,8 @@ const steps = [
       'Service contacts — add as many as you need',
       'Assign roles: cleaner, plumber, electrician, HVAC, pest control, and more',
     ],
-    action: { label: 'Go to Properties →', href: '/properties' },
-    tip: 'Tip: Open a property → Contacts tab to add and manage contacts.',
+    action: { label: 'Go to Contacts →', href: '/contacts' },
+    tip: 'Tip: You can also add contacts directly from a property page under the Contacts tab.',
   },
   {
     number: 3,

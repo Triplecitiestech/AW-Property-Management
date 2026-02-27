@@ -41,6 +41,7 @@ export default function LoginPage() {
         window.location.href = '/welcome'
       } else {
         if (!tosAgreed) throw new Error('You must accept the Terms of Use to create an account.')
+        if (!phone.trim()) throw new Error('A phone number is required to use the SMS AI assistant.')
         const email = emailOrUsername.trim()
         const { error } = await supabase.auth.signUp({
           email,
@@ -115,9 +116,9 @@ export default function LoginPage() {
                   />
                 </div>
                 <div>
-                  <label className="form-label">Phone Number <span className="text-[#6480a0] font-normal">(optional)</span></label>
+                  <label className="form-label">Phone Number <span className="text-red-400 font-normal text-xs">*required</span></label>
                   <p className="text-[11px] text-[#60608a] mb-1.5">
-                    E.164 format — used for SMS AI. e.g. <span className="font-mono">+16075550100</span>
+                    Required for SMS-based AI assistant access. Use E.164 format, e.g. <span className="font-mono">+16075550100</span>
                   </p>
                   <input
                     type="tel"
@@ -125,6 +126,7 @@ export default function LoginPage() {
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
                     placeholder="+16075550100"
+                    required
                   />
                 </div>
                 {/* SMS Consent — only shown when phone number is provided */}

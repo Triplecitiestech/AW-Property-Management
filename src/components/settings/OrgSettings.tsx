@@ -21,6 +21,8 @@ type Invitation = {
   expires_at: string; created_at: string
 }
 
+const DEFAULT_AI_INSTRUCTIONS = `Be concise and professional. When creating work orders, always confirm the property and contact before proceeding. If a contact is missing for a category, ask the user if they'd like to add one or skip. Prefer texting over email for urgent matters. Always address the user by their first name.`
+
 const ROLE_LABELS: Record<string, string> = {
   owner: 'Owner', admin: 'Admin', member: 'Member',
 }
@@ -165,10 +167,34 @@ export default function OrgSettings({
 
       {/* ── General AI Instructions ────────────────────────────── */}
       <div className="card p-5">
-        <h2 className="text-base font-semibold text-white mb-1">General AI Instructions</h2>
-        <p className="text-xs text-[#6480a0] mb-3">
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <h2 className="text-base font-semibold text-white">General AI Instructions</h2>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm('Restore AI instructions to the recommended defaults? Your current instructions will be replaced.')) {
+                  setAiInstructions(DEFAULT_AI_INSTRUCTIONS)
+                }
+              }}
+              className="text-xs text-[#6480a0] hover:text-amber-400 transition-colors flex-shrink-0"
+            >
+              Restore defaults
+            </button>
+          )}
+        </div>
+        <p className="text-xs text-[#6480a0] mb-2">
           Default instructions for the AI agent across all your properties. Override per-property in the property&apos;s AI Agent Instructions section.
         </p>
+        {/* Warning banner */}
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 mb-3">
+          <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>
+            <strong>Customize carefully.</strong> These instructions guide every AI interaction. Removing key rules (like contact checks or property name matching) may cause the AI to behave unexpectedly. Use &ldquo;Restore defaults&rdquo; if something goes wrong.
+          </span>
+        </div>
         <textarea
           className="form-input text-sm w-full"
           rows={5}

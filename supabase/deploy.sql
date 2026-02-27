@@ -831,3 +831,11 @@ CREATE POLICY "organizations_update" ON organizations FOR UPDATE TO authenticate
   USING (is_org_admin(id));
 
 SELECT 'RLS fix verified and applied' AS final_check;
+
+
+-- ========================
+-- 010: is_internal column on service_request_comments
+-- ========================
+
+ALTER TABLE service_request_comments
+  ADD COLUMN IF NOT EXISTS is_internal BOOLEAN NOT NULL DEFAULT true;

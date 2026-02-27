@@ -88,6 +88,37 @@ jobs:
             exit 1
           fi
 
+      - name: Configure Twilio SMS webhook URL
+        # Sets the inbound SMS webhook on our Twilio number so texts go to
+        # https://smartsumai.com/api/webhooks/sms. Safe to run on every deploy.
+        run: |
+          SID="AC${_TS}"
+          TOKEN="${_TA}"
+          PHONE="${TWILIO_PHONE_NUMBER}"
+          WEBHOOK_URL="https://smartsumai.com/api/webhooks/sms"
+
+          echo "Looking up Twilio phone number SID for $PHONE..."
+          RESP=$(curl -s -u "${SID}:${TOKEN}" \
+            "https://api.twilio.com/2010-04-01/Accounts/${SID}/IncomingPhoneNumbers.json?PhoneNumber=$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))' "$PHONE")")
+          NUM_SID=$(echo "$RESP" | python3 -c "import sys,json; data=json.load(sys.stdin); print(data['incoming_phone_numbers'][0]['sid'] if data.get('incoming_phone_numbers') else '')" 2>/dev/null || true)
+
+          if [ -z "$NUM_SID" ]; then
+            echo "⚠ Could not find phone number SID — skipping webhook config"
+            echo "Twilio response: $RESP" | head -c 300
+          else
+            echo "Phone SID: $NUM_SID — setting SMS webhook to $WEBHOOK_URL"
+            UPD=$(curl -s -u "${SID}:${TOKEN}" -X POST \
+              "https://api.twilio.com/2010-04-01/Accounts/${SID}/IncomingPhoneNumbers/${NUM_SID}.json" \
+              --data-urlencode "SmsUrl=$WEBHOOK_URL" \
+              --data-urlencode "SmsMethod=POST")
+            CONFIGURED_URL=$(echo "$UPD" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('sms_url','?'))" 2>/dev/null || true)
+            if [ "$CONFIGURED_URL" = "$WEBHOOK_URL" ]; then
+              echo "✓ Twilio SMS webhook set to $WEBHOOK_URL"
+            else
+              echo "⚠ Unexpected Twilio response — configured URL: $CONFIGURED_URL"
+            fi
+          fi
+
       - name: Update Supabase auth Site URL
         # Ensures the confirmation/magic-link emails point to production, not localhost.
         run: |

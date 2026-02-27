@@ -203,26 +203,47 @@ export default async function Home({
             Add your properties, your team, and your service vendors — then let the AI handle
             day-to-day operations while you keep full visibility from the dashboard.
           </p>
-          <div className="grid sm:grid-cols-3 gap-6 text-left">
+          <div className="grid sm:grid-cols-3 gap-6">
             {[
               {
-                icon: '🏠',
+                icon: (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                ),
+                color: 'from-teal-600 to-teal-400',
                 title: 'Property & Status Hub',
                 desc: 'Track every property\'s real-time status — clean, needs cleaning, occupied, or needs maintenance. See open tickets, upcoming guests, and team activity all in one place.',
               },
               {
-                icon: '🤖',
+                icon: (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                ),
+                color: 'from-violet-600 to-violet-400',
                 title: 'AI That Does the Work',
                 desc: 'Text your AI in plain English from anywhere. It creates tickets, contacts vendors, schedules stays, and updates statuses — no manual data entry, no app switching.',
               },
               {
-                icon: '👥',
+                icon: (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                ),
+                color: 'from-emerald-600 to-emerald-400',
                 title: 'Team & Vendor Network',
                 desc: 'Invite your cleaning crew and co-hosts. Add your plumber, electrician, and landscaper as contacts. The AI automatically routes work orders to the right person and sends professional notification emails.',
               },
             ].map(c => (
-              <div key={c.title} className="rounded-2xl border border-white/5 bg-[#0f1829] p-6">
-                <div className="text-3xl mb-3">{c.icon}</div>
+              <div key={c.title} className="rounded-2xl border border-white/5 bg-[#0f1829] p-6 text-center">
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${c.color} flex items-center justify-center
+                                 mx-auto mb-4 shadow-lg text-white`}>
+                  {c.icon}
+                </div>
                 <h3 className="text-base font-semibold text-white mb-2">{c.title}</h3>
                 <p className="text-sm text-[#6480a0] leading-relaxed">{c.desc}</p>
               </div>
@@ -251,57 +272,96 @@ export default async function Home({
           <div className="grid md:grid-cols-2 gap-6">
             {[
               {
-                color: 'border-red-500/20 bg-red-950/10',
+                iconEl: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                ),
+                iconColor: 'from-red-600 to-red-400',
+                borderColor: 'border-red-500/20 bg-red-950/10',
                 badgeColor: 'bg-red-500/20 text-red-300 border-red-500/30',
                 badge: 'Maintenance',
                 example: '"Urgent — leaking pipe at the Monroe St property, under the kitchen sink"',
                 outcome: 'Creates an urgent plumbing work order, identifies your plumber from your contacts, and sends them a detailed professional notification email — all instantly.',
-                icon: '🔧',
               },
               {
-                color: 'border-teal-500/20 bg-teal-950/10',
+                iconEl: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                ),
+                iconColor: 'from-teal-600 to-teal-400',
+                borderColor: 'border-teal-500/20 bg-teal-950/10',
                 badgeColor: 'bg-teal-500/20 text-teal-300 border-teal-500/30',
                 badge: 'Cleaning',
                 example: '"Schedule a cleaning at Beach House after the guests check out this Friday"',
                 outcome: 'Creates a cleaning work order for the correct property, assigns your cleaner as the contact, sends them a notification, and marks the property as needs cleaning.',
-                icon: '🧹',
               },
               {
-                color: 'border-violet-500/20 bg-violet-950/10',
+                iconEl: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                ),
+                iconColor: 'from-violet-600 to-violet-400',
+                borderColor: 'border-violet-500/20 bg-violet-950/10',
                 badgeColor: 'bg-violet-500/20 text-violet-300 border-violet-500/30',
                 badge: 'Guest Stays',
                 example: '"Add a stay for Jake Miller at the lake cabin, checking in July 5th through the 9th"',
                 outcome: 'Logs the stay, generates a personalized guest welcome page with your property info, WiFi codes, and house rules — ready to share immediately.',
-                icon: '🛎️',
               },
               {
-                color: 'border-sky-500/20 bg-sky-950/10',
+                iconEl: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                ),
+                iconColor: 'from-sky-600 to-sky-400',
+                borderColor: 'border-sky-500/20 bg-sky-950/10',
                 badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/30',
                 badge: 'Status Updates',
                 example: '"Mark the Vestal property clean" or "Beach House needs groceries"',
                 outcome: 'Updates property status instantly across your dashboard. Your whole team sees the current state in real time — no calls, no texts to the group chat.',
-                icon: '✅',
               },
               {
-                color: 'border-blue-500/20 bg-blue-950/10',
+                iconEl: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                ),
+                iconColor: 'from-blue-600 to-blue-400',
+                borderColor: 'border-blue-500/20 bg-blue-950/10',
                 badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
                 badge: 'Work Order Updates',
                 example: '"Close the spring cleaning ticket at the cabin — it\'s done" or "bump the faucet ticket to urgent"',
                 outcome: 'Closes, updates priority, changes status, or reassigns work orders by partial name match. Full audit trail of every AI action with the ability to reverse mistakes.',
-                icon: '📋',
               },
               {
-                color: 'border-emerald-500/20 bg-emerald-950/10',
+                iconEl: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                ),
+                iconColor: 'from-emerald-600 to-emerald-400',
+                borderColor: 'border-emerald-500/20 bg-emerald-950/10',
                 badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
                 badge: 'Portfolio Overview',
                 example: '"What\'s the status of all my properties?" or "Who\'s checking in next week?"',
                 outcome: 'Instant summary of every property status, upcoming guest arrivals, and open tickets across your entire portfolio — without opening the dashboard.',
-                icon: '📊',
               },
             ].map(w => (
-              <div key={w.badge} className={`rounded-2xl border ${w.color} p-6`}>
+              <div key={w.badge} className={`rounded-2xl border ${w.borderColor} p-6`}>
                 <div className="flex items-start gap-4">
-                  <div className="text-2xl flex-shrink-0">{w.icon}</div>
+                  <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${w.iconColor} flex items-center justify-center flex-shrink-0 shadow-md text-white`}>
+                    {w.iconEl}
+                  </div>
                   <div>
                     <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full border mb-3 ${w.badgeColor}`}>
                       {w.badge}
@@ -409,10 +469,10 @@ export default async function Home({
               },
             ].map(f => (
               <div key={f.title}
-                className="group relative rounded-2xl border border-white/5 bg-[#0f1829]/80 p-6
+                className="group relative rounded-2xl border border-white/5 bg-[#0f1829]/80 p-6 text-center
                            hover:border-white/10 hover:bg-[#111d30] transition-all cursor-default">
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center
-                                 mb-4 shadow-lg ${f.glow} transition-shadow`}>
+                                 mx-auto mb-4 shadow-lg ${f.glow} transition-shadow`}>
                   <span className="text-white">{f.icon}</span>
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2">{f.title}</h3>

@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export const metadata = {
   title: 'Pricing — Smart Sumai',
-  description: 'Simple, transparent pricing for property managers. $10 per property per month. No hidden fees.',
+  description: 'Simple, transparent pricing for property managers. $50/month includes 3 properties. $10/month per additional property.',
 }
 
 const features = [
@@ -17,7 +17,7 @@ const features = [
 const faqs = [
   {
     q: 'How does billing work?',
-    a: 'You\'re charged $10/month for each property you have in your account. If you add a property mid-month, you\'re charged a prorated amount. Remove a property and you won\'t be billed for it next month.',
+    a: 'Your $50/month plan includes up to 3 properties. Each additional property beyond 3 is $10/month. Billing is based on the number of properties owned by the account holder — not shared team members. If you add a property mid-month, you\'re charged a prorated amount.',
   },
   {
     q: 'Is there a free trial?',
@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     q: 'Can I manage multiple properties?',
-    a: 'Absolutely. Smart Sumai is built for property managers with portfolios of any size. Add as many properties as you need — each is $10/month.',
+    a: 'Absolutely. Smart Sumai is built for property managers with portfolios of any size. Your base plan covers 3 properties, and each additional one is just $10/month.',
   },
   {
     q: 'Can I invite my team?',
@@ -57,7 +57,7 @@ export default function PricingPage() {
             Simple, honest pricing
           </h1>
           <p className="text-[#8aa0be] text-xl max-w-xl mx-auto">
-            One plan. Every feature included. Pay only for the properties you manage.
+            One plan. Every feature included. 3 properties included, then pay as you grow.
           </p>
         </div>
       </section>
@@ -78,9 +78,10 @@ export default function PricingPage() {
 
               <div className="mb-2 flex items-end justify-center gap-1">
                 <span className="text-2xl text-[#8aa0be] font-medium mb-2">$</span>
-                <span className="text-8xl font-extrabold text-white leading-none">10</span>
+                <span className="text-8xl font-extrabold text-white leading-none">50</span>
               </div>
-              <p className="text-[#8aa0be] text-lg mb-1">per property / per month</p>
+              <p className="text-[#8aa0be] text-lg mb-1">per month — includes 3 properties</p>
+              <p className="text-teal-400 text-sm font-medium mb-1">+ $10 / month per additional property</p>
               <p className="text-[#4a6080] text-sm mb-8">Billed monthly · Cancel anytime · No contracts</p>
 
               <Link href="/auth/login?mode=signup"
@@ -101,14 +102,15 @@ export default function PricingPage() {
           <div className="mt-6 rounded-xl border border-white/5 bg-[#0f1829] p-5">
             <p className="text-sm font-semibold text-white mb-3">Example billing</p>
             {[
-              { count: 1, label: '1 property' },
-              { count: 5, label: '5 properties' },
-              { count: 10, label: '10 properties' },
-              { count: 25, label: '25 properties' },
-            ].map(({ count, label }) => (
-              <div key={count} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+              { count: 1,  label: '1 property',    price: 50  },
+              { count: 3,  label: '3 properties',  price: 50  },
+              { count: 5,  label: '5 properties',  price: 70  },
+              { count: 10, label: '10 properties', price: 120 },
+              { count: 25, label: '25 properties', price: 270 },
+            ].map(({ label, price }) => (
+              <div key={label} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
                 <span className="text-sm text-[#8aa0be]">{label}</span>
-                <span className="text-sm font-semibold text-white">${count * 10}/month</span>
+                <span className="text-sm font-semibold text-white">${price}/month</span>
               </div>
             ))}
           </div>

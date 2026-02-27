@@ -8,7 +8,7 @@ const faqs = [
   },
   {
     q: 'How does the AI Property Manager work?',
-    a: 'When you sign up, you get a dedicated Twilio SMS number. Text it in plain English to check property status, file maintenance tickets, schedule guest stays, add contacts, or ask anything about your portfolio. The same AI is also available as a chat bubble inside the dashboard — and your conversations sync between SMS and web so you never lose context.',
+    a: 'When you sign up, you get a dedicated phone number for SMS. Text it in plain English to check property status, file maintenance tickets, schedule guest stays, add contacts, or ask anything about your portfolio. The same AI is also available as a chat bubble inside the dashboard — and your conversations sync between SMS and web so you never lose context.',
   },
   {
     q: 'What can I do with the AI via text?',
@@ -16,11 +16,11 @@ const faqs = [
   },
   {
     q: 'How much does Smart Sumai cost?',
-    a: 'It\'s $10 per property per month. You only pay for the properties you manage. There are no setup fees, no contracts, and you can cancel anytime from your billing dashboard.',
+    a: 'It\'s $50 per month, which includes up to 3 properties. Each additional property beyond 3 is $10 per month. There are no setup fees, no contracts, and you can cancel anytime from your billing dashboard.',
   },
   {
     q: 'What payment methods do you accept?',
-    a: 'We accept all major credit and debit cards (Visa, Mastercard, Amex), Google Pay, Apple Pay, ACH bank transfers, and PayPal. All payments are securely processed by Stripe.',
+    a: 'We accept all major credit and debit cards (Visa, Mastercard, Amex), Google Pay, Apple Pay, ACH bank transfers, and PayPal. All payments are securely processed.',
   },
   {
     q: 'Can my team use the platform?',
@@ -40,11 +40,11 @@ const faqs = [
   },
   {
     q: 'How do I cancel my account?',
-    a: 'You can manage or cancel your subscription anytime from the Billing page. To permanently delete your account and all data, go to Settings and submit a deletion request. Super admins can also delete accounts directly from the admin dashboard.',
+    a: 'You can manage or cancel your subscription anytime from the Billing page. To permanently delete your account and all data, go to Settings and submit a deletion request. Our team will process the request on your behalf.',
   },
   {
     q: 'Is my data secure?',
-    a: 'Yes. All data is stored in Supabase (Postgres) with row-level security — users can only see data they own or have been granted access to. All connections are encrypted. Payment data is never stored by Smart Sumai; it\'s handled entirely by Stripe.',
+    a: 'Yes. Smart Sumai is built to meet SOC 2 security standards and PCI DSS compliance requirements. All data is stored with row-level security — users can only access data they own or have been explicitly granted access to. All connections are encrypted in transit and at rest. Payment data is never stored by Smart Sumai; it is handled entirely by our payment processor.',
   },
   {
     q: 'How do I contact support?',

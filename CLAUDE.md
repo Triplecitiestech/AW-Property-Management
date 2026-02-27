@@ -132,6 +132,8 @@ The app is a **fully deployed** multi-tenant property management SaaS.
   - Must use action types to create things — never announce creation via `type:"reply"`
   - Auto-updates property status (cleaning → needs_cleaning, maintenance → needs_maintenance)
   - Uses real property checklist items for cleaning outbound messages
+  - **PRIVACY HARD LIMIT**: NEVER include phone numbers, email addresses, or personal contact details in any reply — contact data is for internal use only (work order notifications), never relay it to the user
+  - **UNSUPPORTED ACTIONS**: creating properties, deleting records, billing, inviting team → direct to dashboard UI, never try to perform them
 
 ### Work Orders ✅
 - List at `/work-orders` — clickable card rows (WO#, priority badge, status, property, category)
@@ -261,10 +263,17 @@ Run this via the Supabase MCP tool (`mcp__supabase__execute_sql`) or via the man
 - ALWAYS verify Stripe webhook signatures before processing
 - ALWAYS use Stripe Checkout or Elements — never custom card input forms
 
+## Pricing model (as of 2026-02-27)
+- **Base plan**: $50/month — includes 3 properties
+- **Additional properties**: $10/month each beyond 3
+- **Billing owner**: properties are counted per account owner (not per shared team member)
+- Example: 5 properties = $50 + (2 × $10) = $70/month
+
 ## What still needs to be done
 - See compliance gaps above (security headers + privacy page were implemented 2026-02-27)
+- SOC 2 items completed 2026-02-27: session timeout, MFA UI, account deletion, rate limiting, data retention cleanup, npm audit in CI
 - **v2 ideas**: photo uploads on tickets/guest reports, recurring tasks, weekly email digest,
-  QR codes per property, SMS delivery status tracking, MFA for admin users, data retention cleanup jobs
+  QR codes per property, SMS delivery status tracking, Airbnb/Vrbo calendar integration
 
 ## Project structure
 ```

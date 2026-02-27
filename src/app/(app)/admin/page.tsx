@@ -1,6 +1,7 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import DeleteUserButton from '@/components/admin/DeleteUserButton'
+import ImpersonateButton from '@/components/admin/ImpersonateButton'
 import FeatureRequestAdmin from '@/components/admin/FeatureRequestAdmin'
 import LocalDate from '@/components/LocalDate'
 
@@ -145,8 +146,13 @@ export default async function AdminPage() {
                   <td className="px-4 py-3 text-xs text-[#6480a0] whitespace-nowrap">
                     {u.lastActive ? <LocalDate iso={u.lastActive} /> : 'Never'}
                   </td>
-                  <td className="px-4 py-3">
-                    {!u.is_super_admin && <DeleteUserButton userId={u.id} userName={u.full_name || u.email || ''} />}
+                  <td className="px-4 py-3 flex items-center gap-3">
+                    {!u.is_super_admin && (
+                      <>
+                        <ImpersonateButton userId={u.id} userName={u.full_name || u.email || ''} />
+                        <DeleteUserButton userId={u.id} userName={u.full_name || u.email || ''} />
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

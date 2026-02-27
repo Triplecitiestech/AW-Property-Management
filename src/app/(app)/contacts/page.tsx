@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAppContext } from '@/lib/impersonation'
 import Link from 'next/link'
 import { CONTACT_ROLES } from '@/lib/contact-roles'
 
@@ -12,19 +12,29 @@ export default async function ContactsPage({
   searchParams: Promise<{ q?: string; property_id?: string; role?: string }>
 }) {
   const filters = await searchParams
-  const supabase = await createClient()
+  const ctx = await getAppContext()
+  const supabase = ctx.supabase
 
   let query = supabase
     .from('property_contacts')
     .select('*, properties(id, name)')
     .order('name')
 
+  if (ctx.isImpersonating && ctx.propertyIds) {
+    const pids = ctx.propertyIds.length > 0 ? ctx.propertyIds : ['00000000-0000-0000-0000-000000000000']
+    query = query.in('property_id', pids)
+  }
   if (filters.property_id) query = query.eq('property_id', filters.property_id)
   if (filters.role) query = query.eq('role', filters.role)
   if (filters.q) query = query.ilike('name', `%${filters.q}%`)
 
   const { data: contacts } = await query
-  const { data: properties } = await supabase.from('properties').select('id, name').order('name')
+  let propsQuery = supabase.from('properties').select('id, name').order('name')
+  if (ctx.isImpersonating && ctx.propertyIds) {
+    const pids = ctx.propertyIds.length > 0 ? ctx.propertyIds : ['00000000-0000-0000-0000-000000000000']
+    propsQuery = propsQuery.in('id', pids)
+  }
+  const { data: properties } = await propsQuery
 
   const hasFilters = !!(filters.property_id || filters.role || filters.q)
 

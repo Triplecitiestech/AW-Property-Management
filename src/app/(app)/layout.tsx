@@ -1,7 +1,9 @@
 import Sidebar from '@/components/nav/Sidebar'
 import AiChatBubble from '@/components/chat/AiChatBubble'
 import InactivityTimer from '@/components/auth/InactivityTimer'
+import ImpersonationBanner from '@/components/admin/ImpersonationBanner'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { getImpersonationState } from '@/lib/impersonation'
 import { redirect } from 'next/navigation'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -34,8 +36,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { data: profileData } = await svc2.from('profiles').select('is_super_admin').eq('id', user.id).single()
   const isSuperAdmin = profileData?.is_super_admin ?? false
 
+  // Check impersonation state
+  const impersonation = await getImpersonationState()
+
   return (
     <div className="flex min-h-screen bg-[#0f1829] relative">
+      {/* Impersonation banner — fixed at top */}
+      {impersonation.active && <ImpersonationBanner targetName={impersonation.targetName!} />}
+
       {/* Subtle grid overlay matching landing page */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.025]"
            style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
@@ -43,7 +51,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="fixed top-[-10%] right-[10%] w-[600px] h-[400px] bg-violet-600/5 rounded-full blur-3xl pointer-events-none z-0" />
 
       <Sidebar isSuperAdmin={isSuperAdmin} />
-      <main className="flex-1 md:ml-60 min-h-screen pt-14 md:pt-0 relative z-10">
+      <main className={`flex-1 md:ml-60 min-h-screen pt-14 md:pt-0 relative z-10 ${impersonation.active ? 'mt-10' : ''}`}>
         <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8">
           {children}
         </div>

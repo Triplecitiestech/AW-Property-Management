@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAppContext } from '@/lib/impersonation'
 import Link from 'next/link'
 
 export default async function StaysPage({
@@ -7,18 +7,28 @@ export default async function StaysPage({
   searchParams: Promise<{ property_id?: string; q?: string }>
 }) {
   const { property_id, q } = await searchParams
-  const supabase = await createClient()
+  const ctx = await getAppContext()
+  const supabase = ctx.supabase
 
   let query = supabase
     .from('stays')
     .select('*, properties(name, id)')
     .order('start_date', { ascending: false })
 
+  if (ctx.isImpersonating && ctx.propertyIds) {
+    const pids = ctx.propertyIds.length > 0 ? ctx.propertyIds : ['00000000-0000-0000-0000-000000000000']
+    query = query.in('property_id', pids)
+  }
   if (property_id) query = query.eq('property_id', property_id)
   if (q) query = query.ilike('guest_name', `%${q}%`)
 
   const { data: stays } = await query
-  const { data: properties } = await supabase.from('properties').select('id, name').order('name')
+  let propsQuery = supabase.from('properties').select('id, name').order('name')
+  if (ctx.isImpersonating && ctx.propertyIds) {
+    const pids = ctx.propertyIds.length > 0 ? ctx.propertyIds : ['00000000-0000-0000-0000-000000000000']
+    propsQuery = propsQuery.in('id', pids)
+  }
+  const { data: properties } = await propsQuery
 
   const today = new Date().toISOString().split('T')[0]
 

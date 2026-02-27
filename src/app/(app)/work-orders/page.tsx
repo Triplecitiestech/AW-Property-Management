@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAppContext } from '@/lib/impersonation'
 import Link from 'next/link'
 
 function woLabel(num: number | null) {
@@ -25,13 +25,18 @@ export default async function WorkOrdersPage({
   searchParams: Promise<{ property_id?: string; status?: string; priority?: string; q?: string }>
 }) {
   const filters = await searchParams
-  const supabase = await createClient()
+  const ctx = await getAppContext()
+  const supabase = ctx.supabase
 
   let query = supabase
     .from('service_requests')
     .select('*, properties(name), assignee:profiles!service_requests_assignee_id_fkey(full_name)')
     .order('created_at', { ascending: false })
 
+  if (ctx.isImpersonating && ctx.propertyIds) {
+    const pids = ctx.propertyIds.length > 0 ? ctx.propertyIds : ['00000000-0000-0000-0000-000000000000']
+    query = query.in('property_id', pids)
+  }
   if (filters.property_id) query = query.eq('property_id', filters.property_id)
   if (filters.status) query = query.eq('status', filters.status)
   if (filters.priority) query = query.eq('priority', filters.priority)
@@ -46,7 +51,12 @@ export default async function WorkOrdersPage({
   }
 
   const { data: workOrders } = await query
-  const { data: properties } = await supabase.from('properties').select('id, name').order('name')
+  let propsQuery = supabase.from('properties').select('id, name').order('name')
+  if (ctx.isImpersonating && ctx.propertyIds) {
+    const pids = ctx.propertyIds.length > 0 ? ctx.propertyIds : ['00000000-0000-0000-0000-000000000000']
+    propsQuery = propsQuery.in('id', pids)
+  }
+  const { data: properties } = await propsQuery
   const hasFilters = !!(filters.property_id || filters.status || filters.priority || filters.q)
 
   return (

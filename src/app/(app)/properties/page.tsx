@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAppContext } from '@/lib/impersonation'
 import Link from 'next/link'
 
 function StatusBadge({ status }: { status: string }) {
@@ -12,21 +12,31 @@ export default async function PropertiesPage({
   searchParams: Promise<{ q?: string }>
 }) {
   const { q } = await searchParams
-  const supabase = await createClient()
+  const ctx = await getAppContext()
+  const supabase = ctx.supabase
 
   let query = supabase
     .from('properties')
     .select('*, property_status(*)')
     .order('name')
 
+  if (ctx.isImpersonating && ctx.propertyIds) {
+    const pids = ctx.propertyIds.length > 0 ? ctx.propertyIds : ['00000000-0000-0000-0000-000000000000']
+    query = query.in('id', pids)
+  }
   if (q) query = query.ilike('name', `%${q}%`)
 
   const { data: properties } = await query
 
-  const { data: openTicketCounts } = await supabase
+  let ticketQuery = supabase
     .from('service_requests')
     .select('property_id')
     .in('status', ['open', 'in_progress'])
+  if (ctx.isImpersonating && ctx.propertyIds) {
+    const pids = ctx.propertyIds.length > 0 ? ctx.propertyIds : ['00000000-0000-0000-0000-000000000000']
+    ticketQuery = ticketQuery.in('property_id', pids)
+  }
+  const { data: openTicketCounts } = await ticketQuery
 
   const ticketMap: Record<string, number> = {}
   openTicketCounts?.forEach(t => {

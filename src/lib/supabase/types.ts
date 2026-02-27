@@ -21,6 +21,8 @@ export interface Profile {
   role: UserRole
   full_name: string
   phone_number: string | null
+  email: string | null
+  is_super_admin: boolean
   created_at: string
 }
 

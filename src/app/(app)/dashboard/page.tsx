@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAppContext } from '@/lib/impersonation'
 import Link from 'next/link'
 import LocalDate from '@/components/LocalDate'
 
@@ -29,8 +29,23 @@ function StatCard({ label, value, sub, color }: { label: string; value: number |
 }
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
+  const ctx = await getAppContext()
+  const supabase = ctx.supabase
   const today = new Date().toISOString().split('T')[0]
+
+  // Build queries — during impersonation, manually scope by property IDs
+  let propsQuery = supabase.from('properties').select('id, name')
+  let statusQuery = supabase.from('property_status').select('*')
+  let ticketQuery = supabase.from('service_requests').select('id, title, priority, status, properties(name)').in('status', ['open', 'in_progress']).order('created_at', { ascending: false })
+  let stayQuery = supabase.from('stays').select('id, guest_name, start_date, end_date, properties(name)').lte('start_date', today).gte('end_date', today)
+
+  if (ctx.isImpersonating && ctx.propertyIds) {
+    const pids = ctx.propertyIds.length > 0 ? ctx.propertyIds : ['00000000-0000-0000-0000-000000000000']
+    propsQuery = propsQuery.in('id', pids)
+    statusQuery = statusQuery.in('property_id', pids)
+    ticketQuery = ticketQuery.in('property_id', pids)
+    stayQuery = stayQuery.in('property_id', pids)
+  }
 
   const [
     { data: properties },
@@ -39,10 +54,10 @@ export default async function DashboardPage() {
     { data: activeStays },
     { data: recentAudit },
   ] = await Promise.all([
-    supabase.from('properties').select('id, name'),
-    supabase.from('property_status').select('*'),
-    supabase.from('service_requests').select('id, title, priority, status, properties(name)').in('status', ['open', 'in_progress']).order('created_at', { ascending: false }),
-    supabase.from('stays').select('id, guest_name, start_date, end_date, properties(name)').lte('start_date', today).gte('end_date', today),
+    propsQuery,
+    statusQuery,
+    ticketQuery,
+    stayQuery,
     supabase.from('audit_log').select('*, profiles(full_name)').order('changed_at', { ascending: false }).limit(10),
   ])
 

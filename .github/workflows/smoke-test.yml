@@ -55,35 +55,41 @@ jobs:
             --jq '.[0].number // empty' 2>/dev/null || true)
 
           if [ -n "$EXISTING" ]; then
-            # Add a comment to existing issue instead of creating a new one
+            COMMENT_BODY=$(cat <<EOFBODY
+          ## Smoke test still failing — $TIMESTAMP
+
+          \`\`\`
+          $OUTPUT
+          \`\`\`
+          EOFBODY
+          )
             gh issue comment "$EXISTING" \
               --repo Triplecitiestech/AW-Property-Management \
-              --body "## Smoke test still failing — $TIMESTAMP
-
-\`\`\`
-$OUTPUT
-\`\`\`"
+              --body "$COMMENT_BODY"
             echo "Added comment to existing issue #$EXISTING"
           else
-            # Create a new issue
+            ISSUE_BODY=$(cat <<EOFBODY
+          ## Smoke Test Failure
+
+          **Time:** $TIMESTAMP
+          **Workflow:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          ### Output
+          \`\`\`
+          $OUTPUT
+          \`\`\`
+
+          ### Next Steps
+          1. Check the [Actions run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for full logs
+          2. Review recent deployments for regressions
+          3. Close this issue once the smoke test passes again
+          EOFBODY
+          )
             gh issue create \
               --repo Triplecitiestech/AW-Property-Management \
-              --title "🚨 Smoke test failed — $TIMESTAMP" \
+              --title "Smoke test failed — $TIMESTAMP" \
               --label smoke-test-failure \
-              --body "## Smoke Test Failure
-
-**Time:** $TIMESTAMP
-**Workflow:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-### Output
-\`\`\`
-$OUTPUT
-\`\`\`
-
-### Next Steps
-1. Check the [Actions run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for full logs
-2. Review recent deployments for regressions
-3. Close this issue once the smoke test passes again"
+              --body "$ISSUE_BODY"
             echo "Created new smoke-test-failure issue"
           fi
 

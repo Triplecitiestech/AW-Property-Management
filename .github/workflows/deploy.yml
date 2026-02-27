@@ -107,12 +107,7 @@ jobs:
             "https://api.twilio.com/2010-04-01/Accounts/${SID}/IncomingPhoneNumbers.json?PhoneNumber=$(python3 -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))' "$PHONE")")
           echo "Twilio lookup response: $(echo "$RESP" | head -c 500)"
 
-          NUM_SID=$(echo "$RESP" | python3 -c "
-import sys, json
-data = json.load(sys.stdin)
-numbers = data.get('incoming_phone_numbers', [])
-print(numbers[0]['sid'] if numbers else '')
-" 2>/dev/null || true)
+          NUM_SID=$(echo "$RESP" | python3 -c "import sys,json; data=json.load(sys.stdin); numbers=data.get('incoming_phone_numbers',[]); print(numbers[0]['sid'] if numbers else '')" 2>/dev/null || true)
 
           if [ -z "$NUM_SID" ]; then
             echo "::error::Could not find Twilio phone number SID for $PHONE — SMS webhook NOT configured. Check TWILIO_ACCOUNT_SID/TWILIO_AUTH_TOKEN/TWILIO_PHONE_NUMBER and that the number is in this Twilio account."

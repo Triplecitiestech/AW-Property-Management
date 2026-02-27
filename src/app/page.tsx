@@ -15,7 +15,7 @@ export const metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Smart Sumai — AI Property Manager for Short-Term Rentals',
-    description: 'Your AI property manager. Text it to run your rentals from anywhere. $50/month includes 3 properties.',
+    description: 'Your AI property manager. Text it to manage your properties from anywhere. $50/month includes 3 properties.',
   },
   robots: {
     index: true,

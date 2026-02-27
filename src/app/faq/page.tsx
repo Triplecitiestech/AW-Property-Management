@@ -4,7 +4,7 @@ import MarketingNav from '@/components/marketing/MarketingNav'
 const faqs = [
   {
     q: 'What is Smart Sumai?',
-    a: 'Smart Sumai is an AI-powered property management platform built for short-term rental hosts. It centralizes your properties, guest stays, service tickets, team contacts, and an AI assistant — all in one place.',
+    a: 'Smart Sumai is an AI-powered property management platform for any type of property — short-term rentals, long-term rentals, personal estates, and more. It centralizes your properties, guest stays, service tickets, team contacts, and an AI assistant — all in one place.',
   },
   {
     q: 'How does the AI Property Manager work?',

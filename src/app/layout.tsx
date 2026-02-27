@@ -3,7 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Smart Sumai — Property Management',
-  description: 'AI-powered property management for short-term rental hosts.',
+  description: 'AI-powered property management for any property type — rentals, estates, and more.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

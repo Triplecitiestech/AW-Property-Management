@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       max_tokens: 200,
       messages: [{
         role: 'user',
-        content: `Write a single concise paragraph (3-4 sentences) describing this short-term rental property for a property manager. Include the type of property and location feel. Keep it professional and helpful for managing the property. Do not invent specific details like number of rooms — only describe based on what you can reasonably infer from the address and name.
+        content: `Write a single concise paragraph (3-4 sentences) describing this property for a property manager. Include the type of property and location feel. Keep it professional and helpful for managing the property. Do not invent specific details like number of rooms — only describe based on what you can reasonably infer from the address and name.
 
 Property name: ${name || 'Not specified'}
 Address: ${address || 'Not specified'}

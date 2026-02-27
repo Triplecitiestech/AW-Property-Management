@@ -32,8 +32,8 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-semibold text-white mb-3">2. Description of Service</h2>
             <p>
-              Smart Sumai is an AI-powered property management platform that provides tools for managing short-term
-              rental properties, including work order tracking, guest scheduling, contact management, and AI-assisted
+              Smart Sumai is an AI-powered property management platform that provides tools for managing residential
+              and commercial properties of any type, including work order tracking, guest and tenant scheduling, contact management, and AI-assisted
               communication via SMS and web chat. The Service is provided by Triplecitiestech LLC (&ldquo;Company,&rdquo;
               &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;).
             </p>

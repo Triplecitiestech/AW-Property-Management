@@ -66,7 +66,7 @@ export default function BillingPage() {
         <div className="flex items-start justify-between mb-6">
           <div>
             <h2 className="text-lg font-bold text-white">Property Management Plan</h2>
-            <p className="text-[#6480a0] text-sm mt-1">Everything you need to manage your rentals</p>
+            <p className="text-[#6480a0] text-sm mt-1">Everything you need to manage your properties</p>
           </div>
           <div className="text-right">
             <p className="text-3xl font-bold text-white">$50</p>

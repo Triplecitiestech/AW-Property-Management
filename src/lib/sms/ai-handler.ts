@@ -12,6 +12,8 @@ import { createServiceClient } from '@/lib/supabase/server'
 export type AiSmsAction =
   | { type: 'reply'; reply: string }
   | { type: 'create_work_order'; reply: string; property_name: string; title: string; priority: 'low' | 'medium' | 'high' | 'urgent'; category: string }
+  | { type: 'close_work_order'; reply: string; work_order_title: string }
+  | { type: 'update_work_order'; reply: string; work_order_title: string; new_status?: 'open' | 'in_progress' | 'resolved' | 'closed'; new_priority?: 'low' | 'medium' | 'high' | 'urgent' }
   | { type: 'create_stay'; reply: string; property_name: string; guest_name: string; start_date: string; end_date: string }
   | { type: 'update_status'; reply: string; property_name: string; status: 'clean' | 'needs_cleaning' | 'needs_maintenance' | 'needs_groceries' }
   | { type: 'create_contact'; reply: string; property_name: string; name: string; role: string; phone?: string; email?: string; notes?: string }
@@ -132,6 +134,8 @@ ${contextText}
 === YOUR CAPABILITIES ===
 - Answer questions about property status, work orders, stays, and contacts
 - Create work orders (maintenance, cleaning, plumbing, etc.) for properties
+- Close or delete work orders (marks them closed — always reversible)
+- Update work order status (open → in_progress → resolved → closed) or priority
 - Schedule guest stays at properties
 - Update property cleaning/maintenance status
 - Add new contacts (cleaners, plumbers, landscapers, etc.) to properties
@@ -144,6 +148,13 @@ For a simple reply or info query:
 
 For creating a work order:
 {"type":"create_work_order","reply":"Work order created for [property]: [title]","property_name":"exact property name","title":"work order title","priority":"low|medium|high|urgent","category":"plumbing|electrical|hvac|cleaning|maintenance|landscaping|other"}
+
+For closing/deleting a work order (soft close — reversible):
+{"type":"close_work_order","reply":"Work order closed: [title]","work_order_title":"title of the work order to close"}
+
+For updating a work order's status or priority:
+{"type":"update_work_order","reply":"Work order updated: [title]","work_order_title":"title of the work order","new_status":"open|in_progress|resolved|closed","new_priority":"low|medium|high|urgent"}
+(omit new_status or new_priority if not changing that field)
 
 For scheduling a stay:
 {"type":"create_stay","reply":"Stay created for [guest] at [property]","property_name":"exact property name","guest_name":"Guest Full Name","start_date":"YYYY-MM-DD","end_date":"YYYY-MM-DD"}
@@ -180,10 +191,12 @@ STAY CREATION:
 - You MUST have a guest name before creating a stay. If missing, ask: "What is the guest's name?" Once you have it, create the stay — do not ask for anything else.
 
 ACTIONS:
-- Reply text must use past tense — "Work order created" not "I will create".
-- NEVER announce a creation with type "reply". Only action types (create_work_order, create_stay, etc.) actually create things.
+- Reply text must use past tense — "Work order closed" not "I will close".
+- NEVER announce a creation/change with type "reply". Only action types actually do things.
 - Dates must be YYYY-MM-DD format. Today is ${new Date().toISOString().split('T')[0]}.
-- If a request is unclear, ask for clarification using type "reply".`
+- If a request is unclear, ask for clarification using type "reply".
+- Closing a work order is always reversible — the owner can undo it from the activity log. No need to ask for confirmation.
+- Match work_order_title using the same fuzzy judgment as property matching — partial match is fine.`
 }
 
 // ─── Main Handler ─────────────────────────────────────────────────────────────

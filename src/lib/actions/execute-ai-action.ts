@@ -171,7 +171,8 @@ export async function executeAiAction(
       entity_id: ticket.id,
       action: 'created',
       changed_by: ownerId,
-      after_data: { title: action.title, property_id: property.id, source: `${source}_ai` },
+      after_data: { title: action.title, property_id: property.id, source: `${source}_ai`, ai_action: 'create_work_order' },
+      is_ai_action: true,
     }).then(undefined, () => {})
 
     // Send internal notification email
@@ -257,6 +258,65 @@ export async function executeAiAction(
 
     if (error) return { success: false, detail: error.message }
     return { success: true, detail: `${property.name} → ${action.status.replace(/_/g, ' ')}` }
+  }
+
+  if (action.type === 'close_work_order') {
+    const { data: tickets } = await svc
+      .from('service_requests')
+      .select('id, title, status')
+      .eq('created_by', ownerId)
+      .neq('status', 'closed')
+      .ilike('title', `%${action.work_order_title}%`)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (!tickets?.length) return { success: false, detail: `No open work order found matching: "${action.work_order_title}"` }
+    const ticket = tickets[0]
+
+    await svc.from('service_requests').update({ status: 'closed' }).eq('id', ticket.id)
+    await svc.from('audit_log').insert({
+      entity_type: 'service_request',
+      entity_id: ticket.id,
+      action: 'updated',
+      changed_by: ownerId,
+      before_data: { status: ticket.status },
+      after_data: { status: 'closed', source: `${source}_ai`, ai_action: 'close_work_order' },
+      is_ai_action: true,
+    }).then(undefined, () => {})
+
+    return { success: true, detail: `Closed: ${ticket.title}` }
+  }
+
+  if (action.type === 'update_work_order') {
+    const { data: tickets } = await svc
+      .from('service_requests')
+      .select('id, title, status, priority')
+      .eq('created_by', ownerId)
+      .ilike('title', `%${action.work_order_title}%`)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (!tickets?.length) return { success: false, detail: `No work order found matching: "${action.work_order_title}"` }
+    const ticket = tickets[0]
+
+    const updates: Record<string, string> = {}
+    if (action.new_status) updates.status = action.new_status
+    if (action.new_priority) updates.priority = action.new_priority
+    if (!Object.keys(updates).length) return { success: false, detail: 'No changes specified.' }
+
+    await svc.from('service_requests').update(updates).eq('id', ticket.id)
+    await svc.from('audit_log').insert({
+      entity_type: 'service_request',
+      entity_id: ticket.id,
+      action: 'updated',
+      changed_by: ownerId,
+      before_data: { status: ticket.status, priority: ticket.priority },
+      after_data: { ...updates, source: `${source}_ai`, ai_action: 'update_work_order' },
+      is_ai_action: true,
+    }).then(undefined, () => {})
+
+    const changes = [action.new_status && `status → ${action.new_status}`, action.new_priority && `priority → ${action.new_priority}`].filter(Boolean).join(', ')
+    return { success: true, detail: `${ticket.title}: ${changes}` }
   }
 
   if (action.type === 'create_contact') {

@@ -162,6 +162,31 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
             </form>
           </div>
 
+          {/* Recent Activity — pulled from work orders assigned to this contact */}
+          {workOrders && workOrders.length > 0 && (
+            <div className="card p-5">
+              <h3 className="font-semibold text-white mb-3 text-sm">Recent Activity</h3>
+              <div className="space-y-2">
+                {workOrders.slice(0, 5).map(wo => {
+                  const prop = wo.properties as unknown as { name: string } | null
+                  return (
+                    <div key={wo.id} className="flex items-center justify-between text-sm">
+                      <div className="flex-1 min-w-0">
+                        <Link href={`/work-orders/${wo.id}`} className="text-[#cbd5e1] hover:text-violet-400 transition-colors truncate block">
+                          {wo.title}
+                        </Link>
+                        <p className="text-xs text-[#4a6080]">{prop?.name} · {wo.category}</p>
+                      </div>
+                      <span className={`badge ${STATUS_STYLES[wo.status] ?? 'badge-closed'} flex-shrink-0 ml-2`}>
+                        {wo.status.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Work Orders */}
           <div className="card p-6">
             <h3 className="font-semibold text-white mb-4">Work Orders</h3>

@@ -839,3 +839,82 @@ SELECT 'RLS fix verified and applied' AS final_check;
 
 ALTER TABLE service_request_comments
   ADD COLUMN IF NOT EXISTS is_internal BOOLEAN NOT NULL DEFAULT true;
+
+-- ========================
+-- 011: Fix comments_insert RLS — use is_owner_or_manager() as primary check
+-- (can_access_property may return false for the owner in edge cases due to
+--  org_id join; is_owner_or_manager is a proven, simpler fallback)
+-- ========================
+
+DROP POLICY IF EXISTS "comments_insert" ON service_request_comments;
+CREATE POLICY "comments_insert" ON service_request_comments FOR INSERT TO authenticated WITH CHECK (
+  is_owner_or_manager()
+  OR EXISTS (SELECT 1 FROM service_requests sr WHERE sr.id = request_id AND can_access_property(sr.property_id))
+);
+
+-- ========================
+-- 014: Multi-category checklists per property
+-- ========================
+
+CREATE TABLE IF NOT EXISTS property_checklists (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  property_id UUID NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+  name        TEXT NOT NULL,
+  category    TEXT NOT NULL DEFAULT 'general',
+  enabled     BOOLEAN NOT NULL DEFAULT true,
+  sort_order  INTEGER NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_property_checklists_property
+  ON property_checklists(property_id, sort_order);
+
+ALTER TABLE property_checklists ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "checklists_select" ON property_checklists;
+DROP POLICY IF EXISTS "checklists_insert" ON property_checklists;
+DROP POLICY IF EXISTS "checklists_update" ON property_checklists;
+DROP POLICY IF EXISTS "checklists_delete" ON property_checklists;
+CREATE POLICY "checklists_select" ON property_checklists FOR SELECT TO authenticated USING (can_access_property(property_id));
+CREATE POLICY "checklists_insert" ON property_checklists FOR INSERT TO authenticated WITH CHECK (can_access_property(property_id));
+CREATE POLICY "checklists_update" ON property_checklists FOR UPDATE TO authenticated USING (can_access_property(property_id)) WITH CHECK (can_access_property(property_id));
+CREATE POLICY "checklists_delete" ON property_checklists FOR DELETE TO authenticated USING (is_property_admin(property_id));
+
+-- Link checklist items to a specific checklist (nullable for backward compat)
+ALTER TABLE property_checklist_items ADD COLUMN IF NOT EXISTS checklist_id UUID REFERENCES property_checklists(id) ON DELETE CASCADE;
+
+-- Migrate existing items: create a default "Cleaning" checklist per property and link items to it
+DO $$
+DECLARE
+  prop_rec RECORD;
+  new_checklist_id UUID;
+BEGIN
+  FOR prop_rec IN
+    SELECT DISTINCT p.id AS property_id
+    FROM properties p
+    JOIN property_checklist_items pci ON pci.property_id = p.id
+    WHERE pci.checklist_id IS NULL
+  LOOP
+    -- Create a cleaning checklist for this property if none exists
+    INSERT INTO property_checklists (property_id, name, category, sort_order)
+    VALUES (prop_rec.property_id, 'Cleaning Checklist', 'cleaning', 0)
+    ON CONFLICT DO NOTHING
+    RETURNING id INTO new_checklist_id;
+
+    IF new_checklist_id IS NOT NULL THEN
+      UPDATE property_checklist_items
+        SET checklist_id = new_checklist_id
+      WHERE property_id = prop_rec.property_id
+        AND checklist_id IS NULL;
+    END IF;
+  END LOOP;
+END;
+$$;
+
+-- ========================
+-- 015: Audit log improvements — track AI source + revert support
+-- ========================
+
+ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS is_ai_action BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS reverted_at TIMESTAMPTZ;
+ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS reverted_by UUID REFERENCES profiles(id) ON DELETE SET NULL;
+

@@ -2,13 +2,13 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import PropertyStatusWidget from '@/components/properties/PropertyStatusWidget'
-import ChecklistEditor from '@/components/properties/ChecklistEditor'
+import MultiChecklistEditor from '@/components/properties/MultiChecklistEditor'
 import DeletePropertyButton from '@/components/properties/DeletePropertyButton'
 import QuickNotesEditor from '@/components/properties/QuickNotesEditor'
 import AiInstructionsEditor from '@/components/properties/AiInstructionsEditor'
 import PropertyContactsEditor from '@/components/properties/PropertyContactsEditor'
 import ScrollToContactsButton from '@/components/properties/ScrollToContactsButton'
-import { seedDefaultChecklistIfEmpty } from '@/lib/actions/checklist'
+import { seedDefaultCategoryChecklists } from '@/lib/actions/checklist'
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -18,23 +18,23 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
     { data: property },
     { data: tickets },
     { data: stays },
-    { data: checklistItems },
+    { data: propertyChecklists },
     { data: auditEntries },
     { data: contacts },
   ] = await Promise.all([
     supabase.from('properties').select('*, property_status(*)').eq('id', id).single(),
     supabase.from('service_requests').select('id, title, priority, status, category, created_at').eq('property_id', id).in('status', ['open', 'in_progress']).order('created_at', { ascending: false }).limit(8),
     supabase.from('stays').select('id, guest_name, start_date, end_date, guest_link_token').eq('property_id', id).order('start_date', { ascending: false }).limit(10),
-    supabase.from('property_checklist_items').select('id, label, sort_order, is_checked').eq('property_id', id).order('is_checked').order('sort_order'),
+    supabase.from('property_checklists').select('id, name, category, enabled, property_checklist_items(id, label, is_checked, sort_order)').eq('property_id', id).order('sort_order'),
     supabase.from('audit_log').select('*, profiles(full_name)').eq('entity_id', id).order('changed_at', { ascending: false }).limit(8),
     supabase.from('property_contacts').select('*').eq('property_id', id).order('sort_order'),
   ])
 
   if (!property) notFound()
 
-  // Seed default checklist items if none exist (for older properties)
-  if (!checklistItems || checklistItems.length === 0) {
-    await seedDefaultChecklistIfEmpty(id)
+  // Seed default category checklists if none exist (for new or older properties)
+  if (!propertyChecklists || propertyChecklists.length === 0) {
+    await seedDefaultCategoryChecklists(id)
   }
 
   const ps = Array.isArray(property.property_status) ? property.property_status[0] : property.property_status
@@ -213,20 +213,24 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             </div>
           </div>
 
-          {/* Checklist */}
+          {/* Multi-Checklists */}
           <div className="card p-5">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="font-semibold text-sm text-white">Cleaning / Inspection Checklist</h3>
-              {checklistItems && checklistItems.filter((i: { is_checked: boolean }) => i.is_checked).length > 0 && (
-                <span className="text-xs text-[#6480a0]">
-                  {checklistItems.filter((i: { is_checked: boolean }) => i.is_checked).length}/{checklistItems.length} done
-                </span>
-              )}
+            <div className="mb-4">
+              <h3 className="font-semibold text-sm text-white">Checklists</h3>
+              <p className="text-xs text-[#6480a0] mt-0.5">Separate checklists for cleaning, maintenance, landscaping, and more. Each is collapsible and independently managed.</p>
             </div>
-            <p className="text-xs text-[#6480a0] mb-4">Check items off during cleaning. Reset to start fresh.</p>
-            <ChecklistEditor
+            <MultiChecklistEditor
               propertyId={property.id}
-              initialItems={(checklistItems ?? []).map((i: { id: string; label: string; is_checked: boolean }) => ({ id: i.id, label: i.label, is_checked: i.is_checked }))}
+              initialChecklists={(propertyChecklists ?? []).map((cl: {
+                id: string; name: string; category: string; enabled: boolean;
+                property_checklist_items: Array<{ id: string; label: string; is_checked: boolean; sort_order: number }>
+              }) => ({
+                id: cl.id,
+                name: cl.name,
+                category: cl.category,
+                enabled: cl.enabled,
+                items: [...(cl.property_checklist_items ?? [])].sort((a, b) => a.sort_order - b.sort_order),
+              }))}
             />
           </div>
 

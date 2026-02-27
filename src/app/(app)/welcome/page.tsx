@@ -4,117 +4,123 @@ import Link from 'next/link'
 const steps = [
   {
     number: 1,
+    color: 'from-violet-600 to-violet-400',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
       </svg>
     ),
-    color: 'from-violet-600 to-violet-400',
     title: 'Add your first property',
-    description: 'Start by adding a property — your Airbnb, VRBO, or any rental unit. Give it a name, address, and any notes you need.',
+    description: 'Start here — everything else connects to a property. The onboarding wizard walks you through each step.',
     bullets: [
-      'Enter property name and address',
-      'Add internal notes and AI instructions (used to auto-fill tickets)',
-      'Set a custom checklist for cleaners or staff',
+      'Enter property name, address, and access info (WiFi, door codes)',
+      'Add AI instructions — the AI will use these when managing work orders',
+      'Checklists are created automatically: Cleaning, Maintenance, and Landscaping',
+      'Customize each checklist to match exactly what you need done',
     ],
     action: { label: 'Add Your First Property →', href: '/properties/new' },
-    tip: 'Tip: The onboarding wizard walks you through every detail step by step.',
+    tip: 'Tip: You can always edit checklists later from a property\'s Checklist tab.',
   },
   {
     number: 2,
+    color: 'from-teal-600 to-teal-400',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
           d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
       </svg>
     ),
-    color: 'from-teal-600 to-teal-400',
-    title: 'Add contacts for each property',
-    description: 'Store cleaners, plumbers, electricians, and property managers directly on each property — so your whole team always knows who to call.',
+    title: 'Add your service contacts',
+    description: 'Your contacts are who the AI calls on when work needs to get done. The more complete this list, the more hands-off your life becomes.',
     bullets: [
-      'Primary contact (property manager, owner)',
-      'Service contacts — add as many as you need',
-      'Assign roles: cleaner, plumber, electrician, HVAC, pest control, and more',
+      'Add a contact for every service type: cleaner, plumber, electrician, HVAC, landscaper',
+      'Each contact gets a role — the AI automatically assigns the right contact to each work order',
+      'Include email so the AI can send them a detailed message when a work order is created',
+      'You can have multiple contacts per property — one cleaner, two plumbers, etc.',
     ],
-    action: { label: 'Go to Contacts →', href: '/contacts' },
-    tip: 'Tip: You can also add contacts directly from a property page under the Contacts tab.',
+    action: { label: 'Add Contacts →', href: '/contacts/new' },
+    tip: 'Tip: A missing contact means the AI will ask you before creating a work order — add contacts first for full automation.',
   },
   {
     number: 3,
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-      </svg>
-    ),
-    color: 'from-amber-600 to-amber-400',
-    title: 'Build property checklists',
-    description: 'Create custom checklists for each property — perfect for cleaners, maintenance staff, or guest turnover. Share as a link, no app needed.',
-    bullets: [
-      'Add checklist items specific to each property',
-      'Reorder by dragging',
-      'Share via auto-generated guest link — guests can report issues directly',
-    ],
-    action: { label: 'Go to Properties →', href: '/properties' },
-    tip: 'Tip: Open a property → Checklist tab to build and edit your list.',
-  },
-  {
-    number: 4,
+    color: 'from-emerald-600 to-emerald-400',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
           d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
     ),
-    color: 'from-emerald-600 to-emerald-400',
     title: 'Track guest stays',
-    description: 'Log every check-in and check-out. Smart Sumai auto-generates a unique checklist link for each stay — send it to your guest before arrival.',
+    description: 'Log every check-in. Smart Sumai generates a unique welcome page for each stay that you can share with guests.',
     bullets: [
       'Record guest name, check-in and check-out dates',
-      'Get a sharable checklist link for the stay',
-      'Guests can submit reports (issues, notes) without an account',
+      'Add WiFi, door codes, and house rules — they appear on the guest welcome page',
+      'Guests can submit a checkout report — issues auto-create work orders',
+      'No account needed for guests',
     ],
     action: { label: 'Log a Stay →', href: '/stays/new' },
-    tip: 'Tip: Guest reports automatically create service tickets so nothing falls through the cracks.',
+    tip: 'Tip: Copy the guest link from the stay page and paste it into your Airbnb message.',
   },
   {
-    number: 5,
+    number: 4,
+    color: 'from-rose-600 to-rose-400',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
           d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
       </svg>
     ),
-    color: 'from-rose-600 to-rose-400',
     title: 'Manage work orders',
-    description: 'Create work orders for anything that needs attention — maintenance, cleaning, restocking. Assign priorities and track resolution from start to finish.',
+    description: 'Create work orders for anything that needs attention. The AI assigns the right contact and sends them a detailed professional message automatically.',
     bullets: [
-      'Categories: maintenance, cleaning, supplies, other',
+      'Categories: cleaning, maintenance, plumbing, HVAC, electrical, landscaping, supplies',
       'Priority levels: urgent, high, medium, low',
-      'Add comments, update status, view full audit trail',
+      'AI auto-notifies the assigned contact with a full work description',
+      'Add internal notes for your team, or send external updates to the contact',
     ],
     action: { label: 'Create a Work Order →', href: '/work-orders/new' },
-    tip: 'Tip: Your team gets email notifications automatically when a work order is created or updated.',
+    tip: 'Tip: All AI actions are logged with an "Undo" button — so you can always reverse a mistake.',
+  },
+  {
+    number: 5,
+    color: 'from-amber-600 to-amber-400',
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+          d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+      </svg>
+    ),
+    title: 'Use the AI assistant',
+    description: 'Text your AI from anywhere via SMS or the chat bubble — create work orders, check status, add stays, and more using plain language.',
+    bullets: [
+      'Text "Schedule a cleaning at the Lewis house after checkout this Friday"',
+      'Text "Mark the Vestal property as clean" — status updates instantly',
+      'Text "Delete the spring cleaning work order" — AI can close, update, or create anything',
+      'All AI changes show an "Undo" button in the activity log — never worry about mistakes',
+    ],
+    action: { label: 'Open Dashboard →', href: '/dashboard' },
+    tip: 'Tip: The AI learns your property names — even partial names and addresses work.',
   },
   {
     number: 6,
+    color: 'from-blue-600 to-blue-400',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
           d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     ),
-    color: 'from-blue-600 to-blue-400',
     title: 'Invite your team',
-    description: 'Bring in your cleaners, co-hosts, and maintenance crew. Control which properties each person can access with role-based permissions.',
+    description: 'Bring in co-hosts, cleaners, and maintenance crew. Control exactly which properties each person can access.',
     bullets: [
       'Generate a shareable invite link from Settings',
       'Assign roles: owner, admin, or member',
       'Set property-level access per team member',
+      'Team members get their own login — they only see what you allow',
     ],
     action: { label: 'Go to Settings →', href: '/settings' },
-    tip: 'Tip: Team members get their own login — they only see what you allow.',
+    tip: 'Tip: Admins can post internal notes and manage work orders. Members can view.',
   },
 ]
 
@@ -144,9 +150,9 @@ export default async function WelcomePage() {
             </div>
             <span className="text-xs font-semibold uppercase tracking-widest text-violet-400">Getting Started</span>
           </div>
-          <h1 className="text-3xl font-bold text-white">Welcome, {firstName}! 👋</h1>
+          <h1 className="text-3xl font-bold text-white">Welcome, {firstName}!</h1>
           <p className="text-[#6480a0] mt-2 text-base">
-            You&apos;re all set. Here&apos;s how to get the most out of Smart Sumai — follow these steps and you&apos;ll be up and running in minutes.
+            Follow these steps and you&apos;ll be managing properties on autopilot in minutes.
           </p>
         </div>
         <Link
@@ -159,17 +165,15 @@ export default async function WelcomePage() {
       </div>
 
       {/* Steps */}
-      <div className="space-y-6">
+      <div className="space-y-5">
         {steps.map(step => (
           <div key={step.number}
             className="relative rounded-2xl border border-[#2a3d58] bg-[#0f1829] overflow-hidden
                        hover:border-[#3a5070] transition-colors">
-            {/* Step number accent bar */}
             <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${step.color}`} />
 
             <div className="p-6 pl-8">
               <div className="flex items-start gap-5">
-                {/* Icon */}
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center
                                  flex-shrink-0 shadow-lg text-white`}>
                   {step.icon}

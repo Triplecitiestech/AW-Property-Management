@@ -4,6 +4,7 @@ import Link from 'next/link'
 import WorkOrderStatusSelect from '@/components/work-orders/WorkOrderStatusSelect'
 import AddWorkOrderCommentForm from '@/components/work-orders/AddWorkOrderCommentForm'
 import DeleteWorkOrderButton from '@/components/work-orders/DeleteWorkOrderButton'
+import RevertAiActionButton from '@/components/work-orders/RevertAiActionButton'
 
 export default async function WorkOrderDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ notified?: string; notify_error?: string }> }) {
   const { id } = await params
@@ -34,10 +35,10 @@ export default async function WorkOrderDetailPage({ params, searchParams }: { pa
       .order('created_at'),
     supabase
       .from('audit_log')
-      .select('*, profiles(full_name)')
+      .select('id, entity_type, action, changed_at, before_data, after_data, is_ai_action, reverted_at, profiles(full_name)')
       .eq('entity_id', id)
       .order('changed_at', { ascending: false })
-      .limit(10),
+      .limit(20),
     supabase.from('profiles').select('id, full_name').order('full_name'),
   ])
 
@@ -199,23 +200,38 @@ export default async function WorkOrderDetailPage({ params, searchParams }: { pa
           {auditEntries && auditEntries.length > 0 && (
             <div className="card p-5">
               <h3 className="font-semibold mb-3">Activity Log</h3>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {auditEntries.map(entry => {
-                  const actor = (entry.profiles as {full_name:string}|null)?.full_name ?? 'System'
+                  const actor = (entry.profiles as unknown as {full_name:string}|null)?.full_name ?? 'System'
                   const afterData = entry.after_data as Record<string,unknown>|null
                   const beforeData = entry.before_data as Record<string,unknown>|null
-                  const statusChange = afterData?.status && beforeData?.status
+                  const statusChange = afterData?.status && beforeData?.status && afterData.status !== beforeData.status
+                  const priorityChange = afterData?.priority && beforeData?.priority && afterData.priority !== beforeData.priority
+                  const isAi = !!(entry as Record<string,unknown>).is_ai_action
+                  const alreadyReverted = !!(entry as Record<string,unknown>).reverted_at
                   return (
-                    <div key={entry.id} className="flex items-start justify-between text-sm gap-4">
-                      <div>
-                        <span className="font-medium text-[#e2e8f0]">{actor}</span>
-                        {statusChange ? (
-                          <span className="text-[#6480a0]"> changed status: <span className="font-medium text-[#94a3b8]">{String(beforeData.status)}</span> → <span className="font-medium text-[#94a3b8]">{String(afterData.status)}</span></span>
-                        ) : (
-                          <span className="text-[#6480a0]"> {entry.action} this work order</span>
-                        )}
+                    <div key={entry.id} className={`text-sm rounded-lg px-3 py-2 ${isAi ? 'bg-amber-950/20 border border-amber-500/20' : 'bg-[#0f1829]'}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {isAi && <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">AI</span>}
+                            <span className="font-medium text-[#e2e8f0]">{actor}</span>
+                            {statusChange ? (
+                              <span className="text-[#6480a0]">changed status: <span className="text-[#94a3b8]">{String(beforeData.status)}</span> → <span className="text-[#94a3b8]">{String(afterData.status)}</span></span>
+                            ) : priorityChange ? (
+                              <span className="text-[#6480a0]">changed priority: <span className="text-[#94a3b8]">{String(beforeData.priority)}</span> → <span className="text-[#94a3b8]">{String(afterData.priority)}</span></span>
+                            ) : (
+                              <span className="text-[#6480a0]">{entry.action} this work order</span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-xs text-[#4a6080] flex-shrink-0">{new Date(entry.changed_at).toLocaleDateString()}</span>
                       </div>
-                      <span className="text-xs text-[#4a6080] flex-shrink-0">{new Date(entry.changed_at).toLocaleDateString()}</span>
+                      {isAi && (
+                        <div className="mt-1.5">
+                          <RevertAiActionButton auditId={entry.id} alreadyReverted={alreadyReverted} />
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -239,8 +255,8 @@ export default async function WorkOrderDetailPage({ params, searchParams }: { pa
                 <p className="capitalize text-[#cbd5e1]">{workOrder.category}</p>
               </div>
               <div>
-                <p className="text-[#4a6080] text-xs mb-0.5">Priority</p>
-                <span className={`badge badge-${workOrder.priority}`}>{workOrder.priority.charAt(0).toUpperCase() + workOrder.priority.slice(1)}</span>
+                <p className="text-[#4a6080] text-xs mb-1">Priority</p>
+                <div><span className={`badge badge-${workOrder.priority}`}>{workOrder.priority.charAt(0).toUpperCase() + workOrder.priority.slice(1)}</span></div>
               </div>
               <div>
                 <p className="text-[#4a6080] text-xs mb-0.5">Due Date</p>
@@ -259,7 +275,7 @@ export default async function WorkOrderDetailPage({ params, searchParams }: { pa
                 {assignedContact ? (
                   <div>
                     <p className="text-[#cbd5e1] font-medium">{assignedContact.name}</p>
-                    <p className="text-[#6480a0] text-xs capitalize">{assignedContact.role}</p>
+                    <p className="text-[#6480a0] text-xs"><span className="text-[#4a6080]">Role:</span> <span className="capitalize">{assignedContact.role}</span></p>
                     {assignedContact.email && <p className="text-xs text-violet-400">{assignedContact.email}</p>}
                     {assignedContact.phone && <p className="text-xs text-[#6480a0]">{assignedContact.phone}</p>}
                   </div>

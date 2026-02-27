@@ -449,6 +449,58 @@ export async function notifyContact(id: string): Promise<{ success?: boolean; er
   return { success: true }
 }
 
+// ---- Revert AI Action ----
+// Undoes a single AI-performed action recorded in audit_log.
+
+export async function revertAiAction(auditId: string): Promise<{ success?: boolean; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/login')
+
+  const { data: entry } = await supabase
+    .from('audit_log')
+    .select('*')
+    .eq('id', auditId)
+    .single()
+
+  if (!entry) return { error: 'Audit entry not found.' }
+  if (entry.reverted_at) return { error: 'This action has already been reverted.' }
+  if (!entry.is_ai_action) return { error: 'This action was not performed by the AI.' }
+
+  const beforeData = entry.before_data as Record<string, unknown> | null
+  const afterData = entry.after_data as Record<string, unknown> | null
+  const aiAction = afterData?.ai_action as string | undefined
+
+  if (entry.entity_type === 'service_request') {
+    if (entry.action === 'created' || aiAction === 'create_work_order') {
+      // Revert a creation: close the work order + add note
+      await supabase.from('service_requests').update({ status: 'closed' }).eq('id', entry.entity_id)
+      await supabase.from('service_request_comments').insert({
+        request_id: entry.entity_id,
+        author_id: user.id,
+        content: `[AI Action Reverted] This work order was created by the AI and has been closed.`,
+        is_internal: true,
+      }).then(undefined, () => {})
+    } else if (entry.action === 'updated' && beforeData) {
+      const restore: Record<string, unknown> = {}
+      if (beforeData.status !== undefined) restore.status = beforeData.status
+      if (beforeData.priority !== undefined) restore.priority = beforeData.priority
+      if (Object.keys(restore).length) {
+        await supabase.from('service_requests').update(restore).eq('id', entry.entity_id)
+      }
+    }
+  }
+
+  await supabase
+    .from('audit_log')
+    .update({ reverted_at: new Date().toISOString(), reverted_by: user.id })
+    .eq('id', auditId)
+
+  revalidatePath(`/work-orders/${entry.entity_id}`)
+  revalidatePath('/work-orders')
+  return { success: true }
+}
+
 // ---- Delete Ticket ----
 
 export async function deleteTicket(id: string) {

@@ -11,9 +11,11 @@ export default async function StayDetailPage({ params }: { params: Promise<{ id:
   const [
     { data: stay },
     { data: guestReport },
+    { data: auditEntries },
   ] = await Promise.all([
     supabase.from('stays').select('*, properties(id, name)').eq('id', id).single(),
     supabase.from('guest_reports').select('*').eq('stay_id', id).single(),
+    supabase.from('audit_log').select('action, changed_at, after_data, is_ai_action, profiles(full_name)').eq('entity_id', id).order('changed_at', { ascending: false }).limit(10),
   ])
 
   if (!stay) notFound()
@@ -85,6 +87,29 @@ export default async function StayDetailPage({ params }: { params: Promise<{ id:
               <button type="submit" className="btn-primary text-sm">Save Changes</button>
             </form>
           </div>
+
+          {/* Recent Activity */}
+          {auditEntries && auditEntries.length > 0 && (
+            <div className="card p-5">
+              <h3 className="font-semibold text-white mb-3 text-sm">Recent Activity</h3>
+              <div className="space-y-2">
+                {auditEntries.map((entry, i) => {
+                  const actor = (entry.profiles as unknown as {full_name:string}|null)?.full_name ?? 'System'
+                  const isAi = !!(entry as Record<string,unknown>).is_ai_action
+                  return (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-1.5">
+                        {isAi && <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">AI</span>}
+                        <span className="font-medium text-[#e2e8f0]">{actor}</span>
+                        <span className="text-[#6480a0]">{entry.action} this stay</span>
+                      </div>
+                      <span className="text-xs text-[#4a6080]">{new Date(entry.changed_at).toLocaleDateString()}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Guest Report */}
           <div className="card p-6">

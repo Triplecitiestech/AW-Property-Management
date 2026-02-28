@@ -201,31 +201,25 @@ jobs:
         # NEVER use vercel promote — prebuilt deployments cannot be promoted.
         id: deploy
         run: |
-          set -uo pipefail
+          set -euo pipefail
 
           # Diagnostics
           echo "DEPLOY_ENV=$DEPLOY_ENV"
-          echo "VERCEL_ORG_ID=${VERCEL_ORG_ID:-NOT SET}"
-          echo "VERCEL_PROJECT_ID=${VERCEL_PROJECT_ID:-NOT SET}"
-          echo "Build output exists: $(ls -d .vercel/output 2>/dev/null && echo YES || echo NO)"
-          echo "Vercel CLI version: $(vercel --version 2>&1)"
+          echo "VERCEL_ORG_ID=$VERCEL_ORG_ID"
+          echo "VERCEL_PROJECT_ID=$VERCEL_PROJECT_ID"
+          ls -la .vercel/output/ 2>/dev/null | head -5 || echo "WARNING: .vercel/output/ not found"
+          vercel --version
 
           if [ "$DEPLOY_ENV" = "production" ]; then
-            echo "Deploying to PRODUCTION..."
-            DEPLOY_OUT=$(vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN" 2>&1) && DEPLOY_RC=0 || DEPLOY_RC=$?
+            echo "Running: vercel deploy --prebuilt --prod"
+            DEPLOY_OUT=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" 2>&1)
           else
-            echo "Deploying as PREVIEW..."
-            DEPLOY_OUT=$(vercel deploy --prebuilt --yes --token="$VERCEL_TOKEN" 2>&1) && DEPLOY_RC=0 || DEPLOY_RC=$?
+            echo "Running: vercel deploy --prebuilt (preview)"
+            DEPLOY_OUT=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN" 2>&1)
           fi
 
-          echo "Deploy exit code: $DEPLOY_RC"
           echo "Full deploy output:"
           echo "$DEPLOY_OUT"
-
-          if [ $DEPLOY_RC -ne 0 ]; then
-            echo "::error::vercel deploy failed with exit code $DEPLOY_RC"
-            exit 1
-          fi
 
           URL=$(echo "$DEPLOY_OUT" | grep -oE 'https://[a-z0-9-]+\.vercel\.app[^ ]*' | tail -1)
           if [ -z "$URL" ]; then

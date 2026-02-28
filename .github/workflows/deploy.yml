@@ -195,40 +195,37 @@ jobs:
         # The deploy step controls whether the result lands in production or preview.
         run: vercel build --prod --token="$VERCEL_TOKEN" --yes
 
-      - name: Disable Vercel GitHub auto-deploy
-        # We manage all deploys via CLI. Disable Vercel's built-in GitHub
-        # integration to prevent race conditions and stale deployments.
-        run: |
-          HTTP=$(curl -s -o /tmp/vercel_patch.json -w "%{http_code}" -X PATCH \
-            "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}?teamId=${VERCEL_ORG_ID}" \
-            -H "Authorization: Bearer $VERCEL_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"gitDeploymentEnabled": false}')
-
-          if [ "$HTTP" = "200" ]; then
-            echo "✓ Vercel GitHub auto-deploy disabled"
-          else
-            echo "::warning::Could not disable GitHub auto-deploy (HTTP $HTTP)"
-          fi
-
       - name: Deploy to Vercel
         # main → production deployment (--prod flag assigns to production domain)
         # claude/* → preview deployment (no --prod, gets unique preview URL)
         # NEVER use vercel promote — prebuilt deployments cannot be promoted.
         id: deploy
         run: |
-          set -euo pipefail
+          set -uo pipefail
+
+          # Diagnostics
+          echo "DEPLOY_ENV=$DEPLOY_ENV"
+          echo "VERCEL_ORG_ID=${VERCEL_ORG_ID:-NOT SET}"
+          echo "VERCEL_PROJECT_ID=${VERCEL_PROJECT_ID:-NOT SET}"
+          echo "Build output exists: $(ls -d .vercel/output 2>/dev/null && echo YES || echo NO)"
+          echo "Vercel CLI version: $(vercel --version 2>&1)"
 
           if [ "$DEPLOY_ENV" = "production" ]; then
             echo "Deploying to PRODUCTION..."
-            DEPLOY_OUT=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" 2>&1)
+            DEPLOY_OUT=$(vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN" 2>&1) && DEPLOY_RC=0 || DEPLOY_RC=$?
           else
             echo "Deploying as PREVIEW..."
-            DEPLOY_OUT=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN" 2>&1)
+            DEPLOY_OUT=$(vercel deploy --prebuilt --yes --token="$VERCEL_TOKEN" 2>&1) && DEPLOY_RC=0 || DEPLOY_RC=$?
           fi
 
+          echo "Deploy exit code: $DEPLOY_RC"
           echo "Full deploy output:"
           echo "$DEPLOY_OUT"
+
+          if [ $DEPLOY_RC -ne 0 ]; then
+            echo "::error::vercel deploy failed with exit code $DEPLOY_RC"
+            exit 1
+          fi
 
           URL=$(echo "$DEPLOY_OUT" | grep -oE 'https://[a-z0-9-]+\.vercel\.app[^ ]*' | tail -1)
           if [ -z "$URL" ]; then
@@ -238,6 +235,18 @@ jobs:
 
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Extracted deployment URL: $URL"
+
+      - name: Disable Vercel GitHub auto-deploy
+        # Prevents Vercel's built-in GitHub integration from racing with our CLI deploys.
+        # Runs after deploy succeeds to avoid interfering with CLI project context.
+        if: success()
+        continue-on-error: true
+        run: |
+          curl -s -o /dev/null -w "HTTP %{http_code}" -X PATCH \
+            "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}?teamId=${VERCEL_ORG_ID}" \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"gitDeploymentEnabled": false}' && echo " — auto-deploy disabled" || true
 
       - name: Assert deploy environment matches branch
         # CI guardrail: main MUST produce a production deploy, claude/* MUST NOT.

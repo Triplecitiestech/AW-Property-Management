@@ -1,6 +1,6 @@
-import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { getAppContext } from '@/lib/impersonation'
 import WorkOrderStatusSelect from '@/components/work-orders/WorkOrderStatusSelect'
 import AddWorkOrderCommentForm from '@/components/work-orders/AddWorkOrderCommentForm'
 import DeleteWorkOrderButton from '@/components/work-orders/DeleteWorkOrderButton'
@@ -10,7 +10,8 @@ import LocalDate from '@/components/LocalDate'
 export default async function WorkOrderDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ notified?: string; notify_error?: string }> }) {
   const { id } = await params
   const { notified, notify_error } = await searchParams
-  const supabase = await createClient()
+  const ctx = await getAppContext()
+  const supabase = ctx.supabase
 
   const [
     { data: workOrder },
@@ -40,6 +41,7 @@ export default async function WorkOrderDetailPage({ params, searchParams }: { pa
       .eq('entity_id', id)
       .order('changed_at', { ascending: false })
       .limit(20),
+    // RLS now scopes profiles to same-org members only (deploy.sql section 018)
     supabase.from('profiles').select('id, full_name').order('full_name'),
   ])
 

@@ -1004,6 +1004,43 @@ CREATE POLICY "free_invite_codes_auth_select" ON free_invite_codes FOR SELECT TO
   USING (true);
 
 -- ========================
+-- 018: Fix cross-account data leaks — tighten profiles + invitations RLS
+-- ========================
+-- profiles_select was USING (true) — any authenticated user could see every profile
+-- in the system. invitations_select was the same. Both are now scoped to org membership.
+
+-- Helper: returns user IDs visible to the current user (same org members + property co-access)
+DROP FUNCTION IF EXISTS get_visible_user_ids() CASCADE;
+CREATE FUNCTION get_visible_user_ids()
+RETURNS UUID[] LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT COALESCE(ARRAY(
+    SELECT DISTINCT user_id FROM (
+      -- Users in the same organization(s)
+      SELECT user_id FROM org_members
+      WHERE org_id IN (SELECT org_id FROM org_members WHERE user_id = auth.uid())
+      UNION
+      -- Users with explicit access to the same properties
+      SELECT user_id FROM property_access
+      WHERE property_id IN (SELECT property_id FROM property_access WHERE user_id = auth.uid())
+    ) visible
+  ), ARRAY[]::UUID[]);
+$$;
+
+-- Tighten profiles: only see yourself + org/property co-members
+DROP POLICY IF EXISTS "profiles_select" ON profiles;
+CREATE POLICY "profiles_select" ON profiles FOR SELECT TO authenticated
+  USING (id = auth.uid() OR id = ANY(get_visible_user_ids()));
+
+-- Tighten invitations: only see invitations for your own orgs/properties
+DROP POLICY IF EXISTS "invitations_select" ON invitations;
+CREATE POLICY "invitations_select" ON invitations FOR SELECT TO authenticated
+  USING (
+    invited_by = auth.uid()
+    OR (org_id IS NOT NULL AND org_id = ANY(get_user_org_ids()))
+    OR (property_id IS NOT NULL AND can_access_property(property_id))
+  );
+
+-- ========================
 -- RPC: list_public_tables
 -- ========================
 -- Returns the names of all tables in the public schema.

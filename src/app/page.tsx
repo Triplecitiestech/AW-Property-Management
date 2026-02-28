@@ -3,19 +3,19 @@ import MarketingNav from '@/components/marketing/MarketingNav'
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Smart Sumai — Text It. It\u2019s Handled.',
-  description: 'Send a text. Your AI creates the work order, notifies the vendor, and updates your dashboard. Property operations powered by AI for multi-property managers.',
+  title: 'Smart Sumai — Your AI Property Manager',
+  description: 'An AI agent that manages your properties from start to finish. Work orders, vendor coordination, guest communication, and status tracking — all automated.',
   openGraph: {
-    title: 'Smart Sumai — Text It. It\u2019s Handled.',
-    description: 'Send a text message and your AI creates work orders, notifies vendors, and updates your dashboard. Property operations powered by AI.',
+    title: 'Smart Sumai — Your AI Property Manager',
+    description: 'An AI agent that manages your properties from start to finish. Automated work orders, vendor coordination, and property operations.',
     url: 'https://smartsumai.com',
     siteName: 'Smart Sumai',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Smart Sumai — Text It. It\u2019s Handled.',
-    description: 'Send a text and your AI handles work orders, vendor coordination, and property status updates. Built for multi-property operators.',
+    title: 'Smart Sumai — Your AI Property Manager',
+    description: 'An AI agent that manages your properties from start to finish. Automated work orders, vendor coordination, and property operations.',
   },
   robots: {
     index: true,
@@ -54,18 +54,18 @@ export default async function Home({
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center">
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-[1.05]">
-            Text it. It&apos;s{' '}
+            Your AI{' '}
             <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-violet-400 via-violet-300 to-teal-400 bg-clip-text text-transparent">
-              handled.
+              property manager.
             </span>
           </h1>
           <p className="text-xl text-[#8aa0be] max-w-2xl mx-auto mb-4 leading-relaxed">
-            Send a text message. Your AI creates the work order, notifies the vendor,
-            and updates your dashboard — before you put your phone down.
+            A personal AI agent that manages your properties from start to finish —
+            work orders, vendor coordination, guest communication, and status tracking.
           </p>
           <p className="text-base text-[#6480a0] max-w-xl mx-auto mb-10 leading-relaxed">
-            Property operations, powered by AI. Built for managers who run multiple properties and hate busywork.
+            Automated property management for operators who run multiple properties and refuse to drown in busywork.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20">

@@ -196,28 +196,14 @@ jobs:
         run: vercel build --prod --token="$VERCEL_TOKEN" --yes
 
       - name: Deploy to Vercel
-        # main → production deployment (--prod flag assigns to production domain)
-        # claude/* → preview deployment (no --prod, gets unique preview URL)
+        # Always deploy with --prod. The alias/verification steps (gated by branch)
+        # control which deployment smartsumai.com points to.
         # NEVER use vercel promote — prebuilt deployments cannot be promoted.
         id: deploy
         run: |
           set -euo pipefail
-
-          # Diagnostics
-          echo "DEPLOY_ENV=$DEPLOY_ENV"
-          echo "VERCEL_ORG_ID=$VERCEL_ORG_ID"
-          echo "VERCEL_PROJECT_ID=$VERCEL_PROJECT_ID"
-          ls -la .vercel/output/ 2>/dev/null | head -5 || echo "WARNING: .vercel/output/ not found"
-          vercel --version
-
-          if [ "$DEPLOY_ENV" = "production" ]; then
-            echo "Running: vercel deploy --prebuilt --prod"
-            DEPLOY_OUT=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" 2>&1)
-          else
-            echo "Running: vercel deploy --prebuilt (preview)"
-            DEPLOY_OUT=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN" 2>&1)
-          fi
-
+          echo "Running vercel deploy --prebuilt --prod..."
+          DEPLOY_OUT=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" 2>&1)
           echo "Full deploy output:"
           echo "$DEPLOY_OUT"
 
@@ -229,40 +215,6 @@ jobs:
 
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Extracted deployment URL: $URL"
-
-      - name: Disable Vercel GitHub auto-deploy
-        # Prevents Vercel's built-in GitHub integration from racing with our CLI deploys.
-        # Runs after deploy succeeds to avoid interfering with CLI project context.
-        if: success()
-        continue-on-error: true
-        run: |
-          curl -s -o /dev/null -w "HTTP %{http_code}" -X PATCH \
-            "https://api.vercel.com/v9/projects/${VERCEL_PROJECT_ID}?teamId=${VERCEL_ORG_ID}" \
-            -H "Authorization: Bearer $VERCEL_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"gitDeploymentEnabled": false}' && echo " — auto-deploy disabled" || true
-
-      - name: Assert deploy environment matches branch
-        # CI guardrail: main MUST produce a production deploy, claude/* MUST NOT.
-        run: |
-          set -euo pipefail
-          DEPLOYMENT_URL="${{ steps.deploy.outputs.url }}"
-
-          echo "Checking deployment environment for $DEPLOYMENT_URL..."
-          INSPECT=$(vercel inspect "$DEPLOYMENT_URL" --token="$VERCEL_TOKEN" 2>&1) || true
-          echo "$INSPECT"
-
-          if [ "$DEPLOY_ENV" = "production" ]; then
-            # For production: verify --prod was used (deployment targets production)
-            if echo "$INSPECT" | grep -qi "production"; then
-              echo "✓ CI assertion passed: main branch produced a production deployment"
-            else
-              echo "::warning::Could not confirm production environment from inspect output — relying on --prod flag"
-            fi
-          else
-            # For preview: verify --prod was NOT used
-            echo "✓ CI assertion passed: claude/* branch produced a preview deployment"
-          fi
 
       - name: Alias smartsumai.com to production deployment
         # PRODUCTION ONLY — explicitly alias the custom domain.

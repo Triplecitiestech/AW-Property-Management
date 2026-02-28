@@ -3,19 +3,19 @@ import MarketingNav from '@/components/marketing/MarketingNav'
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Smart Sumai — Property Operations Platform',
-  description: 'Smart Sumai is a property operations platform for managing work orders, vendor coordination, guest turnovers, and property status across your entire portfolio.',
+  title: 'Smart Sumai — Text It. It\u2019s Handled.',
+  description: 'Send a text. Your AI creates the work order, notifies the vendor, and updates your dashboard. Property operations powered by AI for multi-property managers.',
   openGraph: {
-    title: 'Smart Sumai — Property Operations Platform',
-    description: 'One platform for work orders, vendor coordination, guest logistics, and real-time property status. Built for operators managing multiple properties.',
+    title: 'Smart Sumai — Text It. It\u2019s Handled.',
+    description: 'Send a text message and your AI creates work orders, notifies vendors, and updates your dashboard. Property operations powered by AI.',
     url: 'https://smartsumai.com',
     siteName: 'Smart Sumai',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Smart Sumai — Property Operations Platform',
-    description: 'Manage work orders, vendor coordination, guest turnovers, and property status from one platform. Built for multi-property operators.',
+    title: 'Smart Sumai — Text It. It\u2019s Handled.',
+    description: 'Send a text and your AI handles work orders, vendor coordination, and property status updates. Built for multi-property operators.',
   },
   robots: {
     index: true,
@@ -54,18 +54,18 @@ export default async function Home({
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center">
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-[1.05]">
-            Manage every property.{' '}
+            Text it. It&apos;s{' '}
             <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-violet-400 via-violet-300 to-teal-400 bg-clip-text text-transparent">
-              From one place.
+              handled.
             </span>
           </h1>
           <p className="text-xl text-[#8aa0be] max-w-2xl mx-auto mb-4 leading-relaxed">
-            Create work orders, coordinate vendors, track turnovers, and keep your whole
-            team aligned — without spreadsheets or group texts.
+            Send a text message. Your AI creates the work order, notifies the vendor,
+            and updates your dashboard — before you put your phone down.
           </p>
           <p className="text-base text-[#6480a0] max-w-xl mx-auto mb-10 leading-relaxed">
-            One platform for property operations. Simple to set up. Built for operators managing multiple properties.
+            Property operations, powered by AI. Built for managers who run multiple properties and hate busywork.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20">
@@ -557,88 +557,88 @@ export default async function Home({
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
                 title: 'Property Management Companies',
-                desc: 'Manage maintenance, turnovers, and vendor coordination across a portfolio of residential or commercial units. Keep every property status visible to your whole operations team.',
+                desc: 'Manage maintenance, turnovers, and vendor coordination across a portfolio of residential or commercial units.',
                 icon: (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 ),
+                color: 'from-violet-600 to-violet-400',
+                glow: 'group-hover:shadow-violet-900/40',
               },
               {
                 title: 'Owners with Multiple Properties',
-                desc: 'Track the status of every property you own from a single dashboard. Assign work to vendors, log guest stays, and stay organized without juggling separate tools.',
+                desc: 'Track every property from a single dashboard. Assign work to vendors, log guest stays, and stay organized.',
                 icon: (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                   </svg>
                 ),
+                color: 'from-teal-600 to-teal-400',
+                glow: 'group-hover:shadow-teal-900/40',
               },
               {
-                title: 'Apartment and Multi-Unit Buildings',
-                desc: 'Coordinate maintenance across units with clear work order tracking. Assign requests to the right vendor and keep tenants informed without constant back-and-forth.',
+                title: 'Apartment & Multi-Unit Buildings',
+                desc: 'Coordinate maintenance across units with clear work order tracking and vendor assignments.',
                 icon: (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
                   </svg>
                 ),
+                color: 'from-sky-600 to-sky-400',
+                glow: 'group-hover:shadow-sky-900/40',
               },
               {
                 title: 'Commercial Property Operators',
-                desc: 'Manage service requests, vendor relationships, and facility maintenance for office buildings, retail spaces, or mixed-use properties with structured workflows.',
+                desc: 'Service requests, vendor relationships, and facility maintenance for office, retail, or mixed-use properties.',
                 icon: (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 ),
+                color: 'from-emerald-600 to-emerald-400',
+                glow: 'group-hover:shadow-emerald-900/40',
               },
               {
-                title: 'Hospitality and High-Turnover Properties',
-                desc: 'Manage turnover logistics for vacation rentals, Airbnbs, or corporate housing. Schedule cleanings, track guest check-ins, and generate welcome pages automatically.',
+                title: 'Vacation Rentals & Hospitality',
+                desc: 'Turnover logistics, cleaning schedules, guest check-ins, and auto-generated welcome pages.',
                 icon: (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 ),
+                color: 'from-blue-600 to-blue-400',
+                glow: 'group-hover:shadow-blue-900/40',
               },
               {
-                title: 'Facility and Campus Managers',
-                desc: 'Coordinate maintenance staff and external contractors across buildings or campuses. Track every request with priority levels, assignments, and a complete audit history.',
+                title: 'Facility & Campus Managers',
+                desc: 'Coordinate staff and contractors across buildings with priority tracking and full audit history.',
                 icon: (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                   </svg>
                 ),
+                color: 'from-rose-600 to-pink-400',
+                glow: 'group-hover:shadow-rose-900/40',
               },
             ].map(g => (
-              <div key={g.title} className="rounded-2xl border border-white/5 bg-[#0f1829]/80 p-6">
-                <div className="w-10 h-10 rounded-lg bg-violet-600/15 border border-violet-500/20 flex items-center justify-center
-                                text-violet-400 mb-4">
-                  {g.icon}
+              <div key={g.title}
+                className="group relative rounded-2xl border border-white/5 bg-[#0f1829]/80 p-6 text-center
+                           hover:border-white/10 hover:bg-[#111d30] transition-all cursor-default">
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${g.color} flex items-center justify-center
+                                 mx-auto mb-4 shadow-lg ${g.glow} transition-shadow`}>
+                  <span className="text-white">{g.icon}</span>
                 </div>
-                <h3 className="text-base font-semibold text-white mb-2">{g.title}</h3>
-                <p className="text-sm text-[#6480a0] leading-relaxed">{g.desc}</p>
+                <h3 className="text-lg font-semibold text-white mb-2">{g.title}</h3>
+                <p className="text-[#6480a0] text-sm leading-relaxed">{g.desc}</p>
               </div>
             ))}
           </div>
 
-          {/* Not a Fit */}
-          <div className="rounded-2xl border border-white/5 bg-[#0c1220] p-6 max-w-2xl mx-auto">
-            <h3 className="text-sm font-semibold text-[#8aa0be] uppercase tracking-wide mb-3">Not a fit for</h3>
-            <ul className="space-y-2 text-sm text-[#6480a0]">
-              <li className="flex items-start gap-2">
-                <span className="text-[#4a6080] mt-0.5">-</span>
-                Individual homeowners without recurring operational needs
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-[#4a6080] mt-0.5">-</span>
-                Single-property residents without vendor coordination
-              </li>
-            </ul>
-          </div>
         </div>
       </section>
 
@@ -754,9 +754,6 @@ export default async function Home({
             </div>
             <p className="text-sm text-[#4a6080]">
               © {new Date().getFullYear()} Smart Sumai. All rights reserved.
-            </p>
-            <p className="text-xs text-[#3a4f6a] mt-1 italic">
-              Sumai (住まい) — a Japanese word meaning dwelling or place of residence.
             </p>
           </div>
         </div>

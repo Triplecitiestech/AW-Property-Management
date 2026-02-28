@@ -4,7 +4,9 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import DeleteUserButton from '@/components/admin/DeleteUserButton'
 import ImpersonateButton from '@/components/admin/ImpersonateButton'
+import BillingExemptButton from '@/components/admin/BillingExemptButton'
 import FeatureRequestAdmin from '@/components/admin/FeatureRequestAdmin'
+import FreeInviteManager from '@/components/admin/FreeInviteManager'
 import LocalDate from '@/components/LocalDate'
 
 export default async function AdminPage() {
@@ -28,16 +30,18 @@ export default async function AdminPage() {
     { data: auditRaw },
     { data: featureRequests },
     { data: conversations },
+    { data: freeInviteCodes },
   ] = await Promise.all([
-    svc.from('profiles').select('id, full_name, email, role, is_super_admin, created_at, phone_number').order('created_at', { ascending: false }),
+    svc.from('profiles').select('id, full_name, email, role, is_super_admin, billing_exempt, billing_exempt_reason, created_at, phone_number').order('created_at', { ascending: false }),
     svc.from('properties').select('id, owner_id'),
     svc.from('ai_usage').select('user_id, tokens_in, tokens_out'),
     svc.from('audit_log').select('changed_by, changed_at').order('changed_at', { ascending: false }).limit(500),
     svc.from('feature_requests').select('*').order('votes', { ascending: false }),
     svc.from('conversations').select('user_id, created_at').order('created_at', { ascending: false }).limit(1000),
+    svc.from('free_invite_codes').select('*').order('created_at', { ascending: false }),
   ])
 
-  type Profile = { id: string; full_name: string | null; email: string | null; role: string; is_super_admin: boolean; created_at: string; phone_number: string | null }
+  type Profile = { id: string; full_name: string | null; email: string | null; role: string; is_super_admin: boolean; billing_exempt: boolean; billing_exempt_reason: string | null; created_at: string; phone_number: string | null }
   type Property = { id: string; owner_id: string | null }
   type Usage = { user_id: string | null; tokens_in: number | null; tokens_out: number | null }
   type Audit = { changed_by: string | null; changed_at: string }
@@ -139,7 +143,7 @@ export default async function AdminPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#1e2d42]">
-                {['User', 'Properties', 'AI Tokens', 'Messages', 'Actions', 'Last Active', ''].map(h => (
+                {['User', 'Billing', 'Properties', 'AI Tokens', 'Messages', 'Actions', 'Last Active', ''].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs text-[#6480a0] font-medium whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -151,6 +155,16 @@ export default async function AdminPage() {
                     <p className="font-medium text-white">{u.full_name || '—'}</p>
                     <p className="text-xs text-[#6480a0]">{u.email}</p>
                     {u.is_super_admin && <span className="text-[10px] text-violet-400">super admin</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {!u.is_super_admin && (
+                      <BillingExemptButton
+                        userId={u.id}
+                        userName={u.full_name || u.email || ''}
+                        isExempt={u.billing_exempt}
+                        reason={u.billing_exempt_reason}
+                      />
+                    )}
                   </td>
                   <td className="px-4 py-3 text-[#94a3b8]">{u.propCount}</td>
                   <td className="px-4 py-3 text-[#94a3b8]">{(u.aiIn + u.aiOut).toLocaleString()}</td>
@@ -172,6 +186,20 @@ export default async function AdminPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Free Invite Codes */}
+      <div className="card p-5">
+        <div className="mb-4">
+          <h2 className="font-semibold text-white">Free Invite Codes</h2>
+          <p className="text-xs text-[#6480a0] mt-0.5">
+            Generate signup links that automatically grant billing-exempt access. Share with friends, family, and testers.
+          </p>
+        </div>
+        <FreeInviteManager
+          codes={freeInviteCodes ?? []}
+          appUrl={process.env.NEXT_PUBLIC_APP_URL || 'https://smartsumai.com'}
+        />
       </div>
 
       {/* Feature Requests */}

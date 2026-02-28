@@ -971,6 +971,39 @@ ALTER TABLE property_checklists
   ADD COLUMN IF NOT EXISTS unit_id UUID REFERENCES property_units(id) ON DELETE CASCADE;
 
 -- ========================
+-- 017: Free invite codes + billing exempt
+-- ========================
+
+-- Flag for accounts that should never be billed (friends, family, testers)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS billing_exempt BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS billing_exempt_reason TEXT;
+
+-- Free invite codes — reusable signup links that auto-set billing_exempt
+CREATE TABLE IF NOT EXISTS free_invite_codes (
+  id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  code           TEXT NOT NULL UNIQUE DEFAULT replace(gen_random_uuid()::text, '-', ''),
+  label          TEXT NOT NULL DEFAULT '',
+  created_by     UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  max_uses       INT,                    -- NULL = unlimited
+  used_count     INT NOT NULL DEFAULT 0,
+  expires_at     TIMESTAMPTZ,            -- NULL = never expires
+  is_active      BOOLEAN NOT NULL DEFAULT true,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE free_invite_codes ENABLE ROW LEVEL SECURITY;
+
+-- Only super admins (via service client) manage these — no RLS policies for regular users.
+-- Service client bypasses RLS. Grant read-only access for anon (signup flow needs to validate codes).
+DROP POLICY IF EXISTS "free_invite_codes_anon_select" ON free_invite_codes;
+CREATE POLICY "free_invite_codes_anon_select" ON free_invite_codes FOR SELECT TO anon
+  USING (is_active = true AND (expires_at IS NULL OR expires_at > NOW()) AND (max_uses IS NULL OR used_count < max_uses));
+
+DROP POLICY IF EXISTS "free_invite_codes_auth_select" ON free_invite_codes;
+CREATE POLICY "free_invite_codes_auth_select" ON free_invite_codes FOR SELECT TO authenticated
+  USING (true);
+
+-- ========================
 -- RPC: list_public_tables
 -- ========================
 -- Returns the names of all tables in the public schema.

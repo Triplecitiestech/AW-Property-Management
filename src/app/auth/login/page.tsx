@@ -2,12 +2,28 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { lookupUsernameEmail } from '@/lib/actions/auth'
+import { redeemFreeInviteCode } from '@/lib/actions/free-invites'
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0f1829] flex items-center justify-center">
+        <div className="text-[#6480a0] text-sm">Loading...</div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
+  const searchParams = useSearchParams()
+  const inviteCode = searchParams.get('invite')
   const [emailOrUsername, setEmailOrUsername] = useState('')
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState<'login' | 'signup'>('login')
@@ -18,6 +34,11 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  // Auto-set signup mode when invite code is present
+  useEffect(() => {
+    if (inviteCode) setMode('signup')
+  }, [inviteCode])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -43,7 +64,7 @@ export default function LoginPage() {
         if (!tosAgreed) throw new Error('You must accept the Terms of Use to create an account.')
         if (!phone.trim()) throw new Error('A phone number is required to use the SMS AI assistant.')
         const email = emailOrUsername.trim()
-        const { error } = await supabase.auth.signUp({
+        const { error, data: signUpData } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -53,10 +74,20 @@ export default function LoginPage() {
               phone_number: phone.trim() || null,
               tos_agreed_at: new Date().toISOString(),
               sms_consent: smsConsent,
+              free_invite_code: inviteCode || undefined,
             },
           },
         })
         if (error) throw error
+
+        // If invite code was used and user is immediately available (auto-confirm),
+        // redeem the code now. Otherwise it will be redeemed on first login via callback.
+        if (inviteCode && signUpData.user?.id) {
+          await redeemFreeInviteCode(inviteCode, signUpData.user.id).catch(() => {
+            // Non-blocking — code will be retried on callback
+          })
+        }
+
         setMessage('Check your email to confirm your account, then log in.')
         setMode('login')
       }
@@ -87,6 +118,13 @@ export default function LoginPage() {
           </a>
           <p className="text-[#60608a] mt-1 text-sm">AI-powered property management</p>
         </div>
+
+        {inviteCode && (
+          <div className="mb-4 p-3 rounded-xl bg-teal-950/40 border border-teal-500/30 text-center">
+            <p className="text-sm text-teal-300 font-medium">You&apos;ve been invited with free access</p>
+            <p className="text-xs text-[#6480a0] mt-0.5">Create an account below — no billing required.</p>
+          </div>
+        )}
 
         <div className="card p-8">
           <h2 className="text-lg font-semibold mb-6 text-white">

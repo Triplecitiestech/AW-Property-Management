@@ -47,6 +47,7 @@ const REQUIRED_TABLES = [
   'error_logs',
   'conversations',
   'ai_usage',
+  'free_invite_codes',
 ]
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────

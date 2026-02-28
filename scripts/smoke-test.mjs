@@ -75,7 +75,7 @@ async function run() {
     'service_requests', 'service_request_comments', 'guest_reports',
     'audit_log', 'property_checklist_items', 'property_contacts',
     'organizations', 'org_members', 'property_access', 'invitations',
-    'error_logs', 'conversations', 'ai_usage',
+    'error_logs', 'conversations', 'ai_usage', 'free_invite_codes',
   ]
   for (const table of tables) {
     try {

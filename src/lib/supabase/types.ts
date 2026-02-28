@@ -23,6 +23,20 @@ export interface Profile {
   phone_number: string | null
   email: string | null
   is_super_admin: boolean
+  billing_exempt: boolean
+  billing_exempt_reason: string | null
+  created_at: string
+}
+
+export interface FreeInviteCode {
+  id: string
+  code: string
+  label: string
+  created_by: string
+  max_uses: number | null
+  used_count: number
+  expires_at: string | null
+  is_active: boolean
   created_at: string
 }
 

@@ -16,12 +16,12 @@ const features = [
 
 const faqs = [
   {
-    q: 'How does billing work?',
-    a: 'Your $50/month plan includes up to 3 properties. Each additional property beyond 3 is $10/month. Billing is based on the number of properties owned by the account holder — not shared team members. If you add a property mid-month, you\'re charged a prorated amount.',
+    q: 'Is Smart Sumai free right now?',
+    a: 'Yes. During the alpha period, all accounts are completely free. No credit card required. Once we release version 1.0, paid plans will begin. Existing alpha testers will receive a 14-day grace period to add payment information before their access is affected.',
   },
   {
-    q: 'Is there a free trial?',
-    a: 'Yes — your account is free to set up and explore. You can add your first property and use all features without any commitment. Billing begins when you\'re ready.',
+    q: 'How will billing work after launch?',
+    a: 'Your $50/month plan will include up to 3 properties. Each additional property beyond 3 is $10/month. Billing is based on the number of properties owned by the account holder — not shared team members.',
   },
   {
     q: 'Can I manage multiple properties?',
@@ -32,12 +32,12 @@ const faqs = [
     a: 'Yes. You can invite unlimited team members (cleaners, maintenance staff, co-hosts) to your account and control exactly which properties they can access.',
   },
   {
-    q: 'What payment methods do you accept?',
-    a: 'We accept all major credit and debit cards. Payments are processed securely.',
+    q: 'What payment methods will you accept?',
+    a: 'We will accept all major credit and debit cards. Payments are processed securely via Stripe.',
   },
   {
-    q: 'Can I cancel anytime?',
-    a: 'Yes. Cancel anytime from your settings. You\'ll retain access through the end of your billing period.',
+    q: 'Will I lose my data after the alpha?',
+    a: 'We intend to preserve all data through the transition to version 1.0. However, during the alpha period, features and data structures are subject to change, and there is a small possibility of data loss. We recommend not relying on Smart Sumai as your sole record-keeping system during this phase.',
   },
 ]
 
@@ -46,8 +46,25 @@ export default function PricingPage() {
     <div className="min-h-screen bg-[#07101e] text-white overflow-x-hidden">
       <MarketingNav />
 
+      {/* ── ALPHA BANNER ────────────────────────────────────────────── */}
+      <div className="pt-20">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+          <div className="rounded-xl border border-violet-500/30 bg-violet-950/20 p-4 text-center">
+            <div className="inline-block px-2.5 py-0.5 rounded-full bg-violet-500/20 border border-violet-500/30
+                            text-violet-300 text-xs font-semibold uppercase tracking-wider mb-2">
+              Alpha
+            </div>
+            <p className="text-sm text-[#c0d4e8] leading-relaxed">
+              Smart Sumai is currently in alpha. All accounts are <strong className="text-white">free</strong> during
+              this period. Features and data structures are subject to change, and there is potential for data loss.
+              Creating an account right now is experimental until we release version 1.0.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* ── HERO ─────────────────────────────────────────────────────── */}
-      <section className="pt-32 pb-16 relative">
+      <section className="pt-12 pb-16 relative">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px]
                           bg-violet-600/15 blur-3xl rounded-full" />
@@ -57,7 +74,7 @@ export default function PricingPage() {
             Simple, honest pricing
           </h1>
           <p className="text-[#8aa0be] text-xl max-w-xl mx-auto">
-            One plan. Every feature included. 3 properties included, then pay as you grow.
+            One plan. Every feature included. Free during alpha — paid plans begin at version 1.0.
           </p>
         </div>
       </section>
@@ -73,22 +90,22 @@ export default function PricingPage() {
             <div className="relative text-center">
               <div className="inline-block px-3 py-1 rounded-full bg-teal-500/20 border border-teal-500/30
                               text-teal-300 text-sm font-medium mb-6">
-                Everything included
+                Free during alpha
               </div>
 
               <div className="mb-2 flex items-end justify-center gap-1">
                 <span className="text-2xl text-[#8aa0be] font-medium mb-2">$</span>
                 <span className="text-8xl font-extrabold text-white leading-none">50</span>
               </div>
-              <p className="text-[#8aa0be] text-lg mb-1">per month — includes 3 properties</p>
+              <p className="text-[#8aa0be] text-lg mb-1">per month after version 1.0 — includes 3 properties</p>
               <p className="text-teal-400 text-sm font-medium mb-1">+ $10 / month per additional property</p>
-              <p className="text-[#4a6080] text-sm mb-8">Billed monthly · Cancel anytime · No contracts</p>
+              <p className="text-[#4a6080] text-sm mb-8">No credit card required during alpha</p>
 
               <Link href="/auth/login?mode=signup"
                 className="block w-full py-4 rounded-xl bg-gradient-to-r from-violet-600 to-violet-500
                            text-white font-semibold text-lg hover:from-violet-500 hover:to-violet-400
                            transition-all shadow-xl shadow-violet-900/40 mb-3 text-center">
-                Get Started Free
+                Join the Alpha
               </Link>
               <Link href="/auth/login"
                 className="block w-full py-3 rounded-xl border border-white/10 text-[#8aa0be] font-medium
@@ -167,13 +184,16 @@ export default function PricingPage() {
       {/* ── CTA ─────────────────────────────────────────────────────── */}
       <section className="py-24 border-t border-white/5 text-center">
         <div className="max-w-2xl mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-4">Start managing smarter today</h2>
-          <p className="text-[#8aa0be] mb-8">Your first property is just minutes away.</p>
+          <h2 className="text-3xl font-bold mb-4">Try it during the alpha</h2>
+          <p className="text-[#8aa0be] mb-8">
+            Full access, no credit card. Paid plans begin after version 1.0 — alpha testers
+            get a 14-day grace period to decide.
+          </p>
           <Link href="/auth/login?mode=signup"
             className="inline-block px-10 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-violet-500
                        text-white font-semibold text-lg hover:from-violet-500 hover:to-violet-400
                        transition-all shadow-2xl shadow-violet-900/50">
-            Create Your Free Account
+            Join the Alpha
           </Link>
         </div>
       </section>
@@ -197,9 +217,6 @@ export default function PricingPage() {
             <Link href="/auth/login?mode=signup" className="hover:text-white transition-colors">Sign Up</Link>
           </div>
           <p>© {new Date().getFullYear()} Smart Sumai. All rights reserved.</p>
-          <p className="text-xs text-[#3a4f6a] mt-1 italic">
-            Sumai (住まい) — a Japanese word meaning dwelling or place of residence.
-          </p>
         </div>
       </footer>
     </div>

@@ -3,19 +3,19 @@ import MarketingNav from '@/components/marketing/MarketingNav'
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Smart Sumi — AI Property Manager for Short-Term Rentals',
-  description: 'Smart Sumi is your AI property manager. Text it to create work orders, schedule cleanings, track guests, and manage your team — all from any phone. $50/month includes 3 properties.',
+  title: 'Smart Sumi — Property Operations Platform',
+  description: 'Smart Sumi is a property operations platform for managing work orders, vendor coordination, guest turnovers, and property status across your entire portfolio.',
   openGraph: {
-    title: 'Smart Sumi — AI Property Manager for Short-Term Rentals',
-    description: 'Text in plain English to create work orders, schedule stays, manage contacts, and check property status. Your AI handles the details so you can focus on what matters.',
+    title: 'Smart Sumi — Property Operations Platform',
+    description: 'One platform for work orders, vendor coordination, guest logistics, and real-time property status. Built for operators managing multiple properties.',
     url: 'https://smartsumai.com',
     siteName: 'Smart Sumi',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Smart Sumi — AI Property Manager',
-    description: 'Your AI property manager. Text it to manage your properties from anywhere. $50/month includes 3 properties.',
+    title: 'Smart Sumi — Property Operations Platform',
+    description: 'Manage work orders, vendor coordination, guest turnovers, and property status from one platform. Built for multi-property operators.',
   },
   robots: {
     index: true,
@@ -54,19 +54,18 @@ export default async function Home({
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center">
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-[1.05]">
-            AI that manages{' '}
+            Manage every property.{' '}
+            <br className="hidden sm:block" />
             <span className="bg-gradient-to-r from-violet-400 via-violet-300 to-teal-400 bg-clip-text text-transparent">
-              your properties.
+              From one place.
             </span>
-            <br />You just own them.
           </h1>
           <p className="text-xl text-[#8aa0be] max-w-2xl mx-auto mb-4 leading-relaxed">
-            Smart Sumi is an AI property manager you text like a person. It creates work orders,
-            schedules cleanings, contacts your vendors, tracks stays, and updates property
-            status — automatically, from any phone.
+            Create work orders, coordinate vendors, track turnovers, and keep your whole
+            team aligned — without spreadsheets or group texts.
           </p>
           <p className="text-base text-[#6480a0] max-w-xl mx-auto mb-10 leading-relaxed">
-            No app for guests. No training for your team. Just text in plain English and your AI handles the rest.
+            One platform for property operations. Simple to set up. Built for operators managing multiple properties.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20">
@@ -74,12 +73,12 @@ export default async function Home({
               className="px-8 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-violet-500
                          text-white font-semibold text-lg hover:from-violet-500 hover:to-violet-400
                          transition-all shadow-2xl shadow-violet-900/50 hover:shadow-violet-700/40">
-              Start Free — No credit card needed
+              Get Started
             </Link>
             <Link href="/pricing"
               className="px-8 py-4 rounded-xl border border-white/10 bg-white/5
                          text-white font-semibold text-lg hover:bg-white/10 transition-all">
-              See Pricing →
+              See Pricing
             </Link>
           </div>
 
@@ -160,11 +159,11 @@ export default async function Home({
           <div className="mt-14 mb-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full
                             bg-violet-500/15 border border-violet-500/30 text-violet-300 text-xs font-medium mb-3">
-              AI Assistant
+              Built-in AI Assistant
             </div>
-            <p className="text-white font-semibold text-lg">Text it. It takes action.</p>
+            <p className="text-white font-semibold text-lg">Create work orders and update statuses by text.</p>
             <p className="text-[#6480a0] text-sm mt-1 max-w-md mx-auto">
-              Works over SMS and in-app chat. No login needed for your team — just send a text.
+              Works over SMS and in-app chat. Your team can manage operations without logging in.
             </p>
           </div>
 
@@ -209,16 +208,15 @@ export default async function Home({
         </div>
       </section>
 
-      {/* ── WHAT IS SMART SUMI ───────────────────────────────────────── */}
+      {/* ── WHAT SMART SUMI DOES ──────────────────────────────────────── */}
       <section className="py-20 border-t border-white/5 bg-gradient-to-b from-violet-950/10 to-transparent">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-5">
-            One platform. Every part of property management.
+            Structure for every part of property operations
           </h2>
           <p className="text-[#8aa0be] text-lg max-w-3xl mx-auto mb-12 leading-relaxed">
-            Smart Sumi is a complete property management system with an AI at the center.
-            Add your properties, your team, and your service vendors — then let the AI handle
-            day-to-day operations while you keep full visibility from the dashboard.
+            Add your properties, your team, and your service vendors. Smart Sumi keeps
+            everything organized so you always know what needs attention and who is handling it.
           </p>
           <div className="grid sm:grid-cols-3 gap-6">
             {[
@@ -230,19 +228,19 @@ export default async function Home({
                   </svg>
                 ),
                 color: 'from-teal-600 to-teal-400',
-                title: 'Property & Status Hub',
-                desc: 'Track every property\'s real-time status — clean, needs cleaning, occupied, or needs maintenance. See open tickets, upcoming guests, and team activity all in one place.',
+                title: 'Property Status at a Glance',
+                desc: 'See every property\'s real-time status — clean, occupied, needs maintenance, needs cleaning. Open tickets, upcoming guests, and team activity in one view.',
               },
               {
                 icon: (
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                   </svg>
                 ),
                 color: 'from-violet-600 to-violet-400',
-                title: 'AI That Does the Work',
-                desc: 'Text your AI in plain English from anywhere. It creates tickets, contacts vendors, schedules stays, and updates statuses — no manual data entry, no app switching.',
+                title: 'Work Orders and Coordination',
+                desc: 'Create, assign, and track maintenance requests. Work orders route to the right vendor automatically. Every action is logged with a full audit trail.',
               },
               {
                 icon: (
@@ -252,8 +250,8 @@ export default async function Home({
                   </svg>
                 ),
                 color: 'from-emerald-600 to-emerald-400',
-                title: 'Team & Vendor Network',
-                desc: 'Invite your cleaning crew and co-hosts. Add your plumber, electrician, and landscaper as contacts. The AI automatically routes work orders to the right person and sends professional notification emails.',
+                title: 'Teams and Vendor Directory',
+                desc: 'Invite your staff with role-based access per property. Add cleaners, plumbers, and contractors as contacts. Vendor notifications are sent automatically when work is assigned.',
               },
             ].map(c => (
               <div key={c.title} className="rounded-2xl border border-white/5 bg-[#0f1829] p-6 text-center">
@@ -274,11 +272,11 @@ export default async function Home({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Text it. It handles it.
+              Built-in AI assistant for faster operations
             </h2>
             <p className="text-[#8aa0be] text-lg max-w-2xl mx-auto">
-              Your AI understands your properties, your team, and your vendors.
-              It takes action — not just advice.
+              Text or chat with your AI assistant to create work orders, update statuses,
+              and coordinate vendors — without opening the dashboard.
             </p>
           </div>
 
@@ -400,9 +398,9 @@ export default async function Home({
       <section className="py-24 relative border-t border-white/5" id="features">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Everything built in. Nothing extra to buy.</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Everything you need. Nothing extra to buy.</h2>
             <p className="text-[#8aa0be] text-lg max-w-xl mx-auto">
-              One platform covers your entire operation — from the AI to the guest page.
+              One platform covers your entire operation — work orders, guest logistics, vendor management, and team coordination.
             </p>
           </div>
 
@@ -547,6 +545,103 @@ export default async function Home({
         </div>
       </section>
 
+      {/* ── WHO IT'S BUILT FOR ────────────────────────────────────────── */}
+      <section className="py-24 border-t border-white/5">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-5">Who Smart Sumi is built for</h2>
+            <p className="text-[#8aa0be] text-lg max-w-3xl mx-auto leading-relaxed">
+              Smart Sumi is built for operators responsible for maintaining and coordinating
+              physical properties. If you manage vendors, work orders, or property
+              logistics, Smart Sumi gives you structure and visibility.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-12">
+            {[
+              {
+                title: 'Property Management Companies',
+                desc: 'Manage maintenance, turnovers, and vendor coordination across a portfolio of residential or commercial units. Keep every property status visible to your whole operations team.',
+                icon: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                ),
+              },
+              {
+                title: 'Owners with Multiple Properties',
+                desc: 'Track the status of every property you own from a single dashboard. Assign work to vendors, log guest stays, and stay organized without juggling separate tools.',
+                icon: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                ),
+              },
+              {
+                title: 'Apartment and Multi-Unit Buildings',
+                desc: 'Coordinate maintenance across units with clear work order tracking. Assign requests to the right vendor and keep tenants informed without constant back-and-forth.',
+                icon: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                  </svg>
+                ),
+              },
+              {
+                title: 'Commercial Property Operators',
+                desc: 'Manage service requests, vendor relationships, and facility maintenance for office buildings, retail spaces, or mixed-use properties with structured workflows.',
+                icon: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                ),
+              },
+              {
+                title: 'Hospitality and High-Turnover Properties',
+                desc: 'Manage turnover logistics for vacation rentals, Airbnbs, or corporate housing. Schedule cleanings, track guest check-ins, and generate welcome pages automatically.',
+                icon: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                ),
+              },
+              {
+                title: 'Facility and Campus Managers',
+                desc: 'Coordinate maintenance staff and external contractors across buildings or campuses. Track every request with priority levels, assignments, and a complete audit history.',
+                icon: (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                  </svg>
+                ),
+              },
+            ].map(g => (
+              <div key={g.title} className="rounded-2xl border border-white/5 bg-[#0f1829]/80 p-6">
+                <div className="w-10 h-10 rounded-lg bg-violet-600/15 border border-violet-500/20 flex items-center justify-center
+                                text-violet-400 mb-4">
+                  {g.icon}
+                </div>
+                <h3 className="text-base font-semibold text-white mb-2">{g.title}</h3>
+                <p className="text-sm text-[#6480a0] leading-relaxed">{g.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Not a Fit */}
+          <div className="rounded-2xl border border-white/5 bg-[#0c1220] p-6 max-w-2xl mx-auto">
+            <h3 className="text-sm font-semibold text-[#8aa0be] uppercase tracking-wide mb-3">Not a fit for</h3>
+            <ul className="space-y-2 text-sm text-[#6480a0]">
+              <li className="flex items-start gap-2">
+                <span className="text-[#4a6080] mt-0.5">-</span>
+                Individual homeowners without recurring operational needs
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#4a6080] mt-0.5">-</span>
+                Single-property residents without vendor coordination
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       {/* ── PRICING PREVIEW ──────────────────────────────────────────── */}
       <section className="py-24 border-t border-white/5" id="pricing">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -622,16 +717,16 @@ export default async function Home({
             </svg>
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Stop managing your properties.<br />Let AI manage them for you.
+            Ready to bring structure to your operations?
           </h2>
           <p className="text-[#8aa0be] text-lg mb-10">
-            Set up in minutes. Your first text to the AI will feel like the future.
+            Set up in under 10 minutes. Add your properties, your team, and your vendors — then start managing from one place.
           </p>
           <Link href="/auth/login?mode=signup"
             className="inline-block px-10 py-4 rounded-xl bg-gradient-to-r from-violet-600 to-violet-500
                        text-white font-semibold text-lg hover:from-violet-500 hover:to-violet-400
                        transition-all shadow-2xl shadow-violet-900/50">
-            Create Your Free Account
+            Get Started
           </Link>
         </div>
       </section>

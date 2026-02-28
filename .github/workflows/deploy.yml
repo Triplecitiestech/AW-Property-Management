@@ -233,17 +233,24 @@ jobs:
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Extracted deployment URL: $URL"
 
-      - name: Force-promote our deployment to production
-        # Ensures our specific deployment is the production one,
-        # even if anything fired between deploy and now.
-        # Also explicitly aliases the production domain so it is guaranteed
-        # to point to our deployment (in case it is a fixed alias).
+      - name: Alias deployment to production domains
+        # The --prod flag on vercel deploy already assigns the deployment to
+        # the project's production domain. This step verifies the deployment
+        # is live and explicitly aliases smartsumai.com as a safety net.
+        # Note: vercel promote is NOT used because prebuilt deployments
+        # deployed with --prod are already in production and cannot be
+        # promoted again (Vercel returns an error).
         run: |
           set -euo pipefail
           DEPLOYMENT_URL="${{ steps.deploy.outputs.url }}"
-          echo "Promoting $DEPLOYMENT_URL to production..."
-          vercel promote "$DEPLOYMENT_URL" --token="$VERCEL_TOKEN" --yes || \
-            echo "promote command not available, relying on --prod flag"
+          echo "Deployment URL: $DEPLOYMENT_URL"
+
+          # Verify the deployment exists and is production
+          vercel inspect "$DEPLOYMENT_URL" --token="$VERCEL_TOKEN" 2>&1 || true
+
+          # Explicitly alias smartsumai.com to this deployment
+          vercel alias set "$DEPLOYMENT_URL" smartsumai.com --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID" 2>&1 || \
+            echo "::warning::Could not alias smartsumai.com — domain may need DNS configuration"
 
           echo "::notice::Production URL: https://aw-property-management.vercel.app"
           echo "::notice::Deployment URL: $DEPLOYMENT_URL"

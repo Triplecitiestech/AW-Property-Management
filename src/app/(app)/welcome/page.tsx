@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
+import { getAppContext } from '@/lib/impersonation'
 import Link from 'next/link'
 
 const steps = [
@@ -85,13 +86,18 @@ const steps = [
 ]
 
 export default async function WelcomePage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  // Use effective user identity (respects impersonation)
+  const ctx = await getAppContext()
+  const svc = createServiceClient()
+  const { data: profile } = await svc
+    .from('profiles')
+    .select('full_name')
+    .eq('id', ctx.userId)
+    .single()
 
   let firstName = 'there'
-  if (user) {
-    const fullName = user.user_metadata?.full_name as string | undefined
-    if (fullName) firstName = fullName.split(' ')[0]
+  if (profile?.full_name) {
+    firstName = profile.full_name.split(' ')[0]
   }
 
   return (

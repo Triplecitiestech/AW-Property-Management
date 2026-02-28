@@ -72,7 +72,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-white">You&apos;ve been invited</h1>
-          <p className="text-[#6480a0] mt-1 text-sm">Join Smart Sumi</p>
+          <p className="text-[#6480a0] mt-1 text-sm">Join Smart Sumai</p>
         </div>
 
         <div className="card p-8">
@@ -101,7 +101,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
           ) : (
             <div className="space-y-5">
               <div className="p-4 bg-[#0f1829] rounded-xl border border-[#2a3d58] text-sm text-[#94a3b8]">
-                You&apos;re about to join a team on Smart Sumi. Click below to accept.
+                You&apos;re about to join a team on Smart Sumai. Click below to accept.
               </div>
 
               {error && (

@@ -3,8 +3,8 @@ import MarketingNav from '@/components/marketing/MarketingNav'
 
 const faqs = [
   {
-    q: 'What is Smart Sumi?',
-    a: 'Smart Sumi is an AI-powered property management platform for any type of property — short-term rentals, long-term rentals, personal estates, and more. It centralizes your properties, guest stays, service tickets, team contacts, and an AI assistant — all in one place.',
+    q: 'What is Smart Sumai?',
+    a: 'Smart Sumai is an AI-powered property management platform for any type of property — short-term rentals, long-term rentals, personal estates, and more. It centralizes your properties, guest stays, service tickets, team contacts, and an AI assistant — all in one place.',
   },
   {
     q: 'How does the AI Property Manager work?',
@@ -15,7 +15,7 @@ const faqs = [
     a: 'You can: check any property\'s current status, create urgent or routine service tickets, schedule guest stays, add or update vendor contacts, get a list of open tickets, update property cleaning status, and more — all in natural language.',
   },
   {
-    q: 'How much does Smart Sumi cost?',
+    q: 'How much does Smart Sumai cost?',
     a: 'It\'s $50 per month, which includes up to 3 properties. Each additional property beyond 3 is $10 per month. There are no setup fees, no contracts, and you can cancel anytime from your billing dashboard.',
   },
   {
@@ -35,7 +35,7 @@ const faqs = [
     a: 'Each stay gets a unique guest link. Guests can open it without signing up, view property instructions, and submit a report (notes, issues) after their stay. Their responses are sent directly to you as a notification.',
   },
   {
-    q: 'Does Smart Sumi integrate with Airbnb or Vrbo?',
+    q: 'Does Smart Sumai integrate with Airbnb or Vrbo?',
     a: 'Direct calendar integrations are on our roadmap. For now, you can manually log stays and use the AI to manage them. You can submit a feature request from Settings and we\'ll prioritize the most-requested integrations.',
   },
   {
@@ -44,7 +44,7 @@ const faqs = [
   },
   {
     q: 'Is my data secure?',
-    a: 'Yes. Smart Sumi is built to meet SOC 2 security standards and PCI DSS compliance requirements. All data is stored with row-level security — users can only access data they own or have been explicitly granted access to. All connections are encrypted in transit and at rest. Payment data is never stored by Smart Sumi; it is handled entirely by our payment processor.',
+    a: 'Yes. Smart Sumai is built to meet SOC 2 security standards and PCI DSS compliance requirements. All data is stored with row-level security — users can only access data they own or have been explicitly granted access to. All connections are encrypted in transit and at rest. Payment data is never stored by Smart Sumai; it is handled entirely by our payment processor.',
   },
   {
     q: 'How do I contact support?',
@@ -60,7 +60,7 @@ export default function FaqPage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-24 pt-32">
         <div className="text-center mb-14">
           <h1 className="text-4xl font-bold mb-4">Frequently Asked Questions</h1>
-          <p className="text-[#8aa0be] text-lg">Everything you need to know about Smart Sumi.</p>
+          <p className="text-[#8aa0be] text-lg">Everything you need to know about Smart Sumai.</p>
         </div>
 
         <div className="space-y-4">

@@ -1,5 +1,5 @@
 // ============================================================
-// Database Types — Smart Sumi
+// Database Types — Smart Sumai
 // Manually maintained; regenerate with: supabase gen types typescript
 // ============================================================
 

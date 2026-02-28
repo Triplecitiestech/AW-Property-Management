@@ -169,7 +169,7 @@ export default async function GuestStayPage({ params }: { params: Promise<{ toke
         </div>
 
         <p className="text-center text-xs text-[#4a6080] pb-4">
-          Powered by Smart Sumi Property Management
+          Powered by Smart Sumai Property Management
         </p>
       </div>
     </div>

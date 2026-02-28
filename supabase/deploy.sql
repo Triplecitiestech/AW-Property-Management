@@ -1,5 +1,5 @@
 -- ============================================================
--- Smart Sumi — Full Deploy Script
+-- Smart Sumai — Full Deploy Script
 -- Paste this entire file into:
 --   Supabase Dashboard → SQL Editor → New Query → Run
 -- ============================================================

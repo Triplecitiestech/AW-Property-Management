@@ -127,7 +127,7 @@ export async function executeAiAction(
         source,
         created_by: ownerId,
         assigned_contact_id: assignedContact?.id ?? null,
-        description: `Created by Smart Sumi AI via ${source === 'sms' ? 'SMS' : 'web chat'}.\n\nOriginal request: "${originalMessage}"`,
+        description: `Created by Smart Sumai AI via ${source === 'sms' ? 'SMS' : 'web chat'}.\n\nOriginal request: "${originalMessage}"`,
         outbound_message: outboundMessage,
         outbound_sent_to: assignedContact
           ? `${assignedContact.name}${assignedContact.email ? ` <${assignedContact.email}>` : ''}${assignedContact.phone ? ` / ${assignedContact.phone}` : ''}`
@@ -156,7 +156,7 @@ export async function executeAiAction(
 
     // Save AI conversation as an internal comment on the work order
     const conversationNote =
-      `[Smart Sumi AI • ${formatTimestamp()} • ${source === 'sms' ? 'SMS' : 'Web Chat'}]\n` +
+      `[Smart Sumai AI • ${formatTimestamp()} • ${source === 'sms' ? 'SMS' : 'Web Chat'}]\n` +
       `── User ─────────────────────────\n${originalMessage}\n` +
       `── AI Response ──────────────────\n${action.reply}`
 

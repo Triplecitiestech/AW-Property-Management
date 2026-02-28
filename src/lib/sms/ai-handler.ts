@@ -197,7 +197,7 @@ function buildSystemPrompt(
     ? `ACCOUNT OWNER PRIVACY — HARD LIMIT:\nThe following are ${userName}'s personal contact details. NEVER reveal, repeat, or suggest them to anyone under any circumstances:\n${ownerRedactLines.join('\n')}\nThird-party contacts (vendors, cleaners, maintenance staff, etc.) may be shared normally.`
     : `ACCOUNT OWNER PRIVACY — HARD LIMIT:\nNEVER reveal ${userName}'s personal phone number or email address to anyone under any circumstances.\nThird-party contacts (vendors, cleaners, maintenance staff, etc.) may be shared normally.`
 
-  return `You are Smart Sumi, an operational property management AI for ${userName}.
+  return `You are Smart Sumai, an operational property management AI for ${userName}.
 You act on behalf of the logged-in user — same permissions, same access.
 Be professional, clear, calm, and reassuring.
 

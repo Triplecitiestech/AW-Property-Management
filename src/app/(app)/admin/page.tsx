@@ -1,4 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server'
+import { getAppContext } from '@/lib/impersonation'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import DeleteUserButton from '@/components/admin/DeleteUserButton'
 import ImpersonateButton from '@/components/admin/ImpersonateButton'
@@ -6,7 +8,18 @@ import FeatureRequestAdmin from '@/components/admin/FeatureRequestAdmin'
 import LocalDate from '@/components/LocalDate'
 
 export default async function AdminPage() {
+  // Server-side RBAC: only the effective user (considering impersonation) can access admin
+  const ctx = await getAppContext()
   const svc = createServiceClient()
+  const { data: effectiveProfile } = await svc
+    .from('profiles')
+    .select('is_super_admin')
+    .eq('id', ctx.userId)
+    .single()
+
+  if (!effectiveProfile?.is_super_admin) {
+    redirect('/dashboard')
+  }
 
   const [
     { data: profiles },
@@ -183,7 +196,7 @@ export default async function AdminPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/workflow-diagram.svg"
-            alt="Smart Sumi system workflow diagram"
+            alt="Smart Sumai system workflow diagram"
             className="w-full h-auto"
           />
         </div>

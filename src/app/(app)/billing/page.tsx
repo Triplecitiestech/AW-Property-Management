@@ -50,7 +50,7 @@ export default function BillingPage() {
     <div className="max-w-2xl space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-white">Billing</h1>
-        <p className="text-[#6480a0] text-sm mt-1">Manage your Smart Sumi subscription</p>
+        <p className="text-[#6480a0] text-sm mt-1">Manage your Smart Sumai subscription</p>
       </div>
 
       {message && (

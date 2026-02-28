@@ -120,7 +120,7 @@ export async function sendWelcomeEmail(params: {
   return resend.emails.send({
     from: getFROM(),
     to,
-    subject: `Welcome to Smart Sumi — your AI property manager is ready 🏠`,
+    subject: `Welcome to Smart Sumai — your AI property manager is ready 🏠`,
     html: welcomeTemplate({ name, appUrl, twilioPhone }),
   })
 }
@@ -213,7 +213,7 @@ function baseLayout(content: string) {
 <body>
   <div class="container">
     ${content}
-    <div class="footer">Smart Sumi · <a href="${getAPP_URL()}" style="color:#6b7280;">Open App</a></div>
+    <div class="footer">Smart Sumai · <a href="${getAPP_URL()}" style="color:#6b7280;">Open App</a></div>
   </div>
 </body>
 </html>`
@@ -289,7 +289,7 @@ function welcomeTemplate(p: { name: string; appUrl: string; twilioPhone: string 
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Welcome to Smart Sumi</title>
+  <title>Welcome to Smart Sumai</title>
 </head>
 <body style="margin:0;padding:0;background:#0f1829;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#0f1829;min-height:100vh;">
@@ -305,7 +305,7 @@ function welcomeTemplate(p: { name: string; appUrl: string; twilioPhone: string 
                   <span style="font-size:26px;line-height:52px;">🏠</span>
                 </td>
                 <td style="padding-left:12px;vertical-align:middle;">
-                  <span style="font-size:22px;font-weight:700;color:#ffffff;">Smart <span style="color:#2dd4bf;">Sumi</span></span>
+                  <span style="font-size:22px;font-weight:700;color:#ffffff;">Smart <span style="color:#2dd4bf;">Sumai</span></span>
                 </td>
               </tr>
             </table>
@@ -427,7 +427,7 @@ function welcomeTemplate(p: { name: string; appUrl: string; twilioPhone: string 
                     <tr>
                       <td style="padding:6px 0;vertical-align:top;">
                         <span style="display:inline-block;width:22px;height:22px;background:#7c3aed;border-radius:50%;text-align:center;line-height:22px;font-size:11px;font-weight:700;color:#fff;margin-right:10px;">3</span>
-                        <span style="font-size:14px;color:#cbd5e1;">Save <strong style="color:#2dd4bf;">${p.twilioPhone}</strong> in your contacts as &ldquo;Smart Sumi AI&rdquo;</span>
+                        <span style="font-size:14px;color:#cbd5e1;">Save <strong style="color:#2dd4bf;">${p.twilioPhone}</strong> in your contacts as &ldquo;Smart Sumai AI&rdquo;</span>
                       </td>
                     </tr>
                     <tr>
@@ -457,7 +457,7 @@ function welcomeTemplate(p: { name: string; appUrl: string; twilioPhone: string 
         <!-- Footer -->
         <tr>
           <td style="padding:24px 0;text-align:center;">
-            <p style="margin:0;font-size:12px;color:#4a6080;">Smart Sumi · AI-Powered Property Management</p>
+            <p style="margin:0;font-size:12px;color:#4a6080;">Smart Sumai · AI-Powered Property Management</p>
             <p style="margin:4px 0 0;font-size:12px;color:#4a6080;">
               <a href="${p.appUrl}" style="color:#6480a0;text-decoration:none;">Dashboard</a> &nbsp;·&nbsp;
               <a href="mailto:support@smartsumai.com" style="color:#6480a0;text-decoration:none;">Support</a>

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * CI Environment Preflight — Smart Sumi
+ * CI Environment Preflight — Smart Sumai
  *
  * Runs as the FIRST step in deploy.yml, BEFORE migrations/Twilio/deploy.
  * Verifies that all required CI environment variables exist and are non-empty.

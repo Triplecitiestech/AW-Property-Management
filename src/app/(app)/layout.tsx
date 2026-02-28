@@ -31,13 +31,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     } catch { /* non-fatal */ }
   }
 
-  // Check if super admin for sidebar to show admin link
-  const svc2 = createServiceClient()
-  const { data: profileData } = await svc2.from('profiles').select('is_super_admin').eq('id', user.id).single()
-  const isSuperAdmin = profileData?.is_super_admin ?? false
-
   // Check impersonation state
   const impersonation = await getImpersonationState()
+
+  // Determine effective user for authorization decisions.
+  // When impersonating, use the TARGET user's admin status — not the real admin's.
+  // This prevents admin UI/nav from leaking to non-admin views during impersonation.
+  const effectiveUserId = impersonation.active ? impersonation.targetId! : user.id
+  const svc2 = createServiceClient()
+  const { data: profileData } = await svc2.from('profiles').select('is_super_admin').eq('id', effectiveUserId).single()
+  const isSuperAdmin = profileData?.is_super_admin ?? false
 
   return (
     <div className="flex min-h-screen bg-[#0f1829] relative">

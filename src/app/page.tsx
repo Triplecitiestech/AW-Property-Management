@@ -3,18 +3,18 @@ import MarketingNav from '@/components/marketing/MarketingNav'
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Smart Sumi — Property Operations Platform',
-  description: 'Smart Sumi is a property operations platform for managing work orders, vendor coordination, guest turnovers, and property status across your entire portfolio.',
+  title: 'Smart Sumai — Property Operations Platform',
+  description: 'Smart Sumai is a property operations platform for managing work orders, vendor coordination, guest turnovers, and property status across your entire portfolio.',
   openGraph: {
-    title: 'Smart Sumi — Property Operations Platform',
+    title: 'Smart Sumai — Property Operations Platform',
     description: 'One platform for work orders, vendor coordination, guest logistics, and real-time property status. Built for operators managing multiple properties.',
     url: 'https://smartsumai.com',
-    siteName: 'Smart Sumi',
+    siteName: 'Smart Sumai',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Smart Sumi — Property Operations Platform',
+    title: 'Smart Sumai — Property Operations Platform',
     description: 'Manage work orders, vendor coordination, guest turnovers, and property status from one platform. Built for multi-property operators.',
   },
   robots: {
@@ -179,7 +179,7 @@ export default async function Home({
                   </svg>
                 </div>
                 <div className="text-left">
-                  <p className="text-sm font-semibold text-white">Smart Sumi AI</p>
+                  <p className="text-sm font-semibold text-white">Smart Sumai AI</p>
                   <p className="text-xs text-teal-400">● Online — SMS &amp; Web Chat</p>
                 </div>
               </div>
@@ -208,14 +208,14 @@ export default async function Home({
         </div>
       </section>
 
-      {/* ── WHAT SMART SUMI DOES ──────────────────────────────────────── */}
+      {/* ── WHAT SMART SUMAI DOES ──────────────────────────────────────── */}
       <section className="py-20 border-t border-white/5 bg-gradient-to-b from-violet-950/10 to-transparent">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-5">
             Structure for every part of property operations
           </h2>
           <p className="text-[#8aa0be] text-lg max-w-3xl mx-auto mb-12 leading-relaxed">
-            Add your properties, your team, and your service vendors. Smart Sumi keeps
+            Add your properties, your team, and your service vendors. Smart Sumai keeps
             everything organized so you always know what needs attention and who is handling it.
           </p>
           <div className="grid sm:grid-cols-3 gap-6">
@@ -549,11 +549,11 @@ export default async function Home({
       <section className="py-24 border-t border-white/5">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-5">Who Smart Sumi is built for</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-5">Who Smart Sumai is built for</h2>
             <p className="text-[#8aa0be] text-lg max-w-3xl mx-auto leading-relaxed">
-              Smart Sumi is built for operators responsible for maintaining and coordinating
+              Smart Sumai is built for operators responsible for maintaining and coordinating
               physical properties. If you manage vendors, work orders, or property
-              logistics, Smart Sumi gives you structure and visibility.
+              logistics, Smart Sumai gives you structure and visibility.
             </p>
           </div>
 
@@ -742,7 +742,7 @@ export default async function Home({
                   <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <span className="font-bold text-white">Smart <span className="text-teal-400">Sumi</span></span>
+              <span className="font-bold text-white">Smart <span className="text-teal-400">Sumai</span></span>
             </div>
             <div className="flex items-center gap-6 text-sm text-[#4a6080]">
               <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
@@ -753,7 +753,10 @@ export default async function Home({
               <Link href="/auth/login?mode=signup" className="hover:text-white transition-colors">Sign Up</Link>
             </div>
             <p className="text-sm text-[#4a6080]">
-              © {new Date().getFullYear()} Smart Sumi. All rights reserved.
+              © {new Date().getFullYear()} Smart Sumai. All rights reserved.
+            </p>
+            <p className="text-xs text-[#3a4f6a] mt-1 italic">
+              Sumai (住まい) — a Japanese word meaning dwelling or place of residence.
             </p>
           </div>
         </div>

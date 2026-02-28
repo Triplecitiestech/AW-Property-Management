@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * CI Branding Guard — Smart Sumi
+ * CI Branding Guard — Smart Sumai
  *
  * Fails the build if legacy brand names appear in user-facing source code.
  * Run: node scripts/check-branding.mjs
  *
  * Scans src/ for:
  *   - "AW Property" (old brand name)
- *   - "Smart Sumai" (misspelling — correct is "Smart Sumi")
+ *   - "Smart Sumi" (misspelling — correct is "Smart Sumai")
  *
  * Exclusions:
  *   - node_modules, .next, .git, package-lock.json
@@ -23,7 +23,7 @@ const SCAN_DIRS = ['src']
 
 const FORBIDDEN = [
   { pattern: /AW Property/gi, label: 'AW Property' },
-  { pattern: /Smart Sumai/gi, label: 'Smart Sumai (should be "Smart Sumi")' },
+  { pattern: /Smart Sumi(?!ai)/gi, label: 'Smart Sumi (should be "Smart Sumai")' },
 ]
 
 const SKIP_DIRS = new Set(['node_modules', '.next', '.git', 'dist', 'build'])
@@ -66,7 +66,7 @@ for (const scanDir of SCAN_DIRS) {
 }
 
 if (violations > 0) {
-  console.error(`\n✗ ${violations} branding violation(s) found. All user-facing text must use "Smart Sumi".\n`)
+  console.error(`\n✗ ${violations} branding violation(s) found. All user-facing text must use "Smart Sumai".\n`)
   process.exit(1)
 } else {
   console.log('✓ Branding check passed — no legacy references found in src/')

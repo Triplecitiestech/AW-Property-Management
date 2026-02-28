@@ -114,7 +114,7 @@ export default function AiChatBubble() {
                 <span className="text-xs">🏠</span>
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Smart Sumi AI</p>
+                <p className="text-sm font-semibold text-white">Smart Sumai AI</p>
                 <p className="text-[10px] text-teal-400">Synced with SMS · always available</p>
               </div>
             </div>

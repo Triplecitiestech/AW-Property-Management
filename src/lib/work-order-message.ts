@@ -88,6 +88,6 @@ export function buildOutboundMessage(params: {
     specifics = `Details:\n${title}\n\n`
   }
 
-  const closing = `${replyLine}\n\nThank you,\n${ownerName}\n(via Smart Sumi AI Property Manager)`
+  const closing = `${replyLine}\n\nThank you,\n${ownerName}\n(via Smart Sumai AI Property Manager)`
   return intro + details + specifics + closing
 }

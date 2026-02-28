@@ -529,12 +529,60 @@ If you can't do something directly, say so and propose a workaround:
 
 ---
 
+## Alpha Deployment Mode
+
+We are in **alpha**. Production = `main` branch. Every change ships through GitHub.
+
+### How to ship
+
+1. Develop on a `claude/*` branch (push triggers a **preview** deployment)
+2. Open a PR from `claude/*` → `main`
+3. Merge the PR → push to `main` triggers an automatic **production** deployment
+4. `smartsumai.com` is updated within ~60 seconds
+
+```bash
+# From a claude/* branch:
+gh pr create --title "feat: description" --body "summary"
+gh pr merge --squash          # merges to main → auto-deploys to production
+```
+
+### How to rollback
+
+Revert the merge commit on `main`. The push triggers a fresh production deploy of the prior state.
+
+```bash
+git log --oneline -5 main     # find the merge commit hash
+git revert <merge_commit>     # creates a revert commit
+git push origin main          # triggers production deploy with the revert
+```
+
+Alternative: In GitHub (repo > Actions > Deploy to Vercel), find the last successful run from `main`, click **Re-run all jobs**. This redeploys the exact commit.
+
+### What NOT to use
+
+- **Do NOT use** "Promote to Production" in the Vercel dashboard — prebuilt deployments cannot be promoted
+- **Do NOT use** `vercel promote` in CI — same issue
+- **Do NOT** manually deploy from the Vercel dashboard — every change must go through GitHub
+- **Do NOT** push to `main` directly from sandbox — the git proxy restricts to `claude/` branches
+
+### Deploy workflow behavior
+
+| Branch | Deploy type | Domain | Twilio/Auth config |
+|--------|------------|--------|-------------------|
+| `main` | **Production** (`--prod`) | smartsumai.com | Yes |
+| `claude/*` | **Preview** (no `--prod`) | `*.vercel.app` preview URL | Skipped |
+
+Both branch types run: npm ci, migrations, type check, build, deploy, smoke test.
+Production-only steps: Twilio webhook, Supabase auth URL, domain alias, post-deploy gate.
+
+---
+
 ## Deployment Notes
 
-- In GitHub Actions, `deploy.yml` auto-deploys on push to `main` OR any `claude/**` branch
+- In GitHub Actions, `deploy.yml` auto-deploys: `main` → production, `claude/**` → preview
 - Git proxy restricts pushes to `claude/` branches — **never try to push to main directly**
 - In GitHub Actions, `deploy.yml` runs `supabase/deploy.sql` — schema is always in sync on deploy
-- Production URL: `https://aw-property-management.vercel.app`
+- Production URL: `https://smartsumai.com` (alias: `https://aw-property-management.vercel.app`)
 
 ### D1: CI Environment Preflight
 

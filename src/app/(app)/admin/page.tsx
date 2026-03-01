@@ -229,6 +229,28 @@ export default async function AdminPage() {
           />
         </div>
       </div>
+
+      {/* System Architecture Map */}
+      <div className="card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="font-semibold text-white">System Architecture Map</h2>
+            <p className="text-xs text-[#6480a0] mt-0.5">This diagram shows the infrastructure, services, and integrations that power Smart Sumai.</p>
+          </div>
+          <a href="/architecture-diagram.svg" target="_blank" rel="noopener noreferrer"
+             className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
+            Open full size ↗
+          </a>
+        </div>
+        <div className="rounded-xl overflow-hidden border border-[#1e2d42]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/architecture-diagram.svg"
+            alt="Smart Sumai system architecture map showing backend topology and service integrations"
+            className="w-full h-auto"
+          />
+        </div>
+      </div>
     </div>
   )
 }

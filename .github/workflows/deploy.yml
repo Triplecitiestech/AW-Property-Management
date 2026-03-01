@@ -41,6 +41,9 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
+    outputs:
+      deployment_url: ${{ steps.deploy.outputs.url }}
+      deploy_env: ${{ steps.set_env.outputs.deploy_env }}
 
     steps:
       - name: Checkout
@@ -57,13 +60,16 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Determine deploy mode
+        id: set_env
         # Sets DEPLOY_ENV=production for main, DEPLOY_ENV=preview for claude/*
         run: |
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             echo "DEPLOY_ENV=production" >> "$GITHUB_ENV"
+            echo "deploy_env=production" >> "$GITHUB_OUTPUT"
             echo "::notice::Deploy mode: PRODUCTION (main branch)"
           else
             echo "DEPLOY_ENV=preview" >> "$GITHUB_ENV"
+            echo "deploy_env=preview" >> "$GITHUB_OUTPUT"
             echo "::notice::Deploy mode: PREVIEW (${{ github.ref }})"
           fi
 
@@ -188,22 +194,36 @@ jobs:
           echo "Org: ${TEAM_ID}  Project: ${PROJECT_ID}"
 
       - name: Push env vars to Vercel project
+        # PRODUCTION ONLY — env vars don't change between deploys.
+        # For manual updates, use the setup-vercel-env.yml workflow.
+        if: github.ref == 'refs/heads/main'
         run: node scripts/setup-vercel-env.mjs
 
       - name: Build
-        # Always build with --prod to pull production-scoped env vars.
-        # The deploy step controls whether the result lands in production or preview.
-        run: vercel build --prod --token="$VERCEL_TOKEN" --yes
+        # --prod pulls production-scoped env vars and produces a production bundle.
+        # Preview branches build without --prod so they get preview-scoped vars.
+        run: |
+          if [ "$DEPLOY_ENV" = "production" ]; then
+            echo "Building for PRODUCTION..."
+            vercel build --prod --token="$VERCEL_TOKEN" --yes
+          else
+            echo "Building for PREVIEW..."
+            vercel build --token="$VERCEL_TOKEN" --yes
+          fi
 
       - name: Deploy to Vercel
-        # Always deploy with --prod. The alias/verification steps (gated by branch)
-        # control which deployment smartsumai.com points to.
+        # Production → --prod (promotes to production). Preview → no --prod.
         # NEVER use vercel promote — prebuilt deployments cannot be promoted.
         id: deploy
         run: |
           set -euo pipefail
-          echo "Running vercel deploy --prebuilt --prod..."
-          DEPLOY_OUT=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" 2>&1)
+          if [ "$DEPLOY_ENV" = "production" ]; then
+            echo "Deploying to PRODUCTION..."
+            DEPLOY_OUT=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" 2>&1)
+          else
+            echo "Deploying PREVIEW..."
+            DEPLOY_OUT=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN" 2>&1)
+          fi
           echo "Full deploy output:"
           echo "$DEPLOY_OUT"
 
@@ -215,6 +235,19 @@ jobs:
 
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "Extracted deployment URL: $URL"
+
+      - name: Save deployment URL as artifact
+        # Allows downstream workflows (e2e.yml) to read the URL via workflow_run.
+        if: always() && steps.deploy.outputs.url != ''
+        run: echo "${{ steps.deploy.outputs.url }}" > deployment-url.txt
+
+      - name: Upload deployment URL artifact
+        if: always() && steps.deploy.outputs.url != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-url
+          path: deployment-url.txt
+          retention-days: 1
 
       - name: Alias smartsumai.com to production deployment
         # PRODUCTION ONLY — explicitly alias the custom domain.

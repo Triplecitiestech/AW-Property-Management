@@ -1,4 +1,4 @@
 {
   "framework": "nextjs",
-  "ignoreCommand": "exit 1"
+  "ignoreCommand": "exit 0"
 }

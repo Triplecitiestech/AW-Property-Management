@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { requireAppContext } from '@/lib/auth/guards'
 import { createStay } from '@/lib/actions/stays'
 import Link from 'next/link'
 
@@ -13,7 +13,8 @@ export default async function NewStayPage({
   searchParams: Promise<{ property_id?: string }>
 }) {
   const { property_id } = await searchParams
-  const supabase = await createClient()
+  const ctx = await requireAppContext()
+  const supabase = ctx.supabase
   const [{ data: properties }, { data: units }] = await Promise.all([
     supabase.from('properties').select('id, name').order('name'),
     property_id

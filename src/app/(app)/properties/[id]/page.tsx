@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { requireAppContext, requirePropertyAccess } from '@/lib/auth/guards'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import PropertyStatusWidget from '@/components/properties/PropertyStatusWidget'
@@ -14,7 +14,9 @@ import PropertyUnitsManager from '@/components/properties/PropertyUnitsManager'
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
+  const ctx = await requireAppContext()
+  if (!requirePropertyAccess(ctx, id)) notFound()
+  const supabase = ctx.supabase
 
   const [
     { data: property },

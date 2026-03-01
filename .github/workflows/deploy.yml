@@ -155,6 +155,9 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      - name: Access control check
+        run: node scripts/check-access-control.mjs
+
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 

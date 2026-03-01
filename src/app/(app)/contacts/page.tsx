@@ -1,6 +1,8 @@
 import { getAppContext } from '@/lib/impersonation'
 import Link from 'next/link'
 import { CONTACT_ROLES } from '@/lib/contact-roles'
+import ListRow from '@/components/ui/ListRow'
+import EmptyState from '@/components/ui/EmptyState'
 
 function roleLabel(role: string) {
   return CONTACT_ROLES.find(r => r.value === role)?.label ?? role
@@ -77,60 +79,52 @@ export default async function ContactsPage({
       <div className="space-y-2">
         {contacts?.map(contact => {
           const property = contact.properties as { id: string; name: string } | null
+          const meta: string[] = []
+          if (property) meta.push(`Property: ${property.name}`)
+          if (contact.phone) meta.push(`Phone: ${contact.phone}`)
+          if (contact.email) meta.push(`Email: ${contact.email}`)
+
           return (
-            <Link
+            <ListRow
               key={contact.id}
               href={`/contacts/${contact.id}`}
-              className="card flex items-center gap-4 px-5 py-4 hover:bg-[#1e2d42] hover:border-[#3a5070] transition-all cursor-pointer group"
-            >
-              {/* Avatar */}
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-teal-500
-                              flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                {contact.name.charAt(0).toUpperCase()}
-              </div>
-
-              {/* Main info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium text-white group-hover:text-violet-300 transition-colors">
-                    {contact.name}
-                  </span>
-                  {contact.is_primary && (
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 border border-violet-500/30">
-                      Primary
+              avatar={
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-teal-500
+                                flex items-center justify-center text-white font-semibold text-sm">
+                  {contact.name.charAt(0).toUpperCase()}
+                </div>
+              }
+              primary={contact.name}
+              secondary={
+                <span className="flex items-center gap-2 flex-wrap">
+                  <span>Role: {roleLabel(contact.role)}</span>
+                  {meta.map((m, i) => (
+                    <span key={i} className="flex items-center gap-2">
+                      <span className="text-[#2a3d58]">&middot;</span>
+                      <span>{m}</span>
                     </span>
-                  )}
-                  <span className="text-xs text-[#6480a0]">{roleLabel(contact.role)}</span>
-                </div>
-                <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                  {property && (
-                    <span className="text-xs text-[#6480a0]">{property.name}</span>
-                  )}
-                  {contact.phone && (
-                    <span className="text-xs text-[#6480a0]">{contact.phone}</span>
-                  )}
-                  {contact.email && (
-                    <span className="text-xs text-[#6480a0] truncate">{contact.email}</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Arrow */}
-              <svg className="w-4 h-4 text-[#4a6080] group-hover:text-[#6480a0] flex-shrink-0 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
+                  ))}
+                </span>
+              }
+              badges={
+                contact.is_primary ? (
+                  <span className="badge bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                    Primary
+                  </span>
+                ) : undefined
+              }
+            />
           )
         })}
 
         {(!contacts || contacts.length === 0) && (
-          <div className="card p-10 text-center">
-            <p className="text-[#6480a0]">
-              No contacts found.{' '}
-              {hasFilters
-                ? <Link href="/contacts" className="text-violet-400 hover:text-violet-300">Clear filters</Link>
-                : <span>Add contacts from a property page or click <Link href="/contacts/new" className="text-violet-400 hover:text-violet-300">+ Add Contact</Link>.</span>}
-            </p>
+          <div className="card">
+            <EmptyState
+              title={hasFilters ? 'No contacts match filters' : 'No contacts yet'}
+              description={hasFilters ? undefined : 'Add contacts from a property page or use the button above.'}
+              actionLabel={hasFilters ? 'Clear filters' : '+ Add Contact'}
+              actionHref={hasFilters ? '/contacts' : '/contacts/new'}
+            />
           </div>
         )}
       </div>

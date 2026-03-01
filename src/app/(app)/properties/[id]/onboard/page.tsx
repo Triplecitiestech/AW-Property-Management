@@ -1,10 +1,12 @@
-import { createClient } from '@/lib/supabase/server'
+import { requireAppContext, requirePropertyAccess } from '@/lib/auth/guards'
 import { notFound } from 'next/navigation'
 import OnboardingWizard from '@/components/properties/OnboardingWizard'
 
 export default async function OnboardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
+  const ctx = await requireAppContext()
+  if (!requirePropertyAccess(ctx, id)) notFound()
+  const supabase = ctx.supabase
 
   const [
     { data: property },

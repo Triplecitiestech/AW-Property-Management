@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
-import { notFound, redirect } from 'next/navigation'
+import { requireAppContext } from '@/lib/auth/guards'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { CONTACT_ROLES } from '@/lib/contact-roles'
 import LocalDate from '@/components/LocalDate'
@@ -9,9 +9,8 @@ function roleLabel(role: string) {
 
 export default async function ContactDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+  const ctx = await requireAppContext()
+  const supabase = ctx.supabase
 
   const [
     { data: contact },
@@ -32,11 +31,11 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
 
   if (!contact) notFound()
 
-  // Check if current user is an admin/owner in their org
+  // Check if effective user is an admin/owner in their org
   const { data: orgMember } = await supabase
     .from('org_members')
     .select('role')
-    .eq('user_id', user.id)
+    .eq('user_id', ctx.userId)
     .single()
   const isAdmin = orgMember?.role === 'owner' || orgMember?.role === 'admin'
 

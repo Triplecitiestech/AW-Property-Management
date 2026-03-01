@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { requireAppContext } from '@/lib/auth/guards'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import DeleteStayButton from '@/components/stays/DeleteStayButton'
@@ -7,7 +7,8 @@ import LocalDate from '@/components/LocalDate'
 
 export default async function StayDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const supabase = await createClient()
+  const ctx = await requireAppContext()
+  const supabase = ctx.supabase
 
   const [
     { data: stay },

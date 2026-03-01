@@ -1,5 +1,7 @@
 import { getAppContext } from '@/lib/impersonation'
 import Link from 'next/link'
+import ListRow from '@/components/ui/ListRow'
+import EmptyState from '@/components/ui/EmptyState'
 
 export default async function StaysPage({
   searchParams,
@@ -84,57 +86,38 @@ export default async function StaysPage({
           const { label, cls } = getStayStatus(stay.start_date, stay.end_date)
           const nights = Math.ceil((new Date(stay.end_date).getTime() - new Date(stay.start_date).getTime()) / (1000 * 60 * 60 * 24))
           const propName = (stay.properties as { name: string } | null)?.name ?? '—'
+          const meta: string[] = [
+            `Property: ${propName}`,
+            `Dates: ${stay.start_date} → ${stay.end_date}`,
+            `Duration: ${nights} night${nights !== 1 ? 's' : ''}`,
+          ]
+          if (stay.guest_email) meta.push(`Email: ${stay.guest_email}`)
+
           return (
-            <Link
+            <ListRow
               key={stay.id}
               href={`/stays/${stay.id}`}
-              className="card flex items-center gap-4 px-5 py-4 hover:bg-[#1e2d42] hover:border-[#3a5070] transition-all cursor-pointer group"
-            >
-              {/* Guest avatar */}
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-600 to-blue-500
-                              flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-                {stay.guest_name.charAt(0).toUpperCase()}
-              </div>
-
-              {/* Main info */}
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-white group-hover:text-teal-300 transition-colors">
-                  {stay.guest_name}
-                </p>
-                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                  <span className="text-xs text-[#6480a0]">{propName}</span>
-                  <span className="text-[#2a3d58]">·</span>
-                  <span className="text-xs text-[#6480a0]">{stay.start_date} → {stay.end_date}</span>
-                  <span className="text-[#2a3d58]">·</span>
-                  <span className="text-xs text-[#6480a0]">{nights} night{nights !== 1 ? 's' : ''}</span>
-                  {stay.guest_email && (
-                    <>
-                      <span className="text-[#2a3d58]">·</span>
-                      <span className="text-xs text-[#6480a0] truncate">{stay.guest_email}</span>
-                    </>
-                  )}
+              avatar={
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-teal-500
+                                flex items-center justify-center text-white font-semibold text-sm">
+                  {stay.guest_name.charAt(0).toUpperCase()}
                 </div>
-              </div>
-
-              {/* Status + arrow */}
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <span className={`badge ${cls}`}>{label}</span>
-                <svg className="w-4 h-4 text-[#4a6080] group-hover:text-[#6480a0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </Link>
+              }
+              primary={stay.guest_name}
+              secondary={meta.join(' · ')}
+              badges={<span className={`badge ${cls}`}>{label}</span>}
+            />
           )
         })}
 
         {(!stays || stays.length === 0) && (
-          <div className="card p-10 text-center">
-            <p className="text-[#6480a0]">
-              No stays found.{' '}
-              {hasFilters
-                ? <Link href="/stays" className="text-violet-400 hover:text-violet-300">Clear filters</Link>
-                : <Link href="/stays/new" className="text-violet-400 hover:text-violet-300">Add one</Link>}
-            </p>
+          <div className="card">
+            <EmptyState
+              title={hasFilters ? 'No stays match filters' : 'No stays yet'}
+              description={hasFilters ? undefined : 'Add your first stay to track guests and reservations.'}
+              actionLabel={hasFilters ? 'Clear filters' : 'Add Stay'}
+              actionHref={hasFilters ? '/stays' : '/stays/new'}
+            />
           </div>
         )}
       </div>

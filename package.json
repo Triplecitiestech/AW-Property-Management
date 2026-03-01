@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "smoke": "node scripts/smoke-test.mjs",
+    "check:access": "node scripts/check-access-control.mjs",
     "test:e2e": "playwright test",
     "test:e2e:local": "BASE_URL=http://localhost:3000 playwright test",
     "test:e2e:headed": "BASE_URL=http://localhost:3000 playwright test --headed",

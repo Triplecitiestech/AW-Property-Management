@@ -1,10 +1,8 @@
 import { getAppContext } from '@/lib/impersonation'
 import Link from 'next/link'
-
-function StatusBadge({ status }: { status: string }) {
-  const label = status.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
-  return <span className={`badge badge-${status}`}>{label}</span>
-}
+import ListRow from '@/components/ui/ListRow'
+import StatusBadge from '@/components/ui/StatusBadge'
+import EmptyState from '@/components/ui/EmptyState'
 
 export default async function PropertiesPage({
   searchParams,
@@ -79,57 +77,51 @@ export default async function PropertiesPage({
             ? property.property_status[0]
             : property.property_status
           const ticketCount = ticketMap[property.id] ?? 0
+
           return (
-            <Link
+            <ListRow
               key={property.id}
               href={`/properties/${property.id}`}
-              className="card flex items-center gap-4 px-5 py-4 hover:bg-[#1e2d42] hover:border-[#3a5070] transition-all cursor-pointer group"
-            >
-              {/* Icon */}
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-violet-400
-                              flex items-center justify-center flex-shrink-0 shadow-lg">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-              </div>
-
-              {/* Main info */}
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-white group-hover:text-violet-300 transition-colors">
-                  {property.name}
-                </p>
-                <p className="text-xs text-[#6480a0] mt-0.5">{property.address || 'No address'}</p>
-              </div>
-
-              {/* Badges + arrow */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {ticketCount > 0 && (
-                  <span className="text-xs font-medium text-rose-300 bg-rose-500/20 px-2 py-0.5 rounded-full border border-rose-500/30">
-                    {ticketCount} open ticket{ticketCount !== 1 ? 's' : ''}
-                  </span>
-                )}
-                {ps && <StatusBadge status={ps.occupancy} />}
-                {ps && <StatusBadge status={ps.status} />}
-                <svg className="w-4 h-4 text-[#4a6080] group-hover:text-[#6480a0] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </Link>
+              avatar={
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-violet-400
+                                flex items-center justify-center shadow-lg">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                </div>
+              }
+              primary={property.name}
+              secondary={`Address: ${property.address || 'Not set'}`}
+              badges={
+                <>
+                  {ticketCount > 0 && (
+                    <span className="badge bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                      {ticketCount} open ticket{ticketCount !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {ps && <StatusBadge value={ps.occupancy} />}
+                  {ps && <StatusBadge value={ps.status} />}
+                </>
+              }
+            />
           )
         })}
 
         {(!properties || properties.length === 0) && (
-          <div className="card p-12 text-center">
-            <div className="w-12 h-12 bg-[#1a2436] rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-[#4a6080]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-            </div>
-            <h3 className="font-semibold text-white mb-1">No properties yet</h3>
-            <p className="text-sm text-[#6480a0] mb-4">Add your first property to get started.</p>
-            <Link href="/properties/new" className="btn-primary text-sm">Add Property</Link>
+          <div className="card">
+            <EmptyState
+              title={q ? 'No properties match search' : 'No properties yet'}
+              description={q ? undefined : 'Add your first property to get started.'}
+              actionLabel={q ? 'Clear search' : 'Add Property'}
+              actionHref={q ? '/properties' : '/properties/new'}
+              icon={
+                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+              }
+            />
           </div>
         )}
       </div>

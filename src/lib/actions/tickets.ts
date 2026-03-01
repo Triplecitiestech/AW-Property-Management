@@ -379,7 +379,7 @@ export async function notifyContact(id: string): Promise<{ success?: boolean; er
     .from('service_requests')
     .select(`
       *,
-      properties(name),
+      properties(name, address, door_code, gate_code, parking_info),
       assigned_contact:property_contacts!service_requests_assigned_contact_id_fkey(id, name, email, phone, role)
     `)
     .eq('id', id)
@@ -392,7 +392,20 @@ export async function notifyContact(id: string): Promise<{ success?: boolean; er
   if (!contact) return { error: 'No contact is assigned to this work order.' }
   if (!contact.email) return { error: `${contact.name} has no email address on file. Add an email to their contact to send notifications.` }
 
-  const propertyName = (workOrder.properties as { name: string } | null)?.name ?? 'Property'
+  type PropertyRow = { name: string; address: string | null; door_code: string | null; gate_code: string | null; parking_info: string | null }
+  const property = workOrder.properties as PropertyRow | null
+  const propertyName = property?.name ?? 'Property'
+
+  // Get unit identifier if work order is linked to a unit
+  let unitIdentifier: string | null = null
+  if (workOrder.unit_id) {
+    const { data: unit } = await supabase
+      .from('property_units')
+      .select('identifier, name')
+      .eq('id', workOrder.unit_id)
+      .single()
+    if (unit) unitIdentifier = unit.name || unit.identifier
+  }
 
   // Get owner profile for message attribution
   const { data: ownerProfile } = await supabase
@@ -419,6 +432,13 @@ export async function notifyContact(id: string): Promise<{ success?: boolean; er
     title: workOrder.title,
     priority: workOrder.priority,
     propertyName,
+    propertyAddress: property?.address || null,
+    unitIdentifier,
+    accessInfo: {
+      doorCode: property?.door_code || null,
+      gateCode: property?.gate_code || null,
+      parkingInfo: property?.parking_info || null,
+    },
     ownerName: ownerProfile?.full_name ?? 'Property Owner',
     ownerEmail: ownerProfile?.email ?? null,
     ownerPhone: ownerProfile?.phone_number ?? null,

@@ -51,7 +51,7 @@ export async function executeAiAction(
   if (action.type === 'create_work_order') {
     const { data: properties } = await svc
       .from('properties')
-      .select('id, name')
+      .select('id, name, address, door_code, gate_code, parking_info')
       .eq('owner_id', ownerId)
       .ilike('name', `%${action.property_name}%`)
       .limit(1)
@@ -108,6 +108,12 @@ export async function executeAiAction(
       title: action.title,
       priority: action.priority,
       propertyName: property.name,
+      propertyAddress: property.address || null,
+      accessInfo: {
+        doorCode: property.door_code || null,
+        gateCode: property.gate_code || null,
+        parkingInfo: property.parking_info || null,
+      },
       ownerName,
       ownerEmail,
       ownerPhone,

@@ -8,12 +8,22 @@ export function buildOutboundMessage(params: {
   title: string
   priority: string
   propertyName: string
+  propertyAddress?: string | null
+  unitIdentifier?: string | null
+  accessInfo?: {
+    doorCode?: string | null
+    gateCode?: string | null
+    parkingInfo?: string | null
+  } | null
   ownerName: string
   ownerEmail: string | null
   ownerPhone: string | null
   checklistItems?: string[]
 }): string {
-  const { category, title, priority, propertyName, ownerName, ownerEmail, ownerPhone, checklistItems } = params
+  const {
+    category, title, priority, propertyName, propertyAddress, unitIdentifier,
+    accessInfo, ownerName, ownerEmail, ownerPhone, checklistItems,
+  } = params
 
   const replyLine = ownerEmail
     ? `Please reply to this email with confirmation, updates, and payment info.`
@@ -21,8 +31,24 @@ export function buildOutboundMessage(params: {
     ? `Please reply to ${ownerPhone} with confirmation, updates, and payment info.`
     : `Please reply to confirm receipt and provide updates.`
 
-  const intro = `Hi,\n\nI'm reaching out on behalf of ${ownerName} regarding the following service request at ${propertyName}:\n\n`
-  const details = `Work Order: ${title}\nPriority: ${priority.toUpperCase()}\nProperty: ${propertyName}\n\n`
+  // Build the location line: "Property Name, 123 Main St, Unit 4B"
+  const locationParts = [propertyName]
+  if (propertyAddress) locationParts.push(propertyAddress)
+  if (unitIdentifier) locationParts.push(`Unit ${unitIdentifier}`)
+  const locationLine = locationParts.join(', ')
+
+  const intro = `Hi,\n\nI'm reaching out on behalf of ${ownerName} regarding the following service request at ${locationLine}:\n\n`
+  const details = `Work Order: ${title}\nPriority: ${priority.toUpperCase()}\nProperty: ${locationLine}\n\n`
+
+  // Build access info section if any access details are available
+  let accessSection = ''
+  const accessLines: string[] = []
+  if (accessInfo?.doorCode) accessLines.push(`Door Code: ${accessInfo.doorCode}`)
+  if (accessInfo?.gateCode) accessLines.push(`Gate Code: ${accessInfo.gateCode}`)
+  if (accessInfo?.parkingInfo) accessLines.push(`Parking: ${accessInfo.parkingInfo}`)
+  if (accessLines.length > 0) {
+    accessSection = `Access Information:\n${accessLines.join('\n')}\n\n`
+  }
 
   let specifics = ''
   const cat = category.toLowerCase()
@@ -89,5 +115,5 @@ export function buildOutboundMessage(params: {
   }
 
   const closing = `${replyLine}\n\nThank you,\n${ownerName}\n(via Smart Sumai AI Property Manager)`
-  return intro + details + specifics + closing
+  return intro + details + accessSection + specifics + closing
 }

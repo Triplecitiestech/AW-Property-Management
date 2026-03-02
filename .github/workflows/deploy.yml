@@ -61,17 +61,11 @@ jobs:
 
       - name: Determine deploy mode
         id: set_env
-        # Sets DEPLOY_ENV=production for main, DEPLOY_ENV=preview for claude/*
+        # Alpha mode: ALL branches deploy to production until further notice.
         run: |
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            echo "DEPLOY_ENV=production" >> "$GITHUB_ENV"
-            echo "deploy_env=production" >> "$GITHUB_OUTPUT"
-            echo "::notice::Deploy mode: PRODUCTION (main branch)"
-          else
-            echo "DEPLOY_ENV=preview" >> "$GITHUB_ENV"
-            echo "deploy_env=preview" >> "$GITHUB_OUTPUT"
-            echo "::notice::Deploy mode: PREVIEW (${{ github.ref }})"
-          fi
+          echo "DEPLOY_ENV=production" >> "$GITHUB_ENV"
+          echo "deploy_env=production" >> "$GITHUB_OUTPUT"
+          echo "::notice::Deploy mode: PRODUCTION (${{ github.ref_name }}) — alpha: all branches go live"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -105,7 +99,7 @@ jobs:
 
       - name: Configure Twilio SMS webhook URL
         # PRODUCTION ONLY — don't reconfigure Twilio webhook for preview deploys.
-        if: github.ref == 'refs/heads/main'
+        # Alpha: runs for all branches (all deploys go to production)
         run: |
           set -euo pipefail
           SID="AC${_TS}"
@@ -142,7 +136,7 @@ jobs:
 
       - name: Update Supabase auth Site URL
         # PRODUCTION ONLY — keep auth emails pointing to smartsumai.com.
-        if: github.ref == 'refs/heads/main'
+        # Alpha: runs for all branches (all deploys go to production)
         run: |
           HTTP=$(curl -s -o /tmp/auth_patch.json -w "%{http_code}" -X PATCH \
             "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/auth" \
@@ -199,34 +193,23 @@ jobs:
       - name: Push env vars to Vercel project
         # PRODUCTION ONLY — env vars don't change between deploys.
         # For manual updates, use the setup-vercel-env.yml workflow.
-        if: github.ref == 'refs/heads/main'
+        # Alpha: runs for all branches (all deploys go to production)
         run: node scripts/setup-vercel-env.mjs
 
       - name: Build
-        # --prod pulls production-scoped env vars and produces a production bundle.
-        # Preview branches build without --prod so they get preview-scoped vars.
+        # Alpha: all branches build as production.
         run: |
-          if [ "$DEPLOY_ENV" = "production" ]; then
-            echo "Building for PRODUCTION..."
-            vercel build --prod --token="$VERCEL_TOKEN" --yes
-          else
-            echo "Building for PREVIEW..."
-            vercel build --token="$VERCEL_TOKEN" --yes
-          fi
+          echo "Building for PRODUCTION..."
+          vercel build --prod --token="$VERCEL_TOKEN" --yes
 
       - name: Deploy to Vercel
-        # Production → --prod (promotes to production). Preview → no --prod.
+        # Alpha: all branches deploy to production.
         # NEVER use vercel promote — prebuilt deployments cannot be promoted.
         id: deploy
         run: |
           set -euo pipefail
-          if [ "$DEPLOY_ENV" = "production" ]; then
-            echo "Deploying to PRODUCTION..."
-            DEPLOY_OUT=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" 2>&1)
-          else
-            echo "Deploying PREVIEW..."
-            DEPLOY_OUT=$(vercel deploy --prebuilt --token="$VERCEL_TOKEN" 2>&1)
-          fi
+          echo "Deploying to PRODUCTION..."
+          DEPLOY_OUT=$(vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN" 2>&1)
           echo "Full deploy output:"
           echo "$DEPLOY_OUT"
 
@@ -254,7 +237,7 @@ jobs:
 
       - name: Alias smartsumai.com to production deployment
         # PRODUCTION ONLY — explicitly alias the custom domain.
-        if: github.ref == 'refs/heads/main'
+        # Alpha: runs for all branches (all deploys go to production)
         run: |
           set -euo pipefail
           DEPLOYMENT_URL="${{ steps.deploy.outputs.url }}"
@@ -268,7 +251,7 @@ jobs:
 
       - name: Add custom domain smartsumai.com to Vercel project
         # PRODUCTION ONLY — registers domains and triggers SSL provisioning.
-        if: github.ref == 'refs/heads/main'
+        # Alpha: runs for all branches (all deploys go to production)
         run: |
           set -euo pipefail
           echo "## Custom Domain Setup: smartsumai.com" >> "$GITHUB_STEP_SUMMARY"
@@ -311,7 +294,7 @@ jobs:
 
       - name: Verify — correct Supabase URL in live bundle
         # PRODUCTION ONLY — verifies smartsumai.com serves the correct deployment.
-        if: github.ref == 'refs/heads/main'
+        # Alpha: runs for all branches (all deploys go to production)
         run: |
           set -euo pipefail
           DEPLOYMENT_URL="${{ steps.deploy.outputs.url }}"
@@ -390,23 +373,14 @@ jobs:
 
       - name: Smoke test — production
         # PRODUCTION ONLY — full smoke test against smartsumai.com.
-        if: github.ref == 'refs/heads/main'
+        # Alpha: runs for all branches (all deploys go to production)
         run: |
           APP_URL="https://smartsumai.com" \
           node scripts/smoke-test.mjs
 
-      - name: Smoke test — preview
-        # PREVIEW ONLY — smoke test against the preview deployment URL.
-        if: github.ref != 'refs/heads/main'
-        run: |
-          DEPLOYMENT_URL="${{ steps.deploy.outputs.url }}"
-          echo "Running smoke test against preview deployment: $DEPLOYMENT_URL"
-          APP_URL="$DEPLOYMENT_URL" \
-          node scripts/smoke-test.mjs || echo "::warning::Preview smoke test had issues (may be expected for deployment-protected URLs)"
-
       - name: Post-deploy verification gate
         # PRODUCTION ONLY — Twilio webhook match, /api/health, env var check.
-        if: github.ref == 'refs/heads/main'
+        # Alpha: runs for all branches (all deploys go to production)
         run: |
           APP_URL="https://smartsumai.com" \
           TWILIO_ACCOUNT_SID="AC${_TS}" \

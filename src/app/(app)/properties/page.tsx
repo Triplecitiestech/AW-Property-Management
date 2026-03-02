@@ -1,8 +1,21 @@
 import { getAppContext } from '@/lib/impersonation'
 import Link from 'next/link'
-import ListRow from '@/components/ui/ListRow'
 import StatusBadge from '@/components/ui/StatusBadge'
 import EmptyState from '@/components/ui/EmptyState'
+import {
+  DataGridHeader,
+  DataGridRow,
+  DataGridCell,
+  type Column,
+} from '@/components/ui/DataGrid'
+
+const COLUMNS: Column[] = [
+  { label: 'Property',     width: '1fr',   align: 'left' },
+  { label: 'Open Tickets', width: '110px', align: 'center', hideBelow: 'md' },
+  { label: 'Occupancy',    width: '120px', align: 'center', hideBelow: 'sm' },
+  { label: 'Condition',    width: '140px', align: 'center' },
+  { label: '',              width: '32px',  align: 'center' },
+]
 
 export default async function PropertiesPage({
   searchParams,
@@ -71,56 +84,66 @@ export default async function PropertiesPage({
         </form>
       </div>
 
-      <div className="space-y-2">
-        {properties?.map(property => {
-          const ps = Array.isArray(property.property_status)
-            ? property.property_status[0]
-            : property.property_status
-          const ticketCount = ticketMap[property.id] ?? 0
+      <div>
+        <DataGridHeader columns={COLUMNS} />
+        <div className="space-y-1.5">
+          {properties?.map(property => {
+            const ps = Array.isArray(property.property_status)
+              ? property.property_status[0]
+              : property.property_status
+            const ticketCount = ticketMap[property.id] ?? 0
 
-          return (
-            <ListRow
-              key={property.id}
-              href={`/properties/${property.id}`}
-              avatar={
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-violet-400
-                                flex items-center justify-center shadow-lg">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                </div>
-              }
-              primary={property.name}
-              secondary={`Address: ${property.address || 'Not set'}`}
-              badges={
-                <>
-                  {ticketCount > 0 && (
+            return (
+              <DataGridRow key={property.id} href={`/properties/${property.id}`} columns={COLUMNS}>
+                <DataGridCell>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-violet-400
+                                    flex items-center justify-center flex-shrink-0 shadow-lg">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-white group-hover:text-violet-300 transition-colors truncate">
+                        {property.name}
+                      </p>
+                      <p className="text-xs text-[#6480a0] truncate">{property.address || 'No address'}</p>
+                    </div>
+                  </div>
+                </DataGridCell>
+                <DataGridCell align="center" hideBelow="md">
+                  {ticketCount > 0 ? (
                     <span className="badge bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                      {ticketCount} open ticket{ticketCount !== 1 ? 's' : ''}
+                      {ticketCount}
                     </span>
+                  ) : (
+                    <span className="text-xs text-[#3d5a78]">0</span>
                   )}
-                  {ps && <StatusBadge value={ps.occupancy} />}
-                  {ps && <StatusBadge value={ps.status} />}
-                </>
-              }
-            />
-          )
-        })}
+                </DataGridCell>
+                <DataGridCell align="center" hideBelow="sm">
+                  {ps ? <StatusBadge value={ps.occupancy} /> : <span className="text-xs text-[#3d5a78]">—</span>}
+                </DataGridCell>
+                <DataGridCell align="center">
+                  {ps ? <StatusBadge value={ps.status} /> : <span className="text-xs text-[#3d5a78]">—</span>}
+                </DataGridCell>
+                <DataGridCell align="center">
+                  <svg className="w-4 h-4 text-[#4a6080] group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </DataGridCell>
+              </DataGridRow>
+            )
+          })}
+        </div>
 
         {(!properties || properties.length === 0) && (
-          <div className="card">
+          <div className="card mt-2">
             <EmptyState
               title={q ? 'No properties match search' : 'No properties yet'}
               description={q ? undefined : 'Add your first property to get started.'}
               actionLabel={q ? 'Clear search' : 'Add Property'}
               actionHref={q ? '/properties' : '/properties/new'}
-              icon={
-                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-              }
             />
           </div>
         )}

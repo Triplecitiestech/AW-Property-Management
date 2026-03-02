@@ -1,12 +1,26 @@
 import { getAppContext } from '@/lib/impersonation'
 import Link from 'next/link'
-import ListRow from '@/components/ui/ListRow'
 import StatusBadge from '@/components/ui/StatusBadge'
 import EmptyState from '@/components/ui/EmptyState'
+import {
+  DataGridHeader,
+  DataGridRow,
+  DataGridCell,
+  type Column,
+} from '@/components/ui/DataGrid'
 
 function woLabel(num: number | null) {
   return num ? `WO-${String(num).padStart(4, '0')}` : '—'
 }
+
+const COLUMNS: Column[] = [
+  { label: 'WO#',      width: '72px',  align: 'left' },
+  { label: 'Title',    width: '1fr',   align: 'left' },
+  { label: 'Property', width: '160px', align: 'left',   hideBelow: 'md' },
+  { label: 'Priority', width: '100px', align: 'center' },
+  { label: 'Status',   width: '110px', align: 'center' },
+  { label: '',          width: '32px',  align: 'center' },
+]
 
 export default async function WorkOrdersPage({
   searchParams,
@@ -98,34 +112,44 @@ export default async function WorkOrdersPage({
         </form>
       </div>
 
-      {/* Work Order Cards */}
-      <div className="space-y-2">
-        {workOrders?.map(wo => {
-          const propName = (wo.properties as { name: string } | null)?.name ?? '—'
-          const assigneeName = (wo.assignee as { full_name: string } | null)?.full_name
-          const meta: string[] = [`Property: ${propName}`, `Category: ${wo.category}`]
-          if (assigneeName) meta.push(`Assigned: ${assigneeName}`)
-          if (wo.due_date) meta.push(`Due: ${wo.due_date}`)
+      {/* Work Order Grid */}
+      <div>
+        <DataGridHeader columns={COLUMNS} />
+        <div className="space-y-1.5">
+          {workOrders?.map(wo => {
+            const propName = (wo.properties as { name: string } | null)?.name ?? '—'
 
-          return (
-            <ListRow
-              key={wo.id}
-              href={`/work-orders/${wo.id}`}
-              avatar={
-                <div className="flex flex-col items-center gap-1 w-16">
-                  <span className="font-mono text-xs text-[#4a6080]">{woLabel(wo.work_order_number)}</span>
+            return (
+              <DataGridRow key={wo.id} href={`/work-orders/${wo.id}`} columns={COLUMNS}>
+                <DataGridCell>
+                  <span className="font-mono text-xs text-[#6480a0]">{woLabel(wo.work_order_number)}</span>
+                </DataGridCell>
+                <DataGridCell>
+                  <span className="font-medium text-white group-hover:text-violet-300 transition-colors truncate">
+                    {wo.title}
+                  </span>
+                </DataGridCell>
+                <DataGridCell hideBelow="md">
+                  <span className="text-xs text-[#6480a0] truncate">{propName}</span>
+                </DataGridCell>
+                <DataGridCell align="center">
                   <StatusBadge value={wo.priority} variant="priority" />
-                </div>
-              }
-              primary={wo.title}
-              secondary={meta.join(' · ')}
-              badges={<StatusBadge value={wo.status} variant="status" />}
-            />
-          )
-        })}
+                </DataGridCell>
+                <DataGridCell align="center">
+                  <StatusBadge value={wo.status} />
+                </DataGridCell>
+                <DataGridCell align="center">
+                  <svg className="w-4 h-4 text-[#4a6080] group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </DataGridCell>
+              </DataGridRow>
+            )
+          })}
+        </div>
 
         {(!workOrders || workOrders.length === 0) && (
-          <div className="card">
+          <div className="card mt-2">
             <EmptyState
               title={hasFilters ? 'No work orders match filters' : 'No work orders yet'}
               description={hasFilters ? undefined : 'Create your first work order to start tracking maintenance.'}

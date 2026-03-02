@@ -1,12 +1,25 @@
 import { getAppContext } from '@/lib/impersonation'
 import Link from 'next/link'
 import { CONTACT_ROLES } from '@/lib/contact-roles'
-import ListRow from '@/components/ui/ListRow'
 import EmptyState from '@/components/ui/EmptyState'
+import {
+  DataGridHeader,
+  DataGridRow,
+  DataGridCell,
+  type Column,
+} from '@/components/ui/DataGrid'
 
 function roleLabel(role: string) {
   return CONTACT_ROLES.find(r => r.value === role)?.label ?? role
 }
+
+const COLUMNS: Column[] = [
+  { label: 'Contact',  width: '1fr',   align: 'left' },
+  { label: 'Role',     width: '120px', align: 'center' },
+  { label: 'Property', width: '160px', align: 'left',   hideBelow: 'md' },
+  { label: 'Phone',    width: '140px', align: 'left',   hideBelow: 'sm' },
+  { label: '',          width: '32px',  align: 'center' },
+]
 
 export default async function ContactsPage({
   searchParams,
@@ -75,50 +88,54 @@ export default async function ContactsPage({
         </form>
       </div>
 
-      {/* Contact Cards */}
-      <div className="space-y-2">
-        {contacts?.map(contact => {
-          const property = contact.properties as { id: string; name: string } | null
-          const meta: string[] = []
-          if (property) meta.push(`Property: ${property.name}`)
-          if (contact.phone) meta.push(`Phone: ${contact.phone}`)
-          if (contact.email) meta.push(`Email: ${contact.email}`)
+      {/* Contact Grid */}
+      <div>
+        <DataGridHeader columns={COLUMNS} />
+        <div className="space-y-1.5">
+          {contacts?.map(contact => {
+            const property = contact.properties as { id: string; name: string } | null
 
-          return (
-            <ListRow
-              key={contact.id}
-              href={`/contacts/${contact.id}`}
-              avatar={
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-teal-500
-                                flex items-center justify-center text-white font-semibold text-sm">
-                  {contact.name.charAt(0).toUpperCase()}
-                </div>
-              }
-              primary={contact.name}
-              secondary={
-                <span className="flex items-center gap-2 flex-wrap">
-                  <span>Role: {roleLabel(contact.role)}</span>
-                  {meta.map((m, i) => (
-                    <span key={i} className="flex items-center gap-2">
-                      <span className="text-[#2a3d58]">&middot;</span>
-                      <span>{m}</span>
-                    </span>
-                  ))}
-                </span>
-              }
-              badges={
-                contact.is_primary ? (
-                  <span className="badge bg-violet-500/20 text-violet-300 border border-violet-500/30">
-                    Primary
+            return (
+              <DataGridRow key={contact.id} href={`/contacts/${contact.id}`} columns={COLUMNS}>
+                <DataGridCell>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-teal-500
+                                    flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+                      {contact.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="font-medium text-white group-hover:text-violet-300 transition-colors truncate block">
+                        {contact.name}
+                      </span>
+                      {contact.is_primary && (
+                        <span className="text-[10px] text-violet-300">Primary</span>
+                      )}
+                    </div>
+                  </div>
+                </DataGridCell>
+                <DataGridCell align="center">
+                  <span className="badge bg-[#162030] text-[#6480a0] ring-1 ring-[#2a3d58]">
+                    {roleLabel(contact.role)}
                   </span>
-                ) : undefined
-              }
-            />
-          )
-        })}
+                </DataGridCell>
+                <DataGridCell hideBelow="md">
+                  <span className="text-xs text-[#6480a0] truncate">{property?.name ?? '—'}</span>
+                </DataGridCell>
+                <DataGridCell hideBelow="sm">
+                  <span className="text-xs text-[#6480a0]">{contact.phone || '—'}</span>
+                </DataGridCell>
+                <DataGridCell align="center">
+                  <svg className="w-4 h-4 text-[#4a6080] group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </DataGridCell>
+              </DataGridRow>
+            )
+          })}
+        </div>
 
         {(!contacts || contacts.length === 0) && (
-          <div className="card">
+          <div className="card mt-2">
             <EmptyState
               title={hasFilters ? 'No contacts match filters' : 'No contacts yet'}
               description={hasFilters ? undefined : 'Add contacts from a property page or use the button above.'}

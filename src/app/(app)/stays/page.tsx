@@ -1,7 +1,20 @@
 import { getAppContext } from '@/lib/impersonation'
 import Link from 'next/link'
-import ListRow from '@/components/ui/ListRow'
 import EmptyState from '@/components/ui/EmptyState'
+import {
+  DataGridHeader,
+  DataGridRow,
+  DataGridCell,
+  type Column,
+} from '@/components/ui/DataGrid'
+
+const COLUMNS: Column[] = [
+  { label: 'Guest',    width: '1fr',   align: 'left' },
+  { label: 'Property', width: '160px', align: 'left',   hideBelow: 'md' },
+  { label: 'Dates',    width: '200px', align: 'left',   hideBelow: 'sm' },
+  { label: 'Status',   width: '100px', align: 'center' },
+  { label: '',          width: '32px',  align: 'center' },
+]
 
 export default async function StaysPage({
   searchParams,
@@ -80,38 +93,52 @@ export default async function StaysPage({
         </form>
       </div>
 
-      {/* Stay Cards */}
-      <div className="space-y-2">
-        {stays?.map(stay => {
-          const { label, cls } = getStayStatus(stay.start_date, stay.end_date)
-          const nights = Math.ceil((new Date(stay.end_date).getTime() - new Date(stay.start_date).getTime()) / (1000 * 60 * 60 * 24))
-          const propName = (stay.properties as { name: string } | null)?.name ?? '—'
-          const meta: string[] = [
-            `Property: ${propName}`,
-            `Dates: ${stay.start_date} → ${stay.end_date}`,
-            `Duration: ${nights} night${nights !== 1 ? 's' : ''}`,
-          ]
-          if (stay.guest_email) meta.push(`Email: ${stay.guest_email}`)
+      {/* Stay Grid */}
+      <div>
+        <DataGridHeader columns={COLUMNS} />
+        <div className="space-y-1.5">
+          {stays?.map(stay => {
+            const { label, cls } = getStayStatus(stay.start_date, stay.end_date)
+            const nights = Math.ceil((new Date(stay.end_date).getTime() - new Date(stay.start_date).getTime()) / (1000 * 60 * 60 * 24))
+            const propName = (stay.properties as { name: string } | null)?.name ?? '—'
 
-          return (
-            <ListRow
-              key={stay.id}
-              href={`/stays/${stay.id}`}
-              avatar={
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-600 to-teal-500
-                                flex items-center justify-center text-white font-semibold text-sm">
-                  {stay.guest_name.charAt(0).toUpperCase()}
-                </div>
-              }
-              primary={stay.guest_name}
-              secondary={meta.join(' · ')}
-              badges={<span className={`badge ${cls}`}>{label}</span>}
-            />
-          )
-        })}
+            return (
+              <DataGridRow key={stay.id} href={`/stays/${stay.id}`} columns={COLUMNS}>
+                <DataGridCell>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-600 to-teal-500
+                                    flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
+                      {stay.guest_name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="font-medium text-white group-hover:text-violet-300 transition-colors truncate">
+                      {stay.guest_name}
+                    </span>
+                  </div>
+                </DataGridCell>
+                <DataGridCell hideBelow="md">
+                  <span className="text-xs text-[#6480a0] truncate">{propName}</span>
+                </DataGridCell>
+                <DataGridCell hideBelow="sm">
+                  <span className="text-xs text-[#6480a0]">
+                    {stay.start_date} → {stay.end_date}
+                    <span className="text-[#3d5a78] ml-1">({nights}n)</span>
+                  </span>
+                </DataGridCell>
+                <DataGridCell align="center">
+                  <span className={`badge ${cls}`}>{label}</span>
+                </DataGridCell>
+                <DataGridCell align="center">
+                  <svg className="w-4 h-4 text-[#4a6080] group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </DataGridCell>
+              </DataGridRow>
+            )
+          })}
+        </div>
 
         {(!stays || stays.length === 0) && (
-          <div className="card">
+          <div className="card mt-2">
             <EmptyState
               title={hasFilters ? 'No stays match filters' : 'No stays yet'}
               description={hasFilters ? undefined : 'Add your first stay to track guests and reservations.'}

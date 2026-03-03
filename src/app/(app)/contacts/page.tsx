@@ -1,6 +1,7 @@
 import { getAppContext } from '@/lib/impersonation'
 import Link from 'next/link'
 import { CONTACT_ROLES } from '@/lib/contact-roles'
+import StatusBadge from '@/components/ui/StatusBadge'
 import EmptyState from '@/components/ui/EmptyState'
 import {
   DataGridHeader,
@@ -9,13 +10,9 @@ import {
   type Column,
 } from '@/components/ui/DataGrid'
 
-function roleLabel(role: string) {
-  return CONTACT_ROLES.find(r => r.value === role)?.label ?? role
-}
-
 const COLUMNS: Column[] = [
   { label: 'Contact',  width: '1fr',   align: 'left' },
-  { label: 'Role',     width: '120px', align: 'center' },
+  { label: 'Role',     width: '120px', align: 'left' },
   { label: 'Property', width: '160px', align: 'left',   hideBelow: 'md' },
   { label: 'Phone',    width: '140px', align: 'left',   hideBelow: 'sm' },
   { label: '',          width: '32px',  align: 'center' },
@@ -113,10 +110,8 @@ export default async function ContactsPage({
                     </div>
                   </div>
                 </DataGridCell>
-                <DataGridCell align="center">
-                  <span className="badge bg-[#162030] text-[#6480a0] ring-1 ring-[#2a3d58]">
-                    {roleLabel(contact.role)}
-                  </span>
+                <DataGridCell align="left">
+                  <StatusBadge value={contact.role} variant="role" />
                 </DataGridCell>
                 <DataGridCell hideBelow="md">
                   <span className="text-xs text-[#6480a0] truncate">{property?.name ?? '—'}</span>

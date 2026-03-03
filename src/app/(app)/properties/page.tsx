@@ -112,16 +112,14 @@ export default async function PropertiesPage({
                     </div>
                   </div>
                 </DataGridCell>
-                <DataGridCell align="center" hideBelow="md">
+                <DataGridCell align="right" hideBelow="md">
                   {ticketCount > 0 ? (
-                    <span className="badge bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                      {ticketCount}
-                    </span>
+                    <StatusBadge value={String(ticketCount)} variant="custom" className="bg-rose-500/20 text-rose-300 border border-rose-500/30" />
                   ) : (
                     <span className="text-xs text-[#3d5a78]">0</span>
                   )}
                 </DataGridCell>
-                <DataGridCell align="center" hideBelow="sm">
+                <DataGridCell align="left" hideBelow="sm">
                   {ps ? <StatusBadge value={ps.occupancy} /> : <span className="text-xs text-[#3d5a78]">—</span>}
                 </DataGridCell>
                 <DataGridCell align="left">

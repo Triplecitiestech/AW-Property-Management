@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
         reply = buildWorkOrderConfirmation({
           title: (a.title as string) ?? '',
           propertyName: (a.property_name as string) ?? '',
+          propertyAddress: result.propertyAddress,
           category: (a.category as string) ?? 'other',
           priority: (a.priority as string) ?? 'medium',
           workOrderId,

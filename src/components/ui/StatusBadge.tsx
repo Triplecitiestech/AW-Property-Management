@@ -1,11 +1,17 @@
 /**
- * Unified badge component for status, priority, and custom labels.
+ * Unified badge component for status, priority, role, and custom labels.
  *
  * Uses the .badge CSS classes defined in globals.css.
  * Status values map directly to .badge-{value} classes.
+ *
+ * Variants:
+ *   status   — .badge-{value}  (open, in_progress, clean, needs_cleaning, etc.)
+ *   priority — .badge-{mapped} (urgent→badge-urgent, high→badge-high, etc.)
+ *   role     — .badge-{value}  (cleaning, maintenance, plumbing, etc.)
+ *   custom   — .badge + custom className
  */
 
-type BadgeVariant = 'status' | 'priority' | 'custom'
+type BadgeVariant = 'status' | 'priority' | 'role' | 'custom'
 
 interface StatusBadgeProps {
   value: string
@@ -37,5 +43,6 @@ export default function StatusBadge({ value, variant = 'status', className }: St
     return <span className={`badge ${cls}`}>{formatLabel(value)}</span>
   }
 
+  // Both 'status' and 'role' use the same pattern: badge badge-{value}
   return <span className={`badge badge-${value}`}>{formatLabel(value)}</span>
 }

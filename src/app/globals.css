@@ -80,6 +80,16 @@
   .badge-needs_groceries   { @apply bg-rose-950    text-rose-300    ring-1 ring-rose-700/50; }
   .badge-occupied          { @apply bg-cyan-950    text-cyan-300    ring-1 ring-cyan-700/50; }
   .badge-unoccupied        { @apply bg-[#162030]  text-[#4a6080]   ring-1 ring-[#2a3d58]; }
+
+  /* Contact roles (muted style) */
+  .badge-cleaning,
+  .badge-maintenance,
+  .badge-plumbing,
+  .badge-electrical,
+  .badge-hvac,
+  .badge-landscaping,
+  .badge-primary,
+  .badge-other             { @apply bg-[#162030]  text-[#6480a0]   ring-1 ring-[#2a3d58]; }
 }
 
 /* ── Global dark-mode overrides for hardcoded Tailwind classes ── */

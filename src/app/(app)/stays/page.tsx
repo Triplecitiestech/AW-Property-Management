@@ -12,7 +12,7 @@ const COLUMNS: Column[] = [
   { label: 'Guest',    width: '1fr',   align: 'left' },
   { label: 'Property', width: '160px', align: 'left',   hideBelow: 'md' },
   { label: 'Dates',    width: '200px', align: 'left',   hideBelow: 'sm' },
-  { label: 'Status',   width: '100px', align: 'center' },
+  { label: 'Status',   width: '110px', align: 'left' },
   { label: '',          width: '32px',  align: 'center' },
 ]
 
@@ -124,7 +124,7 @@ export default async function StaysPage({
                     <span className="text-[#3d5a78] ml-1">({nights}n)</span>
                   </span>
                 </DataGridCell>
-                <DataGridCell align="center">
+                <DataGridCell align="left">
                   <span className={`badge ${cls}`}>{label}</span>
                 </DataGridCell>
                 <DataGridCell align="center">

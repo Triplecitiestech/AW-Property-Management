@@ -16,6 +16,7 @@ export interface MutationResult {
   canonicalUrl: string | null
   detail: string | null
   workOrderId?: string          // backward compat alias for persistedId on WOs
+  propertyAddress?: string | null
   error: { code: string; message: string } | null
 }
 
@@ -283,6 +284,7 @@ async function executeAiActionInner(
       persistedId: verified.id,
       canonicalUrl,
       workOrderId: verified.id,
+      propertyAddress: property.address || null,
       detail: `${woNum} ${action.title} — ${property.name}`.trim(),
       error: null,
     }
@@ -291,7 +293,7 @@ async function executeAiActionInner(
   if (action.type === 'create_stay') {
     const { data: properties } = await svc
       .from('properties')
-      .select('id, name')
+      .select('id, name, address')
       .eq('owner_id', ownerId)
       .ilike('name', `%${action.property_name}%`)
       .limit(1)
@@ -322,6 +324,7 @@ async function executeAiActionInner(
       success: true,
       persistedId: stay.id,
       canonicalUrl: `/stays/${stay.id}`,
+      propertyAddress: property.address || null,
       detail: `${action.guest_name} at ${property.name} (${action.start_date}→${action.end_date})\nGuest link: ${guestLink}`,
       error: null,
     }
@@ -330,7 +333,7 @@ async function executeAiActionInner(
   if (action.type === 'update_status') {
     const { data: properties } = await svc
       .from('properties')
-      .select('id, name')
+      .select('id, name, address')
       .eq('owner_id', ownerId)
       .ilike('name', `%${action.property_name}%`)
       .limit(1)
@@ -345,7 +348,7 @@ async function executeAiActionInner(
       .upsert({ property_id: property.id, status: action.status, updated_at: new Date().toISOString() }, { onConflict: 'property_id' })
 
     if (error) return { success: false, persistedId: null, canonicalUrl: null, detail: null, error: { code: 'UPSERT_FAILED', message: error.message } }
-    return { success: true, persistedId: property.id, canonicalUrl: `/properties/${property.id}`, detail: `${property.name} → ${action.status.replace(/_/g, ' ')}`, error: null }
+    return { success: true, persistedId: property.id, canonicalUrl: `/properties/${property.id}`, propertyAddress: property.address || null, detail: `${property.name} → ${action.status.replace(/_/g, ' ')}`, error: null }
   }
 
   if (action.type === 'close_work_order') {
@@ -511,7 +514,7 @@ async function executeAiActionInner(
   if (action.type === 'create_contact') {
     const { data: properties } = await svc
       .from('properties')
-      .select('id, name')
+      .select('id, name, address')
       .eq('owner_id', ownerId)
       .ilike('name', `%${action.property_name}%`)
       .limit(1)
@@ -536,7 +539,7 @@ async function executeAiActionInner(
       .single()
 
     if (error || !contact) return { success: false, persistedId: null, canonicalUrl: null, detail: null, error: { code: 'INSERT_FAILED', message: error?.message ?? 'Insert failed' } }
-    return { success: true, persistedId: contact.id, canonicalUrl: `/contacts/${contact.id}`, detail: `${action.name} (${action.role}) added to ${property.name}`, error: null }
+    return { success: true, persistedId: contact.id, canonicalUrl: `/contacts/${contact.id}`, propertyAddress: property.address || null, detail: `${action.name} (${action.role}) added to ${property.name}`, error: null }
   }
 
   return { success: true, persistedId: null, canonicalUrl: null, detail: null, error: null }

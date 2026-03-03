@@ -26,17 +26,17 @@ function StatCard({ label, value, sub, color }: { label: string; value: number |
 /* ─── Column definitions ─────────────────────────────────── */
 
 const PROP_COLS: Column[] = [
-  { label: 'Property',    width: '1fr',   align: 'left' },
-  { label: 'Open Tickets', width: '100px', align: 'center', hideBelow: 'sm' },
-  { label: 'Occupancy',   width: '100px', align: 'center', hideBelow: 'sm' },
-  { label: 'Condition',   width: '160px', align: 'left' },
+  { label: 'Property',     width: '1fr',   align: 'left' },
+  { label: 'Open Tickets', width: '100px', align: 'right',  hideBelow: 'sm' },
+  { label: 'Occupancy',    width: '110px', align: 'left',   hideBelow: 'sm' },
+  { label: 'Condition',    width: '160px', align: 'left' },
 ]
 
 const WO_COLS: Column[] = [
   { label: 'Title',    width: '1fr',   align: 'left' },
   { label: 'Property', width: '140px', align: 'left',   hideBelow: 'sm' },
-  { label: 'Priority', width: '90px',  align: 'center' },
-  { label: 'Status',   width: '100px', align: 'center' },
+  { label: 'Priority', width: '100px', align: 'left' },
+  { label: 'Status',   width: '110px', align: 'left' },
 ]
 
 export default async function DashboardPage() {
@@ -115,14 +115,14 @@ export default async function DashboardPage() {
                       {property.name}
                     </span>
                   </DataGridCell>
-                  <DataGridCell align="center" hideBelow="sm">
+                  <DataGridCell align="right" hideBelow="sm">
                     {count > 0 ? (
                       <span className="text-xs text-rose-300">{count}</span>
                     ) : (
                       <span className="text-xs text-[#3d5a78]">0</span>
                     )}
                   </DataGridCell>
-                  <DataGridCell align="center" hideBelow="sm">
+                  <DataGridCell align="left" hideBelow="sm">
                     {ps ? <StatusBadge value={ps.occupancy} /> : <span className="text-xs text-[#3d5a78]">—</span>}
                   </DataGridCell>
                   <DataGridCell align="left">
@@ -160,10 +160,10 @@ export default async function DashboardPage() {
                     {(ticket.properties as unknown as { name: string } | null)?.name ?? '—'}
                   </span>
                 </DataGridCell>
-                <DataGridCell align="center">
+                <DataGridCell align="left">
                   <StatusBadge value={ticket.priority} variant="priority" />
                 </DataGridCell>
-                <DataGridCell align="center">
+                <DataGridCell align="left">
                   <StatusBadge value={ticket.status} />
                 </DataGridCell>
               </DataGridRowCompact>

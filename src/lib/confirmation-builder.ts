@@ -2,6 +2,8 @@
  * Reusable structured confirmation builder.
  * All action confirmations (work orders, stays, contacts, status updates)
  * must use this to produce consistent, structured responses.
+ *
+ * RULE: Every confirmation must include both property name AND full address.
  */
 
 import { BRAND_AI_NAME, BASE_URL } from '@/lib/branding'
@@ -11,6 +13,7 @@ export interface WorkOrderConfirmation {
   workOrderId?: string
   title: string
   propertyName: string
+  propertyAddress?: string | null
   category: string
   priority: string
   assignedTo?: string | null
@@ -20,6 +23,7 @@ export interface WorkOrderConfirmation {
 export interface StayConfirmation {
   guestName: string
   propertyName: string
+  propertyAddress?: string | null
   startDate: string
   endDate: string
   guestLinkToken?: string
@@ -29,12 +33,14 @@ export interface ContactConfirmation {
   name: string
   role: string
   propertyName: string
+  propertyAddress?: string | null
   phone?: string | null
   email?: string | null
 }
 
 export interface StatusConfirmation {
   propertyName: string
+  propertyAddress?: string | null
   status: string
 }
 
@@ -44,6 +50,7 @@ export function buildWorkOrderConfirmation(c: WorkOrderConfirmation): string {
     '',
     c.workOrderNumber ? `Work Order: #${c.workOrderNumber}` : null,
     `Property: ${c.propertyName}`,
+    c.propertyAddress ? `Address: ${c.propertyAddress}` : null,
     `Category: ${capitalize(c.category)}`,
     `Priority: ${capitalize(c.priority)}`,
     `Title: ${c.title}`,
@@ -61,6 +68,7 @@ export function buildStayConfirmation(c: StayConfirmation): string {
     'Stay Scheduled',
     '',
     `Property: ${c.propertyName}`,
+    c.propertyAddress ? `Address: ${c.propertyAddress}` : null,
     `Guest: ${c.guestName}`,
     `Check-in: ${c.startDate}`,
     `Check-out: ${c.endDate}`,
@@ -75,6 +83,7 @@ export function buildContactConfirmation(c: ContactConfirmation): string {
     'Contact Added',
     '',
     `Property: ${c.propertyName}`,
+    c.propertyAddress ? `Address: ${c.propertyAddress}` : null,
     `Name: ${c.name}`,
     `Role: ${capitalize(c.role)}`,
     c.phone ? `Phone: ${c.phone}` : null,
@@ -88,8 +97,9 @@ export function buildStatusConfirmation(c: StatusConfirmation): string {
     'Property Status Updated',
     '',
     `Property: ${c.propertyName}`,
+    c.propertyAddress ? `Address: ${c.propertyAddress}` : null,
     `New Status: ${c.status.replace(/_/g, ' ')}`,
-  ].join('\n')
+  ].filter(l => l !== null).join('\n')
 }
 
 export function buildErrorMessage(actionReply: string, detail: string): string {

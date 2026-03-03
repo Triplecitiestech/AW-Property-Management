@@ -17,8 +17,8 @@ const COLUMNS: Column[] = [
   { label: 'WO#',      width: '72px',  align: 'left' },
   { label: 'Title',    width: '1fr',   align: 'left' },
   { label: 'Property', width: '160px', align: 'left',   hideBelow: 'md' },
-  { label: 'Priority', width: '100px', align: 'center' },
-  { label: 'Status',   width: '110px', align: 'center' },
+  { label: 'Priority', width: '110px', align: 'left' },
+  { label: 'Status',   width: '120px', align: 'left' },
   { label: '',          width: '32px',  align: 'center' },
 ]
 
@@ -132,10 +132,10 @@ export default async function WorkOrdersPage({
                 <DataGridCell hideBelow="md">
                   <span className="text-xs text-[#6480a0] truncate">{propName}</span>
                 </DataGridCell>
-                <DataGridCell align="center">
+                <DataGridCell align="left">
                   <StatusBadge value={wo.priority} variant="priority" />
                 </DataGridCell>
-                <DataGridCell align="center">
+                <DataGridCell align="left">
                   <StatusBadge value={wo.status} />
                 </DataGridCell>
                 <DataGridCell align="center">

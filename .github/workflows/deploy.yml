@@ -385,7 +385,13 @@ jobs:
           APP_URL="https://smartsumai.com" \
           TWILIO_ACCOUNT_SID="AC${_TS}" \
           TWILIO_AUTH_TOKEN="${_TA}" \
-          node scripts/post-deploy-verify.mjs
+          node scripts/post-deploy-verify.mjs 2>&1 | tee /tmp/verify-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          echo '### Post-deploy verification' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/verify-output.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          exit $EXIT_CODE
 
       - name: Deploy summary
         if: always()

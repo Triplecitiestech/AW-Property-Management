@@ -118,11 +118,12 @@ export async function POST(req: NextRequest) {
     conversationHistory,
   })
 
-  // Save AI reply to conversation history (fire-and-forget)
-  supabase.from('conversations').insert({ user_id: profile.id, role: 'assistant', content: action.reply, channel: 'sms' }).then(undefined, () => {})
+  // Track token usage (fire-and-forget — safe before execution)
   supabase.from('ai_usage').insert({ user_id: profile.id, feature: 'sms', tokens_in: Math.ceil(body.length / 4), tokens_out: Math.ceil(action.reply.length / 4) }).then(undefined, () => {})
 
-  // Execute the action
+  // Execute the action BEFORE saving conversation history.
+  // This prevents "conversation history poisoning" — the bug where a success
+  // message was saved to history before the DB write actually succeeded.
   try {
     const executableTypes = ['create_work_order', 'create_stay', 'update_status', 'create_contact', 'close_work_order', 'update_work_order', 'repair_work_order']
     if (executableTypes.includes(action.type)) {
@@ -130,31 +131,41 @@ export async function POST(req: NextRequest) {
       const result = await executeAiAction(action, profile.id, 'sms', body, appUrl)
 
       if (!result.success) {
-        return twiml(buildErrorMessage(action.reply, result.detail ?? 'Unknown error'))
+        const failReply = buildErrorMessage(action.reply, result.error?.message ?? result.detail ?? 'Unknown error')
+        supabase.from('conversations').insert({ user_id: profile.id, role: 'assistant', content: failReply, channel: 'sms' }).then(undefined, () => {})
+        return twiml(failReply)
       }
 
+      // Build the VERIFIED confirmation message
+      let confirmedReply: string
       if (result.workOrderId) {
         const a = action as Record<string, unknown>
-        return twiml(buildWorkOrderConfirmation({
+        confirmedReply = buildWorkOrderConfirmation({
           title: (a.title as string) ?? '',
           propertyName: (a.property_name as string) ?? '',
           category: (a.category as string) ?? 'other',
           priority: (a.priority as string) ?? 'medium',
           workOrderId: result.workOrderId,
           detail: result.detail ?? undefined,
-        }))
+        })
+      } else if (result.detail) {
+        confirmedReply = `${action.reply}\n${result.detail}`
+      } else {
+        confirmedReply = action.reply
       }
 
-      if (result.detail) {
-        return twiml(`${action.reply}\n${result.detail}`)
-      }
-
-      return twiml(action.reply)
+      // Save the VERIFIED reply to conversation history (only after confirmed success)
+      supabase.from('conversations').insert({ user_id: profile.id, role: 'assistant', content: confirmedReply, channel: 'sms' }).then(undefined, () => {})
+      return twiml(confirmedReply)
     }
 
+    // Plain reply (no mutation) — safe to save directly
+    supabase.from('conversations').insert({ user_id: profile.id, role: 'assistant', content: action.reply, channel: 'sms' }).then(undefined, () => {})
     return twiml(action.reply || 'Something went wrong. Please try again.')
   } catch (err) {
     console.error('[SMS webhook execution error]', err)
-    return twiml('An unexpected error occurred. Please try again or text HELP.')
+    const errReply = 'An unexpected error occurred. Please try again or text HELP.'
+    supabase.from('conversations').insert({ user_id: profile.id, role: 'assistant', content: errReply, channel: 'sms' }).then(undefined, () => {})
+    return twiml(errReply)
   }
 }

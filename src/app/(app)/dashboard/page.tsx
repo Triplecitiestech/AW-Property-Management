@@ -28,8 +28,8 @@ function StatCard({ label, value, sub, color }: { label: string; value: number |
 const PROP_COLS: Column[] = [
   { label: 'Property',    width: '1fr',   align: 'left' },
   { label: 'Open Tickets', width: '100px', align: 'center', hideBelow: 'sm' },
-  { label: 'Occupancy',   width: '110px', align: 'center', hideBelow: 'sm' },
-  { label: 'Condition',   width: '130px', align: 'center' },
+  { label: 'Occupancy',   width: '100px', align: 'center', hideBelow: 'sm' },
+  { label: 'Condition',   width: '160px', align: 'left' },
 ]
 
 const WO_COLS: Column[] = [
@@ -125,7 +125,7 @@ export default async function DashboardPage() {
                   <DataGridCell align="center" hideBelow="sm">
                     {ps ? <StatusBadge value={ps.occupancy} /> : <span className="text-xs text-[#3d5a78]">—</span>}
                   </DataGridCell>
-                  <DataGridCell align="center">
+                  <DataGridCell align="left">
                     {ps ? <StatusBadge value={ps.status} /> : <span className="text-xs text-[#3d5a78]">—</span>}
                   </DataGridCell>
                 </DataGridRowCompact>

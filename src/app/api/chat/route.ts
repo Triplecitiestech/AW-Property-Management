@@ -62,7 +62,8 @@ export async function POST(req: NextRequest) {
     if (action.type !== 'reply' && action.type !== 'error') {
       const result = await executeAiAction(action, user.id, 'web', message, appUrl)
       if (!result.success) {
-        reply = buildErrorMessage(action.reply, result.detail ?? 'Unknown error')
+        const errMsg = result.error?.message ?? result.detail ?? 'Unknown error'
+        reply = buildErrorMessage(action.reply, errMsg)
       } else if (result.workOrderId) {
         workOrderId = result.workOrderId
         const a = action as Record<string, unknown>

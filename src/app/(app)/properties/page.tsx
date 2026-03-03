@@ -12,8 +12,8 @@ import {
 const COLUMNS: Column[] = [
   { label: 'Property',     width: '1fr',   align: 'left' },
   { label: 'Open Tickets', width: '110px', align: 'center', hideBelow: 'md' },
-  { label: 'Occupancy',    width: '120px', align: 'center', hideBelow: 'sm' },
-  { label: 'Condition',    width: '140px', align: 'center' },
+  { label: 'Occupancy',    width: '110px', align: 'center', hideBelow: 'sm' },
+  { label: 'Condition',    width: '160px', align: 'left' },
   { label: '',              width: '32px',  align: 'center' },
 ]
 
@@ -124,7 +124,7 @@ export default async function PropertiesPage({
                 <DataGridCell align="center" hideBelow="sm">
                   {ps ? <StatusBadge value={ps.occupancy} /> : <span className="text-xs text-[#3d5a78]">—</span>}
                 </DataGridCell>
-                <DataGridCell align="center">
+                <DataGridCell align="left">
                   {ps ? <StatusBadge value={ps.status} /> : <span className="text-xs text-[#3d5a78]">—</span>}
                 </DataGridCell>
                 <DataGridCell align="center">

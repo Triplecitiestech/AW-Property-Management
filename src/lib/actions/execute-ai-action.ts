@@ -1,13 +1,23 @@
 /**
  * Shared AI action executor used by both the web chat route and the SMS webhook.
  * Handles create_work_order, create_stay, update_status, create_contact.
- * Returns a human-readable result string.
+ * Returns a MutationResult with verified persistedId and canonicalUrl.
  */
 
 import { createServiceClient } from '@/lib/supabase/server'
 import { AiSmsAction } from '@/lib/sms/ai-handler'
 import { sendNewTicketEmail, sendContactTicketEmail } from '@/lib/email/resend'
 import { buildOutboundMessage } from '@/lib/work-order-message'
+
+/** Every AI-triggered mutation returns this contract. */
+export interface MutationResult {
+  success: boolean
+  persistedId: string | null
+  canonicalUrl: string | null
+  detail: string | null
+  workOrderId?: string          // backward compat alias for persistedId on WOs
+  error: { code: string; message: string } | null
+}
 
 // Map AI categories to valid DB ticket_category enum values
 const CATEGORY_MAP: Record<string, string> = {
@@ -39,14 +49,65 @@ function formatTimestamp(d = new Date()): string {
   })
 }
 
+/** Log every AI mutation attempt for observability. Fire-and-forget. */
+function logMutation(
+  svc: ReturnType<typeof createServiceClient>,
+  params: {
+    userId: string; channel: string; originalPrompt: string;
+    parsedIntent: string; mutationPayload: unknown;
+    result: MutationResult; durationMs: number;
+  }
+) {
+  svc.from('ai_mutation_log').insert({
+    user_id: params.userId,
+    channel: params.channel === 'sms' ? 'sms' : 'web_chat',
+    original_prompt: params.originalPrompt,
+    parsed_intent: params.parsedIntent,
+    mutation_payload: params.mutationPayload,
+    result_payload: params.result.success ? { persistedId: params.result.persistedId, detail: params.result.detail } : null,
+    error_payload: params.result.error ? params.result.error : null,
+    success: params.result.success,
+    persisted_id: params.result.persistedId,
+    canonical_url: params.result.canonicalUrl,
+    duration_ms: params.durationMs,
+  }).then(undefined, () => { /* best-effort */ })
+}
+
 export async function executeAiAction(
   action: AiSmsAction,
   ownerId: string,
   source: 'web' | 'sms',
   originalMessage: string,
   appUrl: string,
-): Promise<{ success: boolean; detail?: string; workOrderId?: string }> {
+): Promise<MutationResult> {
   const svc = createServiceClient()
+  const startTime = Date.now()
+  const result = await executeAiActionInner(svc, action, ownerId, source, originalMessage, appUrl)
+
+  // Log every mutation attempt (fire-and-forget)
+  if (action.type !== 'reply' && action.type !== 'error') {
+    logMutation(svc, {
+      userId: ownerId,
+      channel: source,
+      originalPrompt: originalMessage,
+      parsedIntent: action.type,
+      mutationPayload: action,
+      result,
+      durationMs: Date.now() - startTime,
+    })
+  }
+
+  return result
+}
+
+async function executeAiActionInner(
+  svc: ReturnType<typeof createServiceClient>,
+  action: AiSmsAction,
+  ownerId: string,
+  source: 'web' | 'sms',
+  originalMessage: string,
+  appUrl: string,
+): Promise<MutationResult> {
 
   if (action.type === 'create_work_order') {
     const { data: properties } = await svc
@@ -57,7 +118,7 @@ export async function executeAiAction(
       .limit(1)
 
     if (!properties?.length) {
-      return { success: false, detail: `Property not found: ${action.property_name}` }
+      return { success: false, persistedId: null, canonicalUrl: null, detail: null, error: { code: 'PROPERTY_NOT_FOUND', message: `Property not found: ${action.property_name}` } }
     }
     const property = properties[0]
     const category = mapCategory(action.category)
@@ -145,7 +206,18 @@ export async function executeAiAction(
       .single()
 
     if (error || !ticket) {
-      return { success: false, detail: error?.message ?? 'Insert failed' }
+      return { success: false, persistedId: null, canonicalUrl: null, detail: null, error: { code: 'INSERT_FAILED', message: error?.message ?? 'Insert returned no data' } }
+    }
+
+    // Post-write verification read-back
+    const { data: verified } = await svc
+      .from('service_requests')
+      .select('id, work_order_number, title')
+      .eq('id', ticket.id)
+      .single()
+
+    if (!verified) {
+      return { success: false, persistedId: ticket.id, canonicalUrl: null, detail: null, error: { code: 'VERIFY_FAILED', message: 'Work order was created but could not be confirmed' } }
     }
 
     // Auto-update property status based on work order category
@@ -204,11 +276,15 @@ export async function executeAiAction(
       }).catch(() => {})
     }
 
-    const woNum = ticket.work_order_number ? `WO-${String(ticket.work_order_number).padStart(4, '0')}` : ''
+    const woNum = verified.work_order_number ? `WO-${String(verified.work_order_number).padStart(4, '0')}` : ''
+    const canonicalUrl = `/work-orders/${verified.id}`
     return {
       success: true,
-      workOrderId: ticket.id,
+      persistedId: verified.id,
+      canonicalUrl,
+      workOrderId: verified.id,
       detail: `${woNum} ${action.title} — ${property.name}`.trim(),
+      error: null,
     }
   }
 
@@ -221,7 +297,7 @@ export async function executeAiAction(
       .limit(1)
 
     if (!properties?.length) {
-      return { success: false, detail: `Property not found: ${action.property_name}` }
+      return { success: false, persistedId: null, canonicalUrl: null, detail: null, error: { code: 'PROPERTY_NOT_FOUND', message: `Property not found: ${action.property_name}` } }
     }
     const property = properties[0]
 
@@ -238,11 +314,17 @@ export async function executeAiAction(
       .single()
 
     if (error || !stay) {
-      return { success: false, detail: error?.message ?? 'Insert failed' }
+      return { success: false, persistedId: null, canonicalUrl: null, detail: null, error: { code: 'INSERT_FAILED', message: error?.message ?? 'Insert failed' } }
     }
 
     const guestLink = `${appUrl}/guest/${stay.guest_link_token}`
-    return { success: true, detail: `${action.guest_name} at ${property.name} (${action.start_date}→${action.end_date})\nGuest link: ${guestLink}` }
+    return {
+      success: true,
+      persistedId: stay.id,
+      canonicalUrl: `/stays/${stay.id}`,
+      detail: `${action.guest_name} at ${property.name} (${action.start_date}→${action.end_date})\nGuest link: ${guestLink}`,
+      error: null,
+    }
   }
 
   if (action.type === 'update_status') {
@@ -254,7 +336,7 @@ export async function executeAiAction(
       .limit(1)
 
     if (!properties?.length) {
-      return { success: false, detail: `Property not found: ${action.property_name}` }
+      return { success: false, persistedId: null, canonicalUrl: null, detail: null, error: { code: 'PROPERTY_NOT_FOUND', message: `Property not found: ${action.property_name}` } }
     }
     const property = properties[0]
 
@@ -262,8 +344,8 @@ export async function executeAiAction(
       .from('property_status')
       .upsert({ property_id: property.id, status: action.status, updated_at: new Date().toISOString() }, { onConflict: 'property_id' })
 
-    if (error) return { success: false, detail: error.message }
-    return { success: true, detail: `${property.name} → ${action.status.replace(/_/g, ' ')}` }
+    if (error) return { success: false, persistedId: null, canonicalUrl: null, detail: null, error: { code: 'UPSERT_FAILED', message: error.message } }
+    return { success: true, persistedId: property.id, canonicalUrl: `/properties/${property.id}`, detail: `${property.name} → ${action.status.replace(/_/g, ' ')}`, error: null }
   }
 
   if (action.type === 'close_work_order') {
@@ -289,7 +371,7 @@ export async function executeAiAction(
     if (closePropertyId) closeQuery = closeQuery.eq('property_id', closePropertyId)
 
     const { data: tickets } = await closeQuery
-    if (!tickets?.length) return { success: false, detail: `No open work order found matching: "${action.work_order_title}"` }
+    if (!tickets?.length) return { success: false, persistedId: null, canonicalUrl: null, detail: null, error: { code: 'WO_NOT_FOUND', message: `No open work order found matching: "${action.work_order_title}"` } }
     const ticket = tickets[0]
 
     await svc.from('service_requests').update({ status: 'closed' }).eq('id', ticket.id)
@@ -303,7 +385,7 @@ export async function executeAiAction(
       is_ai_action: true,
     }).then(undefined, () => {})
 
-    return { success: true, detail: `Closed: ${ticket.title}` }
+    return { success: true, persistedId: ticket.id, canonicalUrl: `/work-orders/${ticket.id}`, detail: `Closed: ${ticket.title}`, error: null }
   }
 
   if (action.type === 'update_work_order') {
@@ -329,14 +411,14 @@ export async function executeAiAction(
     if (propertyId) ticketQuery = ticketQuery.eq('property_id', propertyId)
 
     const { data: tickets } = await ticketQuery
-    if (!tickets?.length) return { success: false, detail: `No work order found matching: "${action.work_order_title}"` }
+    if (!tickets?.length) return { success: false, persistedId: null, canonicalUrl: null, detail: null, error: { code: 'WO_NOT_FOUND', message: `No work order found matching: "${action.work_order_title}"` } }
     const ticket = tickets[0]
 
     const updates: Record<string, string> = {}
     if (action.new_status) updates.status = action.new_status
     if (action.new_priority) updates.priority = action.new_priority
     if (action.due_date) updates.due_date = action.due_date
-    if (!Object.keys(updates).length) return { success: false, detail: 'No changes specified.' }
+    if (!Object.keys(updates).length) return { success: false, persistedId: null, canonicalUrl: null, detail: null, error: { code: 'NO_CHANGES', message: 'No changes specified.' } }
 
     await svc.from('service_requests').update(updates).eq('id', ticket.id)
     await svc.from('audit_log').insert({
@@ -354,7 +436,7 @@ export async function executeAiAction(
       action.new_priority && `priority → ${action.new_priority}`,
       action.due_date && `due → ${action.due_date}`,
     ].filter(Boolean).join(', ')
-    return { success: true, detail: `${ticket.title}: ${changes}` }
+    return { success: true, persistedId: ticket.id, canonicalUrl: `/work-orders/${ticket.id}`, detail: `${ticket.title}: ${changes}`, error: null }
   }
 
   if (action.type === 'repair_work_order') {
@@ -412,14 +494,17 @@ export async function executeAiAction(
 
     if (!createResult.success) {
       const removedMsg = removedCount > 0 ? `Removed "${removedTitle}". ` : ''
-      return { success: false, detail: `${removedMsg}But failed to create correct WO: ${createResult.detail}` }
+      return { success: false, persistedId: null, canonicalUrl: null, detail: `${removedMsg}But failed to create correct WO: ${createResult.detail}`, error: createResult.error }
     }
 
     const removedMsg = removedCount > 0 ? `Removed: "${removedTitle}" | ` : ''
     return {
       success: true,
+      persistedId: createResult.persistedId,
+      canonicalUrl: createResult.canonicalUrl,
       workOrderId: createResult.workOrderId,
       detail: `${removedMsg}Created: ${createResult.detail}`,
+      error: null,
     }
   }
 
@@ -432,11 +517,11 @@ export async function executeAiAction(
       .limit(1)
 
     if (!properties?.length) {
-      return { success: false, detail: `Property not found: ${action.property_name}` }
+      return { success: false, persistedId: null, canonicalUrl: null, detail: null, error: { code: 'PROPERTY_NOT_FOUND', message: `Property not found: ${action.property_name}` } }
     }
     const property = properties[0]
 
-    const { error } = await svc
+    const { data: contact, error } = await svc
       .from('property_contacts')
       .insert({
         property_id: property.id,
@@ -447,10 +532,12 @@ export async function executeAiAction(
         notes: action.notes ?? null,
         is_primary: false,
       })
+      .select('id')
+      .single()
 
-    if (error) return { success: false, detail: error.message }
-    return { success: true, detail: `${action.name} (${action.role}) added to ${property.name}` }
+    if (error || !contact) return { success: false, persistedId: null, canonicalUrl: null, detail: null, error: { code: 'INSERT_FAILED', message: error?.message ?? 'Insert failed' } }
+    return { success: true, persistedId: contact.id, canonicalUrl: `/contacts/${contact.id}`, detail: `${action.name} (${action.role}) added to ${property.name}`, error: null }
   }
 
-  return { success: true }
+  return { success: true, persistedId: null, canonicalUrl: null, detail: null, error: null }
 }

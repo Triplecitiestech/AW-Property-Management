@@ -1041,6 +1041,34 @@ CREATE POLICY "invitations_select" ON invitations FOR SELECT TO authenticated
   );
 
 -- ========================
+-- AI Mutation Log
+-- ========================
+-- Observability table for every AI-triggered mutation.
+-- Makes silent failures impossible — every mutation attempt has a paper trail.
+CREATE TABLE IF NOT EXISTS ai_mutation_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  correlation_id UUID NOT NULL DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id),
+  channel TEXT NOT NULL,                -- 'sms' | 'web_chat'
+  original_prompt TEXT NOT NULL,        -- user's raw message
+  parsed_intent TEXT NOT NULL,          -- action type (create_work_order, etc.)
+  mutation_payload JSONB NOT NULL,      -- what was sent to the DB
+  result_payload JSONB,                 -- what came back from the DB
+  error_payload JSONB,                  -- error details if failed
+  success BOOLEAN NOT NULL,
+  persisted_id TEXT,                    -- ID of created resource
+  canonical_url TEXT,                   -- generated URL
+  duration_ms INTEGER,                  -- time from intent to result
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE ai_mutation_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "ai_mutation_log_service_only" ON ai_mutation_log;
+CREATE POLICY "ai_mutation_log_service_only" ON ai_mutation_log
+  FOR ALL TO authenticated
+  USING (user_id = auth.uid());
+
+-- ========================
 -- RPC: list_public_tables
 -- ========================
 -- Returns the names of all tables in the public schema.

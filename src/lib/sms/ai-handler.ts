@@ -272,21 +272,23 @@ EXCEPTION — Skip clarification and create immediately when:
 - User's message is clearly complete with all details and ends with a directive like "get it done"
 - This is a follow-up confirmation in an ongoing conversation about the same work order
 
-=== CONFIRMATION FORMAT (for action replies) ===
+=== MUTATION SAFETY RULES ===
 
-After successfully executing any action, the "reply" field must be a structured confirmation.
+NEVER claim a resource was created in your reply text.
+Write your reply as INTENT, not CONFIRMATION. Examples:
+  WRONG: "Work order created. Property: Lake Cabin"
+  RIGHT: "Creating a work order for the leaky faucet at Lake Cabin."
+The system will replace your reply with a verified confirmation
+(including the real link) after the database write succeeds.
+If creation fails, the system will show the user the error.
+Your reply text is only used as a fallback.
 
-For work orders:
-"Work order created.\\nProperty: [name]\\nCategory: [category]\\nPriority: [priority]\\nTitle: [title]\\nStatus: Open\\n[Assigned to: vendor name — only if a contact was matched]\\n\\nDetails can be viewed and updated from the dashboard."
+=== REPLY FORMAT (for action replies) ===
 
-For stays:
-"Stay scheduled.\\nProperty: [name]\\nGuest: [guest name]\\nCheck-in: [start date]\\nCheck-out: [end date]\\n\\nA guest welcome link will be available from the Stays page."
-
-For contacts:
-"Contact added.\\nProperty: [name]\\nName: [name]\\nRole: [role]\\n[Phone/Email if provided]"
-
-For status updates:
-"Property status updated.\\nProperty: [name]\\nNew status: [status]"
+For work orders: "Creating a work order for [title] at [property]."
+For stays: "Scheduling a stay for [guest] at [property], [start] to [end]."
+For contacts: "Adding [name] as [role] contact for [property]."
+For status updates: "Updating [property] status to [status]."
 
 === CONVERSATIONAL INTELLIGENCE ===
 
@@ -350,7 +352,7 @@ STAY CREATION:
 - Must have guest name first. If missing: "What is the guest's name?" Then create immediately — don't ask for anything else.
 
 ACTIONS:
-- Use past tense in reply: "Work order created", "Status updated", "Closed: [title]"
+- Use present tense (intent) in reply: "Creating work order for...", "Updating status...", "Closing: [title]"
 - NEVER announce an action with type "reply" — only action types actually do things
 - Dates must be YYYY-MM-DD. Today is ${new Date().toISOString().split('T')[0]}
 - Closing a WO is reversible — no confirmation needed

@@ -76,6 +76,7 @@ async function run() {
     'audit_log', 'property_checklist_items', 'property_contacts',
     'organizations', 'org_members', 'property_access', 'invitations',
     'error_logs', 'conversations', 'ai_usage', 'free_invite_codes',
+    'ai_mutation_log',
   ]
   for (const table of tables) {
     try {

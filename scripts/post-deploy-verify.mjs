@@ -248,27 +248,27 @@ async function checkRuntimeEnv() {
     }
 
     const data = await res.json()
-    if (data.ok === true) {
-      pass(`All runtime env vars present on ${data.environment}`)
-      return
-    }
 
-    // Report which keys are missing, with system attribution
-    const missingKeys = Object.entries(data.present || {})
+    // Check critical vars (present field)
+    const missingCritical = Object.entries(data.present || {})
       .filter(([, v]) => v === false)
       .map(([k]) => k)
 
-    if (missingKeys.length > 0) {
-      const detail = missingKeys.map((k) => {
-        if (k.startsWith('NEXT_PUBLIC_')) return `${k} (set in: Vercel project env vars, scope: Production — rebuild required)`
-        if (k.startsWith('STRIPE_')) return `${k} (set in: Vercel project env vars, scope: Production)`
-        if (k.startsWith('TWILIO_')) return `${k} (set in: Vercel project env vars, scope: Production)`
-        if (k.startsWith('RESEND_') || k === 'NOTIFY_EMAIL') return `${k} (set in: Vercel project env vars, scope: Production)`
-        if (k === 'SUPABASE_SERVICE_ROLE_KEY') return `${k} (set in: Vercel project env vars, scope: Production)`
-        if (k === 'ANTHROPIC_API_KEY') return `${k} (set in: Vercel project env vars, scope: Production)`
-        return `${k} (set in: Vercel project env vars)`
-      })
-      fail('Runtime env vars missing on Vercel', `\n      ${detail.join('\n      ')}`)
+    if (missingCritical.length > 0) {
+      const detail = missingCritical.map((k) => `${k} (set in: Vercel project env vars, scope: Production)`)
+      fail('Critical runtime env vars missing on Vercel', `\n      ${detail.join('\n      ')}`)
+    } else {
+      pass(`All critical runtime env vars present on ${data.environment}`)
+    }
+
+    // Check optional vars (optional field) — warn only, do not fail
+    const missingOptional = Object.entries(data.optional || {})
+      .filter(([, v]) => v === false)
+      .map(([k]) => k)
+
+    if (missingOptional.length > 0) {
+      console.log(`  [WARN] Optional env vars not set: ${missingOptional.join(', ')}`)
+      console.log(`         Billing features may not work. Set in: Vercel project env vars (Production scope)`)
     }
   } catch (err) {
     fail('Runtime envcheck', err.message)

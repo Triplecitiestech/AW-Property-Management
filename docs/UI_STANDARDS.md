@@ -1,6 +1,6 @@
 # UI Standards — Smart Sumai Design System
 
-Last updated: 2026-03-03
+Last updated: 2026-03-04
 
 This document defines the visual and structural standards for all list pages,
 badges, alignment, spacing, and typography across the Smart Sumai platform.
@@ -11,6 +11,7 @@ All current and future pages must follow these rules.
 ## 1. Table System
 
 All list pages use the **DataGrid** component (`src/components/ui/DataGrid.tsx`).
+No custom table layouts, HTML tables, or one-off flexbox lists are allowed.
 
 ### Components
 
@@ -18,6 +19,7 @@ All list pages use the **DataGrid** component (`src/components/ui/DataGrid.tsx`)
 |-----------|-------|
 | `DataGridHeader` | Column headers for full pages |
 | `DataGridRow` | Clickable row with `<Link>` wrapper |
+| `DataGridRowStatic` | Non-link row for admin/action tables |
 | `DataGridCell` | Individual cell with alignment and responsive hiding |
 | `DataGridHeaderCompact` | Headers inside dashboard cards |
 | `DataGridRowCompact` | Rows inside dashboard cards (subtler styling) |
@@ -29,9 +31,9 @@ Every page defines a `COLUMNS` array using the `Column` interface:
 ```typescript
 interface Column {
   label: string        // Header text (empty string for icon-only columns)
-  width: string        // CSS grid track: '1fr', '110px', 'minmax(100px, 1fr)'
-  align?: 'left' | 'center' | 'right'
-  hideBelow?: 'sm' | 'md' | 'lg'  // Responsive breakpoint to hide
+  width: string        // CSS grid track: '1fr', '120px', '1.6fr'
+  align?: 'left' | 'center' | 'right'  // Default: 'center'
+  hideBelow?: 'sm' | 'md' | 'lg'       // Responsive breakpoint to hide
 }
 ```
 
@@ -45,16 +47,27 @@ padding, and alignment across the entire app.
 
 ## 2. Alignment Rules
 
-These rules are absolute and apply to every column on every page.
+**All cell content is center-aligned. No exceptions.**
 
-| Column Type | Alignment | Examples |
-|-------------|-----------|---------|
-| Text | `left` | Names, titles, addresses, phone numbers, dates |
-| Numeric | `right` | Ticket counts, totals, scores |
-| Badge (status/priority/role/condition) | `left` | StatusBadge components |
-| Icon / Arrow | `center` | Chevron arrows, action icons |
+| Rule | Value |
+|------|-------|
+| Cell alignment | `display: flex; align-items: center; justify-content: center; text-align: center` |
+| Header alignment | `text-align: center` |
+| Badge alignment | Centered (inherited from cell) |
 
-**Never center-align text or badges.** Center is only for icon-only columns.
+The DataGrid component enforces center alignment by default. All column definitions
+should use `align: 'center'`. Do not override with `align: 'left'` or `align: 'right'`.
+
+### Row Constraints
+
+| Property | Value |
+|----------|-------|
+| Row min-height | `56px` (full page) / `48px` (compact) |
+| Column gap | `gap-4` (16px) |
+| Cell padding | `px-1` per cell + `px-5` on row |
+
+Rows must not visually shift when badge length changes, property names vary,
+or titles wrap. The fixed grid + min-width badges prevent this.
 
 ---
 
@@ -64,15 +77,15 @@ Standard widths used across pages for consistency:
 
 | Width | Purpose | Examples |
 |-------|---------|---------|
-| `1fr` | Primary column (stretches) | Property name, contact name, title |
-| `72px` | Short ID / code | WO#, ticket number |
-| `100px` | Small count / compact badge | Open tickets (dashboard) |
-| `110px` | Standard badge | Occupancy, status, priority |
-| `120px` | Role badge | Contact role |
-| `140px` | Medium text | Phone numbers |
-| `160px` | Property name (secondary) | Property column on non-property pages |
+| `1.6fr` | Primary column (stretches) | Property name, contact name, title |
+| `1.2fr` | Secondary stretch column | Property column on non-property pages |
+| `80px` | Short ID / code | WO#, ticket number |
+| `100px` | Small count / compact badge | Open tickets (dashboard), actions |
+| `120px` | Standard badge | Occupancy, status, priority, role |
+| `140px` | Medium text | Phone numbers, last active |
+| `160px` | Wider badge | Property condition |
 | `200px` | Long text | Date ranges |
-| `32px` | Arrow / icon column | Chevron arrow |
+| `48px` | Arrow / icon column | Chevron arrow |
 
 ---
 
@@ -82,6 +95,18 @@ Standard widths used across pages for consistency:
 
 Use `StatusBadge` (`src/components/ui/StatusBadge.tsx`) for all badges.
 Never write inline badge styles.
+
+### Badge Sizing
+
+All badges have a minimum width of `72px` and centered content. This prevents
+column alignment shifts when badge text varies in length (e.g., "Open" vs "In Progress").
+
+```css
+.badge {
+  @apply inline-flex items-center justify-center min-w-[72px] px-2.5 py-0.5
+         rounded-full text-xs font-semibold tracking-wide whitespace-nowrap;
+}
+```
 
 ### Variants
 
@@ -136,7 +161,10 @@ Never write inline badge styles.
 | Context | Value |
 |---------|-------|
 | Full page row padding | `px-5 py-3.5` |
+| Full page row min-height | `min-h-[56px]` |
 | Dashboard compact row padding | `px-5 py-2.5` |
+| Dashboard compact row min-height | `min-h-[48px]` |
+| Column gap (all grids) | `gap-4` |
 | Gap between full page rows | `space-y-1.5` |
 | Dashboard compact rows | border-bottom separator |
 
@@ -204,15 +232,16 @@ All clickable rows use `group-hover:text-violet-300` on primary text.
 
 When screen width shrinks, columns hide in this order (first hidden = least important):
 
-1. `hideBelow: 'md'` — Property name (on non-property pages), Open Tickets
-2. `hideBelow: 'sm'` — Dates, Phone, Occupancy
+1. `hideBelow: 'lg'` — Billing, Messages, Actions (admin only)
+2. `hideBelow: 'md'` — Property name (on non-property pages), Open Tickets, AI Tokens
+3. `hideBelow: 'sm'` — Dates, Phone, Occupancy
 
 ### Always Visible
 
 These columns must never have `hideBelow`:
-- Primary column (1fr) — the row's identity
+- Primary column (1.6fr) — the row's identity
 - Condition / Status — critical at-a-glance info
-- Arrow column — navigation affordance
+- Arrow / action column — navigation affordance
 
 ---
 
@@ -257,3 +286,5 @@ Every list page follows this structure:
   </div>
 </div>
 ```
+
+For non-link rows (admin), use `DataGridRowStatic` instead of `DataGridRow`.

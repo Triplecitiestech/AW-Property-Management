@@ -10,11 +10,11 @@ import {
 } from '@/components/ui/DataGrid'
 
 const COLUMNS: Column[] = [
-  { label: 'Property',     width: '1fr',   align: 'left' },
-  { label: 'Open Tickets', width: '110px', align: 'center', hideBelow: 'md' },
-  { label: 'Occupancy',    width: '110px', align: 'center', hideBelow: 'sm' },
-  { label: 'Condition',    width: '160px', align: 'left' },
-  { label: '',              width: '32px',  align: 'center' },
+  { label: 'Property',     width: '1.6fr', align: 'center' },
+  { label: 'Open Tickets', width: '120px', align: 'center', hideBelow: 'md' },
+  { label: 'Occupancy',    width: '120px', align: 'center', hideBelow: 'sm' },
+  { label: 'Condition',    width: '160px', align: 'center' },
+  { label: '',              width: '48px',  align: 'center' },
 ]
 
 export default async function PropertiesPage({
@@ -112,20 +112,20 @@ export default async function PropertiesPage({
                     </div>
                   </div>
                 </DataGridCell>
-                <DataGridCell align="right" hideBelow="md">
+                <DataGridCell hideBelow="md">
                   {ticketCount > 0 ? (
                     <StatusBadge value={String(ticketCount)} variant="custom" className="bg-rose-500/20 text-rose-300 border border-rose-500/30" />
                   ) : (
                     <span className="text-xs text-[#3d5a78]">0</span>
                   )}
                 </DataGridCell>
-                <DataGridCell align="left" hideBelow="sm">
+                <DataGridCell hideBelow="sm">
                   {ps ? <StatusBadge value={ps.occupancy} /> : <span className="text-xs text-[#3d5a78]">—</span>}
                 </DataGridCell>
-                <DataGridCell align="left">
+                <DataGridCell>
                   {ps ? <StatusBadge value={ps.status} /> : <span className="text-xs text-[#3d5a78]">—</span>}
                 </DataGridCell>
-                <DataGridCell align="center">
+                <DataGridCell>
                   <svg className="w-4 h-4 text-[#4a6080] group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>

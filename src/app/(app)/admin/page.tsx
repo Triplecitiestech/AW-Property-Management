@@ -8,6 +8,12 @@ import BillingExemptButton from '@/components/admin/BillingExemptButton'
 import FeatureRequestAdmin from '@/components/admin/FeatureRequestAdmin'
 import FreeInviteManager from '@/components/admin/FreeInviteManager'
 import LocalDate from '@/components/LocalDate'
+import {
+  DataGridHeader,
+  DataGridRowStatic,
+  DataGridCell,
+  type Column,
+} from '@/components/ui/DataGrid'
 
 export default async function AdminPage() {
   // Server-side RBAC: only the effective user (considering impersonation) can access admin
@@ -133,30 +139,36 @@ export default async function AdminPage() {
         )
       })()}
 
-      {/* Users Table */}
-      <div className="card">
-        <div className="px-5 py-4 border-b border-[#1e2d42] flex items-center justify-between">
-          <h2 className="font-semibold text-white">Users</h2>
-          <p className="text-xs text-[#6480a0]">Sorted by activity</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[#1e2d42]">
-                {['User', 'Billing', 'Properties', 'AI Tokens', 'Messages', 'Actions', 'Last Active', ''].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs text-[#6480a0] font-medium whitespace-nowrap">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#1e2d42]">
+      {/* Users Grid */}
+      {(() => {
+        const ADMIN_COLS: Column[] = [
+          { label: 'User',        width: '1.6fr', align: 'center' },
+          { label: 'Billing',     width: '120px', align: 'center', hideBelow: 'lg' },
+          { label: 'Properties',  width: '100px', align: 'center', hideBelow: 'md' },
+          { label: 'AI Tokens',   width: '120px', align: 'center', hideBelow: 'md' },
+          { label: 'Messages',    width: '100px', align: 'center', hideBelow: 'lg' },
+          { label: 'Actions',     width: '100px', align: 'center', hideBelow: 'lg' },
+          { label: 'Last Active', width: '140px', align: 'center', hideBelow: 'md' },
+          { label: '',             width: '100px', align: 'center' },
+        ]
+        return (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-semibold text-white">Users</h2>
+              <p className="text-xs text-[#6480a0]">Sorted by activity</p>
+            </div>
+            <DataGridHeader columns={ADMIN_COLS} />
+            <div className="space-y-1.5">
               {userStats.map(u => (
-                <tr key={u.id} className="hover:bg-[#1a2436] transition-colors">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-white">{u.full_name || '—'}</p>
-                    <p className="text-xs text-[#6480a0]">{u.email}</p>
-                    {u.is_super_admin && <span className="text-[10px] text-violet-400">super admin</span>}
-                  </td>
-                  <td className="px-4 py-3">
+                <DataGridRowStatic key={u.id} columns={ADMIN_COLS}>
+                  <DataGridCell>
+                    <div className="text-center">
+                      <p className="font-medium text-white">{u.full_name || '—'}</p>
+                      <p className="text-xs text-[#6480a0]">{u.email}</p>
+                      {u.is_super_admin && <span className="text-[10px] text-violet-400">super admin</span>}
+                    </div>
+                  </DataGridCell>
+                  <DataGridCell hideBelow="lg">
                     {!u.is_super_admin && (
                       <BillingExemptButton
                         userId={u.id}
@@ -165,28 +177,40 @@ export default async function AdminPage() {
                         reason={u.billing_exempt_reason}
                       />
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-[#94a3b8]">{u.propCount}</td>
-                  <td className="px-4 py-3 text-[#94a3b8]">{(u.aiIn + u.aiOut).toLocaleString()}</td>
-                  <td className="px-4 py-3 text-[#94a3b8]">{u.messageCount}</td>
-                  <td className="px-4 py-3 text-[#94a3b8]">{u.activityCount}</td>
-                  <td className="px-4 py-3 text-xs text-[#6480a0] whitespace-nowrap">
-                    {u.lastActive ? <LocalDate iso={u.lastActive} /> : 'Never'}
-                  </td>
-                  <td className="px-4 py-3 flex items-center gap-3">
-                    {!u.is_super_admin && (
-                      <>
-                        <ImpersonateButton userId={u.id} userName={u.full_name || u.email || ''} />
-                        <DeleteUserButton userId={u.id} userName={u.full_name || u.email || ''} />
-                      </>
-                    )}
-                  </td>
-                </tr>
+                  </DataGridCell>
+                  <DataGridCell hideBelow="md">
+                    <span className="text-[#94a3b8]">{u.propCount}</span>
+                  </DataGridCell>
+                  <DataGridCell hideBelow="md">
+                    <span className="text-[#94a3b8]">{(u.aiIn + u.aiOut).toLocaleString()}</span>
+                  </DataGridCell>
+                  <DataGridCell hideBelow="lg">
+                    <span className="text-[#94a3b8]">{u.messageCount}</span>
+                  </DataGridCell>
+                  <DataGridCell hideBelow="lg">
+                    <span className="text-[#94a3b8]">{u.activityCount}</span>
+                  </DataGridCell>
+                  <DataGridCell hideBelow="md">
+                    <span className="text-xs text-[#6480a0] whitespace-nowrap">
+                      {u.lastActive ? <LocalDate iso={u.lastActive} /> : 'Never'}
+                    </span>
+                  </DataGridCell>
+                  <DataGridCell>
+                    <div className="flex items-center justify-center gap-3">
+                      {!u.is_super_admin && (
+                        <>
+                          <ImpersonateButton userId={u.id} userName={u.full_name || u.email || ''} />
+                          <DeleteUserButton userId={u.id} userName={u.full_name || u.email || ''} />
+                        </>
+                      )}
+                    </div>
+                  </DataGridCell>
+                </DataGridRowStatic>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Free Invite Codes */}
       <div className="card p-5">

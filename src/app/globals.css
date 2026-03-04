@@ -58,7 +58,7 @@
 
   /* ── Badges ───────────────────────────────────────── */
   .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide whitespace-nowrap;
+    @apply inline-flex items-center justify-center min-w-[72px] px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide whitespace-nowrap;
   }
 
   /* Priority */

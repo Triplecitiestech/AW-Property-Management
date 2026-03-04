@@ -9,11 +9,11 @@ import {
 } from '@/components/ui/DataGrid'
 
 const COLUMNS: Column[] = [
-  { label: 'Guest',    width: '1fr',   align: 'left' },
-  { label: 'Property', width: '160px', align: 'left',   hideBelow: 'md' },
-  { label: 'Dates',    width: '200px', align: 'left',   hideBelow: 'sm' },
-  { label: 'Status',   width: '110px', align: 'left' },
-  { label: '',          width: '32px',  align: 'center' },
+  { label: 'Guest',    width: '1.6fr', align: 'center' },
+  { label: 'Property', width: '1.2fr', align: 'center', hideBelow: 'md' },
+  { label: 'Dates',    width: '200px', align: 'center', hideBelow: 'sm' },
+  { label: 'Status',   width: '120px', align: 'center' },
+  { label: '',          width: '48px',  align: 'center' },
 ]
 
 export default async function StaysPage({
@@ -124,10 +124,10 @@ export default async function StaysPage({
                     <span className="text-[#3d5a78] ml-1">({nights}n)</span>
                   </span>
                 </DataGridCell>
-                <DataGridCell align="left">
+                <DataGridCell>
                   <span className={`badge ${cls}`}>{label}</span>
                 </DataGridCell>
-                <DataGridCell align="center">
+                <DataGridCell>
                   <svg className="w-4 h-4 text-[#4a6080] group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>

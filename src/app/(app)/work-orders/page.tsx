@@ -14,12 +14,12 @@ function woLabel(num: number | null) {
 }
 
 const COLUMNS: Column[] = [
-  { label: 'WO#',      width: '72px',  align: 'left' },
-  { label: 'Title',    width: '1fr',   align: 'left' },
-  { label: 'Property', width: '160px', align: 'left',   hideBelow: 'md' },
-  { label: 'Priority', width: '110px', align: 'left' },
-  { label: 'Status',   width: '120px', align: 'left' },
-  { label: '',          width: '32px',  align: 'center' },
+  { label: 'WO#',      width: '80px',  align: 'center' },
+  { label: 'Title',    width: '1.6fr', align: 'center' },
+  { label: 'Property', width: '1.2fr', align: 'center', hideBelow: 'md' },
+  { label: 'Priority', width: '120px', align: 'center' },
+  { label: 'Status',   width: '120px', align: 'center' },
+  { label: '',          width: '48px',  align: 'center' },
 ]
 
 export default async function WorkOrdersPage({
@@ -132,13 +132,13 @@ export default async function WorkOrdersPage({
                 <DataGridCell hideBelow="md">
                   <span className="text-xs text-[#6480a0] truncate">{propName}</span>
                 </DataGridCell>
-                <DataGridCell align="left">
+                <DataGridCell>
                   <StatusBadge value={wo.priority} variant="priority" />
                 </DataGridCell>
-                <DataGridCell align="left">
+                <DataGridCell>
                   <StatusBadge value={wo.status} />
                 </DataGridCell>
-                <DataGridCell align="center">
+                <DataGridCell>
                   <svg className="w-4 h-4 text-[#4a6080] group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>

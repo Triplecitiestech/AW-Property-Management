@@ -26,14 +26,14 @@ function StatCard({ label, value, sub, color }: { label: string; value: number |
 /* ─── Column definitions ─────────────────────────────────── */
 
 const PROP_COLS: Column[] = [
-  { label: 'Property',     width: '1fr',   align: 'center' },
+  { label: 'Property',     width: '1fr',   align: 'left' },
   { label: 'Open Tickets', width: '100px', align: 'center', hideBelow: 'sm' },
   { label: 'Occupancy',    width: '110px', align: 'center', hideBelow: 'sm' },
   { label: 'Condition',    width: '160px', align: 'center' },
 ]
 
 const WO_COLS: Column[] = [
-  { label: 'Title',    width: '1fr',   align: 'center' },
+  { label: 'Title',    width: '1fr',   align: 'left' },
   { label: 'Property', width: '140px', align: 'center', hideBelow: 'sm' },
   { label: 'Priority', width: '100px', align: 'center' },
   { label: 'Status',   width: '110px', align: 'center' },
@@ -110,7 +110,7 @@ export default async function DashboardPage() {
               const count = ticketMap[property.name] ?? 0
               return (
                 <DataGridRowCompact key={property.id} href={`/properties/${property.id}`} columns={PROP_COLS}>
-                  <DataGridCell>
+                  <DataGridCell align="left">
                     <span className="font-medium text-sm text-white group-hover:text-violet-300 transition-colors truncate">
                       {property.name}
                     </span>
@@ -150,7 +150,7 @@ export default async function DashboardPage() {
           <div>
             {openTickets?.slice(0, 6).map(ticket => (
               <DataGridRowCompact key={ticket.id} href={`/work-orders/${ticket.id}`} columns={WO_COLS}>
-                <DataGridCell>
+                <DataGridCell align="left">
                   <span className="font-medium text-sm text-white group-hover:text-violet-300 transition-colors truncate">
                     {ticket.title}
                   </span>

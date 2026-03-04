@@ -47,16 +47,28 @@ padding, and alignment across the entire app.
 
 ## 2. Alignment Rules
 
-**All cell content is center-aligned. No exceptions.**
+Three-zone alignment policy: primary entity flush-left, data columns centered, trailing action right-aligned.
 
-| Rule | Value |
-|------|-------|
-| Cell alignment | `display: flex; align-items: center; justify-content: center; text-align: center` |
-| Header alignment | `text-align: center` |
-| Badge alignment | Centered (inherited from cell) |
+| Zone | Alignment | Examples |
+|------|-----------|---------|
+| Primary entity column | `align: 'left'` | Property name + avatar, Guest name, Contact name, Work order title |
+| Data columns | `align: 'center'` (default) | Status badges, priority, occupancy, counts, dates, phone |
+| Trailing action/chevron column | `align: 'right'` | Chevron arrow, action buttons |
 
-The DataGrid component enforces center alignment by default. All column definitions
-should use `align: 'center'`. Do not override with `align: 'left'` or `align: 'right'`.
+### Column definitions
+
+- Set `align: 'left'` on the primary entity column (first or second column depending on page)
+- Data columns can omit `align` — defaults to `'center'`
+- Set `align: 'right'` on the trailing chevron/action column
+
+### DataGridCell align prop
+
+The `<DataGridCell>` component defaults to `align="center"`. You must explicitly pass:
+- `align="left"` on the primary entity cell (avatar + name)
+- `align="right"` on the trailing chevron/action cell
+- Data cells can omit `align` (center by default)
+
+Both the column definition `align` and the `<DataGridCell>` `align` prop must match.
 
 ### Row Constraints
 

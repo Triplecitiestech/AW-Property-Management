@@ -142,14 +142,14 @@ export default async function AdminPage() {
       {/* Users Grid */}
       {(() => {
         const ADMIN_COLS: Column[] = [
-          { label: 'User',        width: '1.6fr', align: 'center' },
+          { label: 'User',        width: '1.6fr', align: 'left' },
           { label: 'Billing',     width: '120px', align: 'center', hideBelow: 'lg' },
           { label: 'Properties',  width: '100px', align: 'center', hideBelow: 'md' },
           { label: 'AI Tokens',   width: '120px', align: 'center', hideBelow: 'md' },
           { label: 'Messages',    width: '100px', align: 'center', hideBelow: 'lg' },
           { label: 'Actions',     width: '100px', align: 'center', hideBelow: 'lg' },
           { label: 'Last Active', width: '140px', align: 'center', hideBelow: 'md' },
-          { label: '',             width: '100px', align: 'center' },
+          { label: '',             width: '100px', align: 'right' },
         ]
         return (
           <div>
@@ -161,8 +161,8 @@ export default async function AdminPage() {
             <div className="space-y-1.5">
               {userStats.map(u => (
                 <DataGridRowStatic key={u.id} columns={ADMIN_COLS}>
-                  <DataGridCell>
-                    <div className="text-center">
+                  <DataGridCell align="left">
+                    <div>
                       <p className="font-medium text-white">{u.full_name || '—'}</p>
                       <p className="text-xs text-[#6480a0]">{u.email}</p>
                       {u.is_super_admin && <span className="text-[10px] text-violet-400">super admin</span>}
@@ -195,8 +195,8 @@ export default async function AdminPage() {
                       {u.lastActive ? <LocalDate iso={u.lastActive} /> : 'Never'}
                     </span>
                   </DataGridCell>
-                  <DataGridCell>
-                    <div className="flex items-center justify-center gap-3">
+                  <DataGridCell align="right">
+                    <div className="flex items-center justify-end gap-3">
                       {!u.is_super_admin && (
                         <>
                           <ImpersonateButton userId={u.id} userName={u.full_name || u.email || ''} />

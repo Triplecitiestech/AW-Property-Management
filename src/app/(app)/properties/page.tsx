@@ -10,11 +10,11 @@ import {
 } from '@/components/ui/DataGrid'
 
 const COLUMNS: Column[] = [
-  { label: 'Property',     width: '1.6fr', align: 'center' },
+  { label: 'Property',     width: '1.6fr', align: 'left' },
   { label: 'Open Tickets', width: '120px', align: 'center', hideBelow: 'md' },
   { label: 'Occupancy',    width: '120px', align: 'center', hideBelow: 'sm' },
   { label: 'Condition',    width: '160px', align: 'center' },
-  { label: '',              width: '48px',  align: 'center' },
+  { label: '',              width: '48px',  align: 'right' },
 ]
 
 export default async function PropertiesPage({
@@ -95,7 +95,7 @@ export default async function PropertiesPage({
 
             return (
               <DataGridRow key={property.id} href={`/properties/${property.id}`} columns={COLUMNS}>
-                <DataGridCell>
+                <DataGridCell align="left">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-600 to-violet-400
                                     flex items-center justify-center flex-shrink-0 shadow-lg">
@@ -125,7 +125,7 @@ export default async function PropertiesPage({
                 <DataGridCell>
                   {ps ? <StatusBadge value={ps.status} /> : <span className="text-xs text-[#3d5a78]">—</span>}
                 </DataGridCell>
-                <DataGridCell>
+                <DataGridCell align="right">
                   <svg className="w-4 h-4 text-[#4a6080] group-hover:text-violet-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>

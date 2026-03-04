@@ -107,12 +107,15 @@ export function DataGridCell({ children, align = 'center', hideBelow, className 
   const justify =
     align === 'left' ? 'justify-start' :
     align === 'right' ? 'justify-end' : 'justify-center'
+  const textAlign =
+    align === 'left' ? 'text-left' :
+    align === 'right' ? 'text-right' : 'text-center'
   const hide =
     hideBelow === 'sm' ? 'hidden sm:flex' :
     hideBelow === 'md' ? 'hidden md:flex' :
     hideBelow === 'lg' ? 'hidden lg:flex' : 'flex'
   return (
-    <div className={`${hide} items-center ${justify} text-center min-w-0 px-1 ${className}`}>
+    <div className={`${hide} items-center ${justify} ${textAlign} min-w-0 px-1 ${className}`}>
       {children}
     </div>
   )

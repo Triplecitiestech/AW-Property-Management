@@ -6,6 +6,26 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { lookupUsernameEmail } from '@/lib/actions/auth'
 
+// Supabase free-tier projects pause after ~7 days of inactivity. When the
+// project endpoint is unreachable supabase-js throws a plain fetch/network
+// error, which is unhelpful to the user. Surface a specific hint instead.
+function describeAuthError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err ?? 'An error occurred')
+  const name = err instanceof Error ? err.name : ''
+  const lower = raw.toLowerCase()
+  const looksUnreachable =
+    name === 'AuthRetryableFetchError' ||
+    lower.includes('fetch failed') ||
+    lower.includes('failed to fetch') ||
+    lower.includes('networkerror') ||
+    lower.includes('err_name_not_resolved') ||
+    lower.includes('load failed')
+  if (looksUnreachable) {
+    return "Can't reach the authentication service. The Supabase project may be paused after inactivity — an admin needs to restore it from the Supabase dashboard, then try again."
+  }
+  return raw
+}
+
 export default function LoginPage() {
   const [emailOrUsername, setEmailOrUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -47,7 +67,7 @@ export default function LoginPage() {
         setMode('login')
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      setError(describeAuthError(err))
     } finally {
       setLoading(false)
     }

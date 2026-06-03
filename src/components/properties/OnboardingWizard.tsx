@@ -25,7 +25,9 @@ type ContactDraft = {
 }
 
 const EMPTY_CONTACT: ContactDraft = {
-  name: '', role: 'primary', phone: '', email: '', notes: '', is_primary: false,
+  // 'other' is valid in every role <select> (the service step filters out
+  // 'primary'); each step overrides this default as needed.
+  name: '', role: 'other', phone: '', email: '', notes: '', is_primary: false,
 }
 
 const STEPS = [

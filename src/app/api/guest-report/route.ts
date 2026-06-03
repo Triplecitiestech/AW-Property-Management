@@ -13,8 +13,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
   }
 
-  const { token, notes } = body
-  const checklist = Array.isArray(body.checklist) ? body.checklist : []
+  const { token } = body
+
+  // This endpoint is public/unauthenticated, so clamp the untrusted payload
+  // before it ever reaches the database.
+  const checklist = (Array.isArray(body.checklist) ? body.checklist : [])
+    .slice(0, 100)
+    .map((item) => ({
+      label: typeof item?.label === 'string' ? item.label.slice(0, 500) : '',
+      checked: Boolean(item?.checked),
+    }))
+    .filter((item) => item.label.length > 0)
+  const notes = typeof body.notes === 'string' ? body.notes.slice(0, 5000) : undefined
 
   if (!token) {
     return NextResponse.json({ error: 'Missing token.' }, { status: 400 })

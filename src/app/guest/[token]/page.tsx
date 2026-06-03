@@ -22,7 +22,7 @@ export default async function GuestReportPage({ params }: { params: Promise<{ to
     .from('guest_reports')
     .select('id, submitted_at')
     .eq('stay_id', stay.id)
-    .single()
+    .maybeSingle()
 
   // Get property-specific checklist or defaults
   const { data: customItems } = await supabase
@@ -35,7 +35,7 @@ export default async function GuestReportPage({ params }: { params: Promise<{ to
     ? customItems.map((i: { label: string }) => i.label)
     : DEFAULT_CHECKLIST_LABELS
 
-  const propertyName = (stay.properties as { name: string } | null)?.name ?? 'the property'
+  const propertyName = (stay.properties as unknown as { name: string } | null)?.name ?? 'the property'
 
   if (existingReport) {
     return (

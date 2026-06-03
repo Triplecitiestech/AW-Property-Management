@@ -9,7 +9,7 @@ import type { PropertyStatusEnum, TicketPriority } from '@/lib/supabase/types'
 // ============================================================
 
 export type ParsedCommand =
-  | { type: 'status'; propertyName: string; status: PropertyStatusEnum; occupancy?: string }
+  | { type: 'status'; propertyName: string; status: PropertyStatusEnum }
   | { type: 'ticket'; propertyName: string; title: string; priority: TicketPriority; category?: string }
   | { type: 'stay'; propertyName: string; guestName: string; startDate: string; endDate: string }
   | { type: 'unknown'; raw: string }
@@ -56,7 +56,7 @@ function parseDate(raw: string): string | null {
 
 export function parseCommand(text: string): ParsedCommand {
   // Status command: "status: Property Name | clean"
-  const statusMatch = text.match(/^(?:status|property)\s*:\s*(.+?)\s*\|\s*(.+?)(?:\s*\|\s*(.+))?$/i)
+  const statusMatch = text.match(/^(?:status|property)\s*:\s*(.+?)\s*\|\s*(.+?)\s*$/i)
   if (statusMatch) {
     const propertyName = statusMatch[1].trim()
     const statusRaw = statusMatch[2].trim().toLowerCase()

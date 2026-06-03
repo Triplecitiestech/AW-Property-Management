@@ -34,8 +34,9 @@ In the Vercel project dashboard → **Settings** → **Environment Variables**, 
 | `RESEND_API_KEY` | Your Resend API key |
 | `RESEND_FROM_EMAIL` | Your verified sending email |
 | `NOTIFY_EMAIL` | Comma-separated notification emails |
-| `TELEGRAM_BOT_TOKEN` | Your Telegram bot token |
-| `TELEGRAM_WEBHOOK_SECRET` | Your webhook secret |
+| `TWILIO_ACCOUNT_SID` | Your Twilio Account SID |
+| `TWILIO_AUTH_TOKEN` | Your Twilio Auth Token (keep secret) |
+| `TWILIO_PHONE_NUMBER` | Your Twilio number (E.164, e.g. `+12025551234`) |
 
 ## Step 4: Redeploy
 
@@ -49,25 +50,23 @@ After adding environment variables:
    - **Site URL**: `https://your-vercel-app.vercel.app`
    - **Redirect URLs**: Add `https://your-vercel-app.vercel.app/auth/callback`
 
-## Step 6: Register Telegram Webhook
+## Step 6: Configure the Twilio SMS Webhook
 
-Now that your app is live, register the Telegram webhook:
+Now that your app is live, point your Twilio number at it. In the Twilio Console →
+**Phone Numbers** → your number → **Messaging**:
 
-```bash
-curl -X POST "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://your-vercel-app.vercel.app/api/webhooks/telegram",
-    "secret_token": "<WEBHOOK_SECRET>"
-  }'
-```
+- Set **"A message comes in"** to **Webhook**.
+- URL: `https://your-vercel-app.vercel.app/api/webhooks/sms`
+- Method: **HTTP POST**
+
+See `docs/SMS_SETUP.md` for the full walkthrough.
 
 ## Step 7: Verify Deployment
 
 1. Visit your Vercel URL → should redirect to login page.
 2. Sign in with your account.
 3. Check the dashboard loads correctly.
-4. Send a test Telegram message to verify the bot responds.
+4. Text a command to your Twilio number to verify SMS replies work.
 
 ## Custom Domain (Optional)
 
@@ -75,7 +74,7 @@ curl -X POST "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \
 2. Update your DNS records as instructed.
 3. Update `NEXT_PUBLIC_APP_URL` to your custom domain.
 4. Update Supabase Auth redirect URLs.
-5. Re-register the Telegram webhook with the new URL.
+5. Update the Twilio messaging webhook to the new URL.
 
 ## Automatic Deployments
 
@@ -96,4 +95,4 @@ For staging/preview deployments, Vercel creates unique URLs per branch. You can 
 - **Build fails**: Check Vercel build logs for TypeScript errors. Run `npm run build` locally first.
 - **"Function execution failed"**: Check Vercel function logs — usually a missing environment variable.
 - **Auth not working after deploy**: Verify Supabase redirect URLs include your Vercel domain.
-- **Telegram bot not responding**: Re-register webhook with correct Vercel URL.
+- **SMS not replying**: Verify the Twilio messaging webhook points to `<APP_URL>/api/webhooks/sms` and that `TWILIO_AUTH_TOKEN` is set.

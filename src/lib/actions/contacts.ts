@@ -3,9 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-
-const RETHROW = (err: unknown) =>
-  err instanceof Error && (err.message === 'NEXT_REDIRECT' || err.message === 'NEXT_NOT_FOUND')
+import { isNextControlFlowError } from '@/lib/server-action-utils'
 
 export async function addContact(propertyId: string, formData: FormData) {
   try {
@@ -44,7 +42,7 @@ export async function addContact(propertyId: string, formData: FormData) {
     revalidatePath(`/properties/${propertyId}`)
     return { success: true }
   } catch (err: unknown) {
-    if (RETHROW(err)) throw err
+    if (isNextControlFlowError(err)) throw err
     return { error: err instanceof Error ? err.message : 'Failed to add contact' }
   }
 }
@@ -85,7 +83,7 @@ export async function updateContact(
     revalidatePath(`/properties/${propertyId}`)
     return { success: true }
   } catch (err: unknown) {
-    if (RETHROW(err)) throw err
+    if (isNextControlFlowError(err)) throw err
     return { error: err instanceof Error ? err.message : 'Failed to update contact' }
   }
 }
@@ -105,7 +103,7 @@ export async function deleteContact(contactId: string, propertyId: string) {
     revalidatePath(`/properties/${propertyId}`)
     return { success: true }
   } catch (err: unknown) {
-    if (RETHROW(err)) throw err
+    if (isNextControlFlowError(err)) throw err
     return { error: err instanceof Error ? err.message : 'Failed to delete contact' }
   }
 }

@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { PropertyStatusEnum, OccupancyEnum } from '@/lib/supabase/types'
 import { getOrCreateUserOrg } from '@/lib/actions/organizations'
+import { isNextControlFlowError } from '@/lib/server-action-utils'
 
 // ---- Create Property (wizard flow — returns id, does not redirect) ----
 
@@ -48,46 +49,9 @@ export async function createPropertyForWizard(
     revalidatePath('/dashboard')
     return { propertyId: property.id }
   } catch (err: unknown) {
-    if (err instanceof Error && (err.message === 'NEXT_REDIRECT' || err.message === 'NEXT_NOT_FOUND')) throw err
+    if (isNextControlFlowError(err)) throw err
     return { error: err instanceof Error ? err.message : 'Failed to create property' }
   }
-}
-
-// ---- Create Property ----
-
-export async function createProperty(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
-
-  const name = formData.get('name') as string
-  const address = formData.get('address') as string
-  const description = formData.get('description') as string | null
-
-  if (!name?.trim()) return { error: 'Property name is required.' }
-
-  const orgId = await getOrCreateUserOrg()
-
-  const { data: property, error } = await supabase
-    .from('properties')
-    .insert({ name: name.trim(), address: address?.trim() ?? '', description: description?.trim() || null, owner_id: user.id, org_id: orgId })
-    .select('id')
-    .single()
-
-  if (error) return { error: error.message }
-
-  // Audit log
-  await supabase.from('audit_log').insert({
-    entity_type: 'property',
-    entity_id: property.id,
-    action: 'created',
-    changed_by: user.id,
-    after_data: { name, address, description },
-  })
-
-  revalidatePath('/properties')
-  revalidatePath('/dashboard')
-  redirect(`/properties/${property.id}`)
 }
 
 // ---- Update Property ----
@@ -228,7 +192,7 @@ export async function updatePropertyStatus(
     revalidatePath('/dashboard')
     return { success: true }
   } catch (err: unknown) {
-    if (err instanceof Error && (err.message === 'NEXT_REDIRECT' || err.message === 'NEXT_NOT_FOUND')) throw err
+    if (isNextControlFlowError(err)) throw err
     return { error: err instanceof Error ? err.message : 'Failed to update status' }
   }
 }

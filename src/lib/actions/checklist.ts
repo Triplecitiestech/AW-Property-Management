@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { DEFAULT_CHECKLIST_LABELS } from '@/lib/checklist-defaults'
+import { isNextControlFlowError } from '@/lib/server-action-utils'
 
 // ---- Get checklist items for a property ----
 // Returns custom items if configured, else the app-level defaults
@@ -54,8 +55,7 @@ export async function saveChecklistItems(propertyId: string, labels: string[]) {
     revalidatePath(`/properties/${propertyId}`)
     return { success: true }
   } catch (err: unknown) {
-    // Let Next.js handle redirect/notFound — rethrow those
-    if (err instanceof Error && (err.message === 'NEXT_REDIRECT' || err.message === 'NEXT_NOT_FOUND')) throw err
+    if (isNextControlFlowError(err)) throw err
     return { error: err instanceof Error ? err.message : 'Failed to save checklist' }
   }
 }
@@ -78,7 +78,7 @@ export async function resetChecklistToDefaults(propertyId: string) {
     revalidatePath(`/properties/${propertyId}`)
     return { success: true }
   } catch (err: unknown) {
-    if (err instanceof Error && (err.message === 'NEXT_REDIRECT' || err.message === 'NEXT_NOT_FOUND')) throw err
+    if (isNextControlFlowError(err)) throw err
     return { error: err instanceof Error ? err.message : 'Failed to reset checklist' }
   }
 }

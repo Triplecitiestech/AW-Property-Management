@@ -2,8 +2,9 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { OrgRole, PropertyRole } from '@/lib/supabase/types'
+import { isNextControlFlowError } from '@/lib/server-action-utils'
 
 // ─── Internal: Get or create the current user's primary org ──────────────────
 // Used by property-creation to ensure an org always exists.
@@ -230,8 +231,15 @@ export async function acceptInvitation(token: string): Promise<{ type: 'org' | '
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect('/auth/login')
 
-    // Fetch the invitation (uses service client to bypass RLS)
-    const { data: inv, error: invError } = await supabase
+    // The invite token is the capability here, so the lookup and the grant run
+    // through the service-role client: a brand-new invitee has no RLS rights to
+    // read the invitation or to insert their own property_access row yet. This
+    // also lets the invitations SELECT policy stay locked down (no token
+    // enumeration by arbitrary signed-in users).
+    const admin = createServiceClient()
+
+    // Fetch the pending, unexpired invitation by token.
+    const { data: inv, error: invError } = await admin
       .from('invitations')
       .select('*')
       .eq('token', token)
@@ -243,16 +251,17 @@ export async function acceptInvitation(token: string): Promise<{ type: 'org' | '
 
     if (inv.org_id) {
       // Org invitation — add the user as an org member
-      const { error: memberError } = await supabase
+      const { error: memberError } = await admin
         .from('org_members')
         .insert({ org_id: inv.org_id, user_id: user.id, role: inv.role, invited_by: inv.invited_by })
 
-      if (memberError && !memberError.message.includes('duplicate')) {
+      // 23505 = unique_violation → already a member, which is fine.
+      if (memberError && (memberError as { code?: string }).code !== '23505') {
         return { error: memberError.message }
       }
 
       // Mark as accepted
-      await supabase
+      await admin
         .from('invitations')
         .update({ accepted_at: new Date().toISOString() })
         .eq('id', inv.id)
@@ -263,15 +272,16 @@ export async function acceptInvitation(token: string): Promise<{ type: 'org' | '
 
     if (inv.property_id) {
       // Property invitation — grant direct property access
-      const { error: accessError } = await supabase
+      const { error: accessError } = await admin
         .from('property_access')
         .insert({ property_id: inv.property_id, user_id: user.id, role: inv.role, granted_by: inv.invited_by })
 
-      if (accessError && !accessError.message.includes('duplicate')) {
+      // 23505 = unique_violation → access already granted, which is fine.
+      if (accessError && (accessError as { code?: string }).code !== '23505') {
         return { error: accessError.message }
       }
 
-      await supabase
+      await admin
         .from('invitations')
         .update({ accepted_at: new Date().toISOString() })
         .eq('id', inv.id)
@@ -282,7 +292,7 @@ export async function acceptInvitation(token: string): Promise<{ type: 'org' | '
 
     return { error: 'Invalid invitation.' }
   } catch (err: unknown) {
-    if (err instanceof Error && err.message === 'NEXT_REDIRECT') throw err
+    if (isNextControlFlowError(err)) throw err
     return { error: err instanceof Error ? err.message : 'Failed to accept invitation.' }
   }
 }

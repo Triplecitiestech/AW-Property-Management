@@ -1,30 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { sendGuestReportEmail } from '@/lib/email/resend'
-
-type ChecklistItem = { label: string; checked: boolean }
+import { sanitizeChecklist, sanitizeNotes } from '@/lib/guest-report'
 
 // Guest report submission — no auth required, validated by the stay's guest link token.
 export async function POST(req: NextRequest) {
-  let body: { token?: string; checklist?: ChecklistItem[]; notes?: string }
+  let body: { token?: unknown; checklist?: unknown; notes?: unknown }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
   }
 
-  const { token } = body
-
-  // This endpoint is public/unauthenticated, so clamp the untrusted payload
-  // before it ever reaches the database.
-  const checklist = (Array.isArray(body.checklist) ? body.checklist : [])
-    .slice(0, 100)
-    .map((item) => ({
-      label: typeof item?.label === 'string' ? item.label.slice(0, 500) : '',
-      checked: Boolean(item?.checked),
-    }))
-    .filter((item) => item.label.length > 0)
-  const notes = typeof body.notes === 'string' ? body.notes.slice(0, 5000) : undefined
+  const token = typeof body.token === 'string' ? body.token : ''
+  // This endpoint is public/unauthenticated, so clamp the untrusted payload first.
+  const checklist = sanitizeChecklist(body.checklist)
+  const notes = sanitizeNotes(body.notes)
 
   if (!token) {
     return NextResponse.json({ error: 'Missing token.' }, { status: 400 })

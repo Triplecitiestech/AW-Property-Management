@@ -3,11 +3,11 @@
  * Smoke Test Script — AW Property Management
  *
  * Tests key flows against a running local or deployed instance.
- * Requires: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, APP_URL environment variables
+ * Requires: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, APP_URL environment variables
  *
  * Usage:
  *   APP_URL=http://localhost:3000 \
- *   SUPABASE_URL=https://xxx.supabase.co \
+ *   NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co \
  *   SUPABASE_SERVICE_ROLE_KEY=your_key \
  *   node scripts/smoke-test.mjs
  */
@@ -126,24 +126,22 @@ async function run() {
     fail('Guest report API', err.message)
   }
 
-  // ---- Test 5: Telegram webhook ----
-  console.log('\n5. Telegram webhook')
+  // ---- Test 5: SMS webhook ----
+  console.log('\n5. SMS webhook')
   try {
-    const res = await fetch(`${APP_URL}/api/webhooks/telegram`, {
+    const res = await fetch(`${APP_URL}/api/webhooks/sms`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Telegram-Bot-Api-Secret-Token': 'wrong_secret',
-      },
-      body: JSON.stringify({}),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ From: '+10000000000', Body: 'HELP' }).toString(),
     })
+    // 200 → TwiML reply; 401 → signature rejected when TWILIO_AUTH_TOKEN is set.
     if (res.status === 200 || res.status === 401) {
-      pass('Telegram webhook endpoint reachable')
+      pass('SMS webhook endpoint reachable')
     } else {
-      fail('Telegram webhook', `Unexpected status ${res.status}`)
+      fail('SMS webhook', `Unexpected status ${res.status}`)
     }
   } catch (err) {
-    fail('Telegram webhook', err.message)
+    fail('SMS webhook', err.message)
   }
 
   // ---- Test 6: Guest page renders ----

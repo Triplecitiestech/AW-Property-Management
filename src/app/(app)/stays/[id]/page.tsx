@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import DeleteStayButton from '@/components/stays/DeleteStayButton'
+import CopyLinkButton from '@/components/stays/CopyLinkButton'
 
 export default async function StayDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -13,7 +14,7 @@ export default async function StayDetailPage({ params }: { params: Promise<{ id:
     { data: properties },
   ] = await Promise.all([
     supabase.from('stays').select('*, properties(id, name)').eq('id', id).single(),
-    supabase.from('guest_reports').select('*').eq('stay_id', id).single(),
+    supabase.from('guest_reports').select('*').eq('stay_id', id).maybeSingle(),
     supabase.from('properties').select('id, name').order('name'),
   ])
 
@@ -135,14 +136,7 @@ export default async function StayDetailPage({ params }: { params: Promise<{ id:
               >
                 Open Guest Checklist
               </a>
-              <button
-                onClick={undefined}
-                className="btn-secondary text-sm w-full justify-center"
-                id="copy-link"
-                type="button"
-              >
-                Copy Link
-              </button>
+              <CopyLinkButton value={guestLink} />
             </div>
           </div>
 

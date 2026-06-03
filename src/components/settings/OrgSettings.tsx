@@ -32,7 +32,10 @@ const ROLE_STYLES: Record<string, string> = {
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false)
   function handleCopy() {
-    navigator.clipboard.writeText(text).then(() => {
+    // Resolve relative paths (e.g. "/invite/abc") against the current origin at
+    // click time — avoids reading window during render (SSR/CSR mismatch).
+    const url = text.startsWith('/') ? `${window.location.origin}${text}` : text
+    navigator.clipboard?.writeText(url).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
@@ -261,7 +264,7 @@ export default function OrgSettings({
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <CopyButton text={`${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${inv.token}`} />
+                  <CopyButton text={`/invite/${inv.token}`} />
                   <button
                     onClick={() => handleRevoke(inv.id)}
                     disabled={revokePending}

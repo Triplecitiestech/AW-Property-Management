@@ -29,8 +29,6 @@ export default async function TicketsPage({
   const { data: tickets } = await query
   const { data: properties } = await supabase.from('properties').select('id, name').order('name')
 
-  const params = new URLSearchParams(filters as Record<string, string>)
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

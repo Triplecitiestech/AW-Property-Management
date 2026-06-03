@@ -12,7 +12,7 @@ export type TicketCategory = 'maintenance' | 'cleaning' | 'supplies' | 'other'
 export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent'
 export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
 export type AuditAction = 'created' | 'updated' | 'deleted'
-export type AuditEntity = 'property' | 'property_status' | 'stay' | 'service_request' | 'service_request_comment' | 'guest_report' | 'org_member' | 'property_access'
+export type AuditEntity = 'property' | 'property_status' | 'stay' | 'service_request' | 'service_request_comment' | 'guest_report' | 'property_checklist_item' | 'org_member' | 'property_access'
 
 export interface Profile {
   id: string

@@ -103,13 +103,17 @@ export async function POST(req: NextRequest) {
         }
 
         const property = properties[0]
+        // occupancy is intentionally omitted so an SMS status update never
+        // clobbers the property's current occupancy. On a brand-new row the
+        // column falls back to its default; on an existing row (the normal case —
+        // a DB trigger creates one with each property) only the supplied columns
+        // are updated.
         const { error } = await supabase
           .from('property_status')
           .upsert(
             {
               property_id: property.id,
               status: command.status,
-              occupancy: 'unoccupied',
               updated_at: new Date().toISOString(),
             },
             { onConflict: 'property_id' }

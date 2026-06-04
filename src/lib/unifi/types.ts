@@ -10,13 +10,14 @@ export type Camera = { id: string; name: string }
 export type ProvisionAccessInput = {
   fullName: string
   email: string
+  /** Suggested PIN (used in dry-run; live prefers an Access-generated PIN). */
   pin: string
-  /** Access door groups the tenant should be able to open (front intercom + back door). */
-  doorGroupIds: string[]
+  /** UniFi Access policy IDs granting the tenant the front intercom + back door. */
+  accessPolicyIds: string[]
   validFrom?: string | null
   validUntil?: string | null
 }
-export type ProvisionAccessResult = { accessUserId: string }
+export type ProvisionAccessResult = { accessUserId: string; pin: string }
 
 export type SetWifiInput = {
   ssid: string

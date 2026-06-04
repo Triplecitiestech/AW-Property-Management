@@ -73,21 +73,24 @@ actions.
 
 ## Verified vs. still-to-confirm
 
-Verified against the live console docs (Network 10.4.57 / Protect 7.1.75):
+Verified against the live console docs (Network 10.4.57 / Protect 7.1.75 / Access API ref):
 - One Integration key (`X-API-KEY`) covers **Network + Protect**; **Access uses a
-  separate Bearer token** (port 12445).
-- Network WiFi is `GET/PUT /v1/sites/{siteId}/wifi/broadcasts/{id}` with a
-  full-object PUT; the site is a **UUID** from `GET /v1/sites` (auto-resolved).
-- Protect exposes `/v1/cameras/{id}/snapshot`, RTSPS streams, and a `ring` event
-  stream (`/v1/subscribe/events`) usable for the intercom "ring the manager" flow.
+  separate Bearer token** (Access app → Settings → General → Advanced → API Token),
+  served on `:12445` with a **self-signed cert** (the Access client uses insecure TLS).
+- Network WiFi: `GET/PUT /v1/sites/{siteId}/wifi/broadcasts/{id}` (full-object PUT);
+  site UUID auto-resolved from `GET /v1/sites`.
+- Access provisioning: create user (`POST /users`), generate PIN
+  (`POST /credentials/pin_codes`), assign PIN (`PUT /users/:id/pin_codes`), grant
+  access-policy IDs (`PUT /users/:id/access_policies`); revoke = deactivate user.
+- Protect exposes `/v1/cameras/{id}/snapshot` and a doorbell `ring` event stream.
 
 Still to confirm:
-- The exact PSK field inside `securityConfiguration` on a WiFi broadcast (set here
-  as `passphrase`) — needs one live read.
-- **UniFi Access** endpoints for PIN / NFC / door-group binding (`access.ts`) — the
-  Access API reference isn't fetchable by tooling; paste it or confirm against the
-  Access app's API page.
-- Whether port **12445** (Access) is reachable over your remote-access path or needs a tunnel.
+- The exact PSK field inside `securityConfiguration` on a WiFi broadcast (set as
+  `passphrase`) — needs one live read.
+- **Connectivity**: the console has a dynamic ISP IP, so it needs a stable path —
+  UniFi DDNS + port-forwards (443 + 12445) for a quick test, or an on-site agent /
+  tunnel for production (recommended). Access (`:12445`, self-signed) must be
+  reachable that way too.
 
 ## Security notes / follow-ups
 

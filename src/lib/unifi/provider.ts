@@ -32,13 +32,24 @@ class LiveUniFiProvider implements UniFiProvider {
 
   async provisionAccess(input: ProvisionAccessInput): Promise<ProvisionAccessResult> {
     const accessUserId = await this.access.createUser({ fullName: input.fullName, email: input.email })
-    await this.access.setUserPin(accessUserId, input.pin)
-    await this.access.assignResources(accessUserId, input.doorGroupIds)
-    return { accessUserId }
+    // Prefer an Access-generated PIN (matches the console's length rules); fall back
+    // to the suggested one if generation isn't available.
+    let pin = input.pin
+    try {
+      pin = await this.access.generatePin()
+    } catch {
+      /* keep suggested pin */
+    }
+    await this.access.assignPin(accessUserId, pin)
+    if (input.accessPolicyIds.length > 0) {
+      await this.access.assignAccessPolicies(accessUserId, input.accessPolicyIds)
+    }
+    return { accessUserId, pin }
   }
 
   async revokeAccess(accessUserId: string): Promise<void> {
-    await this.access.deleteUser(accessUserId)
+    await this.access.unassignPin(accessUserId).catch(() => {})
+    await this.access.deactivateUser(accessUserId)
   }
 
   async setWifiPassword(input: SetWifiInput): Promise<SetWifiResult> {
@@ -66,8 +77,8 @@ class DryRunUniFiProvider implements UniFiProvider {
     ]
   }
 
-  async provisionAccess(_input: ProvisionAccessInput): Promise<ProvisionAccessResult> {
-    return { accessUserId: `dryrun-user-${randomUUID().slice(0, 8)}` }
+  async provisionAccess(input: ProvisionAccessInput): Promise<ProvisionAccessResult> {
+    return { accessUserId: `dryrun-user-${randomUUID().slice(0, 8)}`, pin: input.pin }
   }
 
   async revokeAccess(_accessUserId: string): Promise<void> {

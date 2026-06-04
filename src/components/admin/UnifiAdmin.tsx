@@ -123,8 +123,8 @@ function BuildingConfig({ building, isPending, run }: { building: UnifiBuilding;
       >
         <Field name="console_url" label="Console URL" defaultValue={building.console_url ?? ''} placeholder="https://console.example.com" />
         <Field name="network_site_id" label="Network site ID" defaultValue={building.network_site_id ?? 'default'} />
-        <Field name="front_door_group_id" label="Front intercom — Access group ID" defaultValue={building.front_door_group_id ?? ''} />
-        <Field name="back_door_group_id" label="Back door — Access group ID" defaultValue={building.back_door_group_id ?? ''} />
+        <Field name="front_door_group_id" label="Front access policy ID (UniFi Access)" defaultValue={building.front_door_group_id ?? ''} />
+        <Field name="back_door_group_id" label="Back access policy ID (UniFi Access)" defaultValue={building.back_door_group_id ?? ''} />
         <div className="sm:col-span-2">
           <button className="btn-secondary text-sm" disabled={isPending} type="submit">Save configuration</button>
         </div>

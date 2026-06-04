@@ -150,21 +150,23 @@ export async function onboardTenant(tenancyId: string): Promise<Result> {
   if (!building) return { error: 'Building not found.' }
 
   const provider = getUniFiProvider()
-  const pin = generatePin()
+  const suggestedPin = generatePin()
   const wifiPassword = generateWifiPassword()
   const ssid = unit.wifi_ssid || `${building.name} ${unit.label}`.trim()
-  const doorGroupIds = [building.front_door_group_id, building.back_door_group_id, unit.door_group_id]
+  // These building/unit fields hold UniFi Access *policy* IDs to grant the tenant.
+  const accessPolicyIds = [building.front_door_group_id, building.back_door_group_id, unit.door_group_id]
     .filter((x): x is string => !!x)
 
   try {
     const access = await provider.provisionAccess({
       fullName: t.tenant_name,
       email: t.tenant_email,
-      pin,
-      doorGroupIds,
+      pin: suggestedPin,
+      accessPolicyIds,
       validFrom: t.move_in,
       validUntil: t.move_out,
     })
+    const pin = access.pin
     const wifi = await provider.setWifiPassword({
       ssid,
       password: wifiPassword,

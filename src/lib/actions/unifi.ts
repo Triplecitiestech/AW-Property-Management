@@ -7,6 +7,7 @@ import { getUniFiProvider } from '@/lib/unifi/provider'
 import { generatePin, generateWifiPassword } from '@/lib/unifi/credentials'
 import { sendTenantWelcomeEmail, sendTenantOffboardingEmail } from '@/lib/email/unifi-emails'
 import type { UnifiBuilding, UnifiUnit, UnifiTenancy } from '@/lib/supabase/types'
+import type { UniFiDiscovery } from '@/lib/unifi/types'
 
 type Result = { success: true; mode?: string } | { error: string }
 
@@ -19,6 +20,17 @@ async function getAdminUser() {
 }
 
 const now = () => new Date().toISOString()
+
+// ── Test connection & discover controller resources ──────────────────────────
+
+export async function discoverUnifi(): Promise<UniFiDiscovery | { error: string }> {
+  if (!(await getAdminUser())) return { error: 'Not authorized.' }
+  try {
+    return await getUniFiProvider().discover()
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : 'Discovery failed.' }
+  }
+}
 
 // ── Seed the test building (257 Washington Street) ───────────────────────────
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, type ReactNode } from 'react'
 import {
   seedTestBuilding,
   saveBuildingConfig,
@@ -8,6 +8,7 @@ import {
   createTenancy,
   onboardTenant,
   offboardTenant,
+  discoverUnifi,
 } from '@/lib/actions/unifi'
 import type {
   UnifiBuilding,
@@ -15,6 +16,7 @@ import type {
   UnifiProvisioning,
   UnifiTenancyWithProvisioning,
 } from '@/lib/supabase/types'
+import type { UniFiDiscovery, SystemDiscovery } from '@/lib/unifi/types'
 
 type Props = {
   mode: 'live' | 'dry-run'
@@ -43,6 +45,16 @@ const STATUS_STYLES: Record<string, string> = {
 export default function UnifiAdmin({ mode, building, units, tenancies }: Props) {
   const [isPending, startTransition] = useTransition()
   const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
+  const [discovery, setDiscovery] = useState<UniFiDiscovery | null>(null)
+
+  function handleDiscover() {
+    setMsg(null)
+    startTransition(async () => {
+      const r = await discoverUnifi()
+      if ('error' in r) setMsg({ kind: 'err', text: r.error })
+      else setDiscovery(r)
+    })
+  }
 
   function run(fn: () => Promise<ActionResult>, okText: string, onOk?: () => void) {
     setMsg(null)
@@ -63,9 +75,14 @@ export default function UnifiAdmin({ mode, building, units, tenancies }: Props) 
           <h1>UniFi Tenant Provisioning</h1>
           <p className="text-gray-500 mt-1 text-sm">Admin-only · onboarding &amp; offboarding for Ubiquiti-equipped buildings</p>
         </div>
-        <span className={`badge ${mode === 'live' ? 'badge-clean' : 'badge-medium'}`}>
-          {mode === 'live' ? 'LIVE' : 'DRY-RUN'}
-        </span>
+        <div className="flex items-center gap-2">
+          <button className="btn-secondary text-xs" disabled={isPending} onClick={handleDiscover}>
+            Test &amp; Discover
+          </button>
+          <span className={`badge ${mode === 'live' ? 'badge-clean' : 'badge-medium'}`}>
+            {mode === 'live' ? 'LIVE' : 'DRY-RUN'}
+          </span>
+        </div>
       </div>
 
       {mode === 'dry-run' && (
@@ -80,6 +97,8 @@ export default function UnifiAdmin({ mode, building, units, tenancies }: Props) 
           {msg.text}
         </div>
       )}
+
+      {discovery && <DiscoveryPanel d={discovery} />}
 
       {!building ? (
         <div className="card p-8 text-center space-y-4">
@@ -268,6 +287,47 @@ function Field({ name, label, defaultValue, placeholder, type = 'text', required
     <div>
       <label className="form-label">{label}</label>
       <input name={name} type={type} className="form-input" defaultValue={defaultValue} placeholder={placeholder} required={required} />
+    </div>
+  )
+}
+
+function DiscoveryPanel({ d }: { d: UniFiDiscovery }) {
+  return (
+    <div className="card p-5 space-y-3">
+      <h3 className="font-semibold text-sm">Controller discovery · <span className="text-gray-400">{d.mode}</span></h3>
+      <p className="text-xs text-gray-500">Copy the IDs below into the config / unit fields.</p>
+      <SystemBlock title="Network — WiFi broadcasts" sys={d.network} render={(data) => (
+        <ul className="text-xs space-y-0.5">
+          <li className="text-gray-500">site: <span className="font-mono">{data.siteId}</span></li>
+          {data.wifi.map((w) => (
+            <li key={w.id}><span className="text-white">{w.name || '(unnamed)'}</span> · <span className="font-mono text-gray-400">{w.id}</span></li>
+          ))}
+        </ul>
+      )} />
+      <SystemBlock title="Access — policies & door groups" sys={d.access} render={(data) => (
+        <div className="text-xs space-y-1">
+          <div className="text-gray-500">Access policies (use these IDs in the front/back config fields):</div>
+          <ul className="space-y-0.5">{data.accessPolicies.map((p) => <li key={p.id}><span className="text-white">{p.name}</span> · <span className="font-mono text-gray-400">{p.id}</span></li>)}</ul>
+          <div className="text-gray-500 mt-1">Door groups:</div>
+          <ul className="space-y-0.5">{data.doorGroups.map((g) => <li key={g.id}><span className="text-white">{g.name}</span> · <span className="font-mono text-gray-400">{g.id}</span></li>)}</ul>
+        </div>
+      )} />
+      <SystemBlock title="Protect — cameras" sys={d.protect} render={(data) => (
+        <ul className="text-xs space-y-0.5">
+          {data.cameras.map((c) => <li key={c.id}><span className="text-white">{c.name}</span> · <span className="font-mono text-gray-400">{c.id}</span></li>)}
+        </ul>
+      )} />
+    </div>
+  )
+}
+
+function SystemBlock<T>({ title, sys, render }: { title: string; sys: SystemDiscovery<T>; render: (data: T) => ReactNode }) {
+  return (
+    <div className="border border-[#1e2d42] rounded-lg p-3">
+      <p className="text-xs font-medium mb-1.5">
+        {title} {sys.ok ? <span className="text-emerald-400">✓</span> : <span className="text-red-400">✗ failed</span>}
+      </p>
+      {sys.ok ? render(sys.data) : <p className="text-xs text-red-400 font-mono break-all">{sys.error}</p>}
     </div>
   )
 }

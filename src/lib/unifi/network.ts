@@ -4,9 +4,7 @@ import type { WifiNetwork } from './types'
 // UniFi Network — official Integration API (verified against v10.4.57 docs).
 //   Base:  https://<console>/proxy/network/integration/v1
 //   Auth:  X-API-KEY
-//   Most paths are site-scoped and need the site UUID from GET /v1/sites.
-//   WiFi:  /v1/sites/{siteId}/wifi/broadcasts  (GET/POST/PUT/DELETE)
-//   Updates are a full-object PUT — read, modify, write back.
+//   WiFi:  /v1/sites/{siteId}/wifi/broadcasts  (full-object PUT to change passphrase)
 
 const API = '/proxy/network/integration/v1'
 
@@ -27,6 +25,7 @@ export class NetworkClient {
     private readonly consoleUrl: string,
     private readonly apiKey: string,
     private readonly configuredSiteId?: string,
+    private readonly insecure = false,
   ) {}
 
   private req<T>(path: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', body?: unknown) {
@@ -34,8 +33,9 @@ export class NetworkClient {
       baseUrl: this.consoleUrl + API,
       path,
       method,
-      headers: { 'X-API-KEY': this.apiKey },
       body,
+      headers: { 'X-API-KEY': this.apiKey },
+      insecure: this.insecure,
     })
   }
 
@@ -64,11 +64,9 @@ export class NetworkClient {
   }
 
   /**
-   * Set/rotate a WiFi broadcast's PSK passphrase. The Integration API uses a full
-   * PUT, so we GET the broadcast, set the passphrase inside securityConfiguration,
-   * then write the whole object back (preserving every other setting).
-   * NOTE: confirm the exact PSK field within securityConfiguration for your
-   * Network version (used here as `passphrase`).
+   * Set/rotate a WiFi broadcast's PSK passphrase via a full-object PUT (read,
+   * modify securityConfiguration.passphrase, write back). NOTE: confirm the exact
+   * PSK field for your Network version (used here as `passphrase`).
    */
   async updateWifiPassword(wifiBroadcastId: string, passphrase: string): Promise<void> {
     const site = await this.siteId()

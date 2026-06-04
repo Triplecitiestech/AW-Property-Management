@@ -28,6 +28,17 @@ export type SetWifiInput = {
 }
 export type SetWifiResult = { wifiNetworkId: string }
 
+/** Result of probing one UniFi system during discovery. */
+export type SystemDiscovery<T> = { ok: true; data: T } | { ok: false; error: string }
+
+/** What the "Test & Discover" probe returns — what works + the IDs to map. */
+export type UniFiDiscovery = {
+  mode: UniFiMode
+  network: SystemDiscovery<{ siteId: string; wifi: WifiNetwork[] }>
+  protect: SystemDiscovery<{ cameras: Camera[] }>
+  access: SystemDiscovery<{ doorGroups: DoorGroup[]; accessPolicies: { id: string; name: string }[] }>
+}
+
 /**
  * A UniFi provider performs the raw controller operations. Two implementations
  * exist: a live HTTP one and a dry-run one used when no controller is configured.
@@ -40,4 +51,6 @@ export interface UniFiProvider {
   setWifiPassword(input: SetWifiInput): Promise<SetWifiResult>
   /** Returns a URL for a camera snapshot, or null if Protect isn't configured. */
   cameraSnapshotUrl(cameraId: string | null | undefined): string | null
+  /** Probe each system and report what authenticates + the IDs available to map. */
+  discover(): Promise<UniFiDiscovery>
 }

@@ -10,7 +10,10 @@ import type {
   ProvisionAccessResult,
   SetWifiInput,
   SetWifiResult,
+  UniFiDiscovery,
 } from './types'
+
+const errMsg = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
 // ── Live provider — composes the Access, Network and Protect clients ──────────
 
@@ -22,8 +25,8 @@ class LiveUniFiProvider implements UniFiProvider {
 
   constructor(cfg: UniFiConfig) {
     this.access = new AccessClient(cfg.accessApiUrl, cfg.accessApiToken)
-    this.network = new NetworkClient(cfg.consoleUrl, cfg.apiKey, cfg.networkSiteId)
-    this.protect = new ProtectClient(cfg.consoleUrl, cfg.apiKey)
+    this.network = new NetworkClient(cfg.consoleUrl, cfg.apiKey, cfg.networkSiteId, cfg.insecureTls)
+    this.protect = new ProtectClient(cfg.consoleUrl, cfg.apiKey, cfg.insecureTls)
   }
 
   listDoorGroups(): Promise<DoorGroup[]> {
@@ -32,8 +35,6 @@ class LiveUniFiProvider implements UniFiProvider {
 
   async provisionAccess(input: ProvisionAccessInput): Promise<ProvisionAccessResult> {
     const accessUserId = await this.access.createUser({ fullName: input.fullName, email: input.email })
-    // Prefer an Access-generated PIN (matches the console's length rules); fall back
-    // to the suggested one if generation isn't available.
     let pin = input.pin
     try {
       pin = await this.access.generatePin()
@@ -63,6 +64,41 @@ class LiveUniFiProvider implements UniFiProvider {
   cameraSnapshotUrl(cameraId: string | null | undefined): string | null {
     return cameraId ? this.protect.snapshotUrl(cameraId) : null
   }
+
+  async discover(): Promise<UniFiDiscovery> {
+    const network = await (async () => {
+      try {
+        const siteId = await this.network.siteId()
+        const wifi = await this.network.listWifi()
+        return { ok: true as const, data: { siteId, wifi } }
+      } catch (e) {
+        return { ok: false as const, error: errMsg(e) }
+      }
+    })()
+
+    const protect = await (async () => {
+      try {
+        const cameras = await this.protect.listCameras()
+        return { ok: true as const, data: { cameras } }
+      } catch (e) {
+        return { ok: false as const, error: errMsg(e) }
+      }
+    })()
+
+    const access = await (async () => {
+      try {
+        const [doorGroups, accessPolicies] = await Promise.all([
+          this.access.listDoorGroups(),
+          this.access.listAccessPolicies(),
+        ])
+        return { ok: true as const, data: { doorGroups, accessPolicies } }
+      } catch (e) {
+        return { ok: false as const, error: errMsg(e) }
+      }
+    })()
+
+    return { mode: this.mode, network, protect, access }
+  }
 }
 
 // ── Dry-run provider — realistic simulation when no controller is configured ──
@@ -91,6 +127,33 @@ class DryRunUniFiProvider implements UniFiProvider {
 
   cameraSnapshotUrl(_cameraId: string | null | undefined): string | null {
     return null
+  }
+
+  async discover(): Promise<UniFiDiscovery> {
+    return {
+      mode: this.mode,
+      network: {
+        ok: true,
+        data: {
+          siteId: 'dryrun-site',
+          wifi: [
+            { id: 'dryrun-wifi-1a', name: '257Washington-1A' },
+            { id: 'dryrun-wifi-2b', name: '257Washington-2B' },
+          ],
+        },
+      },
+      protect: { ok: true, data: { cameras: [{ id: 'dryrun-cam-front', name: 'Front Intercom (sample)' }] } },
+      access: {
+        ok: true,
+        data: {
+          doorGroups: [
+            { id: 'dryrun-front', name: 'Front Intercom (sample)' },
+            { id: 'dryrun-back', name: 'Back Door (sample)' },
+          ],
+          accessPolicies: [{ id: 'dryrun-policy-residents', name: 'Residents (sample)' }],
+        },
+      },
+    }
   }
 }
 

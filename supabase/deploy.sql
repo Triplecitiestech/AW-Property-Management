@@ -458,5 +458,79 @@ CREATE POLICY "invitations_select" ON invitations FOR SELECT TO authenticated US
 CREATE POLICY "invitations_insert" ON invitations FOR INSERT TO authenticated WITH CHECK (invited_by = auth.uid());
 CREATE POLICY "invitations_delete" ON invitations FOR DELETE TO authenticated USING (invited_by = auth.uid());
 
+-- ========================
+-- 007: UniFi tenant provisioning (admin-only; service-role access only)
+-- ========================
+
+CREATE TABLE IF NOT EXISTS unifi_buildings (
+  id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  property_id         UUID REFERENCES properties(id) ON DELETE SET NULL,
+  name                TEXT NOT NULL,
+  address             TEXT,
+  console_url         TEXT,
+  network_site_id     TEXT NOT NULL DEFAULT 'default',
+  front_door_group_id TEXT,
+  back_door_group_id  TEXT,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS unifi_units (
+  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  building_id       UUID NOT NULL REFERENCES unifi_buildings(id) ON DELETE CASCADE,
+  label             TEXT NOT NULL,
+  wifi_ssid         TEXT,
+  wifi_network_id   TEXT,
+  vlan_id           INTEGER,
+  door_group_id     TEXT,
+  protect_camera_id TEXT,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_unifi_units_building ON unifi_units(building_id);
+
+CREATE TABLE IF NOT EXISTS unifi_tenancies (
+  id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  unit_id      UUID NOT NULL REFERENCES unifi_units(id) ON DELETE CASCADE,
+  tenant_name  TEXT NOT NULL,
+  tenant_email TEXT NOT NULL,
+  tenant_phone TEXT,
+  move_in      DATE,
+  move_out     DATE,
+  status       TEXT NOT NULL DEFAULT 'pending'
+                 CHECK (status IN ('pending','active','offboarded','failed')),
+  wants_nfc    BOOLEAN NOT NULL DEFAULT false,
+  created_by   UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_unifi_tenancies_unit ON unifi_tenancies(unit_id);
+
+CREATE TABLE IF NOT EXISTS unifi_provisioning (
+  id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  tenancy_id     UUID NOT NULL UNIQUE REFERENCES unifi_tenancies(id) ON DELETE CASCADE,
+  mode           TEXT NOT NULL DEFAULT 'dry-run',
+  status         TEXT NOT NULL DEFAULT 'pending'
+                   CHECK (status IN ('pending','provisioned','revoked','failed')),
+  access_user_id TEXT,
+  door_pin       TEXT,
+  wifi_ssid      TEXT,
+  wifi_password  TEXT,
+  nfc_status     TEXT NOT NULL DEFAULT 'none'
+                   CHECK (nfc_status IN ('none','requested','issued')),
+  last_error     TEXT,
+  provisioned_at TIMESTAMPTZ,
+  revoked_at     TIMESTAMPTZ,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE unifi_buildings    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE unifi_units        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE unifi_tenancies    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE unifi_provisioning ENABLE ROW LEVEL SECURITY;
+-- Intentionally no policies — access is service-role only (admin server actions).
+REVOKE ALL ON unifi_buildings    FROM anon, authenticated;
+REVOKE ALL ON unifi_units        FROM anon, authenticated;
+REVOKE ALL ON unifi_tenancies    FROM anon, authenticated;
+REVOKE ALL ON unifi_provisioning FROM anon, authenticated;
+
 -- Done!
 SELECT 'Schema deployed successfully' AS result;

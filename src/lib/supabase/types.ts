@@ -173,3 +173,68 @@ export const DEFAULT_CHECKLIST: ChecklistItem[] = [
   { label: 'WiFi / TV working as expected', checked: false },
   { label: 'Overall stay was comfortable', checked: false },
 ]
+
+// ---- UniFi integration ----
+export type UnifiTenancyStatus = 'pending' | 'active' | 'offboarded' | 'failed'
+export type UnifiProvisioningStatus = 'pending' | 'provisioned' | 'revoked' | 'failed'
+export type UnifiNfcStatus = 'none' | 'requested' | 'issued'
+export type UnifiMode = 'live' | 'dry-run'
+
+export interface UnifiBuilding {
+  id: string
+  property_id: string | null
+  name: string
+  address: string | null
+  console_url: string | null
+  network_site_id: string
+  front_door_group_id: string | null
+  back_door_group_id: string | null
+  created_at: string
+}
+
+export interface UnifiUnit {
+  id: string
+  building_id: string
+  label: string
+  wifi_ssid: string | null
+  wifi_network_id: string | null
+  vlan_id: number | null
+  door_group_id: string | null
+  protect_camera_id: string | null
+  created_at: string
+}
+
+export interface UnifiTenancy {
+  id: string
+  unit_id: string
+  tenant_name: string
+  tenant_email: string
+  tenant_phone: string | null
+  move_in: string | null
+  move_out: string | null
+  status: UnifiTenancyStatus
+  wants_nfc: boolean
+  created_by: string | null
+  created_at: string
+}
+
+export interface UnifiProvisioning {
+  id: string
+  tenancy_id: string
+  mode: UnifiMode
+  status: UnifiProvisioningStatus
+  access_user_id: string | null
+  door_pin: string | null
+  wifi_ssid: string | null
+  wifi_password: string | null
+  nfc_status: UnifiNfcStatus
+  last_error: string | null
+  provisioned_at: string | null
+  revoked_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface UnifiTenancyWithProvisioning extends UnifiTenancy {
+  unifi_provisioning: UnifiProvisioning | UnifiProvisioning[] | null
+}

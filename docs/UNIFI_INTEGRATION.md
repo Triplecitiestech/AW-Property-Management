@@ -67,19 +67,27 @@ actions.
 3. Click **Create test building** (seeds 257 Washington Street + 4 sample units).
 4. Add a tenant via the intake form, then **Provision & send welcome** — works in
    dry-run immediately.
-5. To go live, set `UNIFI_CONSOLE_URL`, `UNIFI_NETWORK_API_KEY`,
-   `UNIFI_ACCESS_API_TOKEN`, and (for cameras) `UNIFI_PROTECT_API_KEY`, then fill
-   the building's Access group IDs + each unit's SSID/VLAN/camera in the UI.
+5. To go live, set `UNIFI_CONSOLE_URL`, `UNIFI_API_KEY` (one Integration key for
+   Network + Protect), and `UNIFI_ACCESS_API_TOKEN` (separate Access token), then
+   fill the building's Access group IDs + each unit's SSID/VLAN/camera in the UI.
 
-## To confirm against the live controller (flagged, not assumed)
+## Verified vs. still-to-confirm
 
-- Exact Access endpoints for **PIN assignment** and **door-group / access-policy
-  binding** (`access.ts`) — field names vary by Access version.
-- Network resource name/path for Wi-Fi (`wifi-broadcasts` vs `wlans`) and the
-  passphrase field (`network.ts`).
-- Whether the **Access Developer API (:12445)** is reachable via remote access, or
-  needs the console's proxy path / a tunnel.
-- The real per-apartment SSID/VLAN layout ("I'll have you look at how it's set up").
+Verified against the live console docs (Network 10.4.57 / Protect 7.1.75):
+- One Integration key (`X-API-KEY`) covers **Network + Protect**; **Access uses a
+  separate Bearer token** (port 12445).
+- Network WiFi is `GET/PUT /v1/sites/{siteId}/wifi/broadcasts/{id}` with a
+  full-object PUT; the site is a **UUID** from `GET /v1/sites` (auto-resolved).
+- Protect exposes `/v1/cameras/{id}/snapshot`, RTSPS streams, and a `ring` event
+  stream (`/v1/subscribe/events`) usable for the intercom "ring the manager" flow.
+
+Still to confirm:
+- The exact PSK field inside `securityConfiguration` on a WiFi broadcast (set here
+  as `passphrase`) — needs one live read.
+- **UniFi Access** endpoints for PIN / NFC / door-group binding (`access.ts`) — the
+  Access API reference isn't fetchable by tooling; paste it or confirm against the
+  Access app's API page.
+- Whether port **12445** (Access) is reachable over your remote-access path or needs a tunnel.
 
 ## Security notes / follow-ups
 

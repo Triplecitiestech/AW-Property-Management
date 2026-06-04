@@ -2,23 +2,26 @@ import type { UniFiMode } from './types'
 
 // UniFi connection config. Secrets come from env vars only.
 //
-// Connectivity model (chosen): "UniFi remote access" — the console is reachable
-// over the internet (valid TLS cert) and we authenticate with per-app API keys.
-//   UNIFI_CONSOLE_URL        e.g. https://console.example.com
-//   UNIFI_NETWORK_API_KEY    Network Integration API key  (X-API-KEY)
-//   UNIFI_ACCESS_API_URL     optional; defaults to <console host>:12445
-//   UNIFI_ACCESS_API_TOKEN   UniFi Access developer API token (Bearer)
-//   UNIFI_PROTECT_API_KEY    UniFi Protect integration API key (X-API-KEY)
-//   UNIFI_SITE_ID            Network site id (default "default")
-//   UNIFI_DRY_RUN=true       force simulation even if creds are present
+// Connectivity: "UniFi remote access" — console reachable over the internet.
+// Keys (confirmed against this deployment):
+//   UNIFI_API_KEY          ONE console Integration key — covers Network + Protect
+//                          (Settings → Control Plane → Integrations). X-API-KEY.
+//   UNIFI_ACCESS_API_TOKEN UniFi Access token — SEPARATE, from the Access app
+//                          (Bearer, port 12445).
+//   UNIFI_CONSOLE_URL      e.g. https://console.example.com
+//   UNIFI_SITE_ID          optional Network site UUID; auto-resolved via GET /sites
+//   UNIFI_ACCESS_API_URL   optional; defaults to <console host>:12445
+//   UNIFI_DRY_RUN=true     force simulation even if creds are present
+//
+// UNIFI_NETWORK_API_KEY / UNIFI_PROTECT_API_KEY are still accepted as overrides
+// but normally you only need the single UNIFI_API_KEY.
 
 export type UniFiConfig = {
   consoleUrl: string
-  networkApiKey: string
+  apiKey: string
   accessApiUrl: string
   accessApiToken: string
-  protectApiKey: string
-  networkSiteId: string
+  networkSiteId?: string
 }
 
 const trimSlash = (u: string) => u.replace(/\/+$/, '')
@@ -35,21 +38,25 @@ function deriveAccessUrl(consoleUrl: string): string {
 export function readUniFiConfig(): UniFiConfig | null {
   const consoleUrl = process.env.UNIFI_CONSOLE_URL?.trim()
   if (!consoleUrl) return null
+  const apiKey =
+    process.env.UNIFI_API_KEY?.trim() ||
+    process.env.UNIFI_NETWORK_API_KEY?.trim() ||
+    process.env.UNIFI_PROTECT_API_KEY?.trim() ||
+    ''
   return {
     consoleUrl: trimSlash(consoleUrl),
-    networkApiKey: process.env.UNIFI_NETWORK_API_KEY?.trim() ?? '',
+    apiKey,
     accessApiUrl: trimSlash(process.env.UNIFI_ACCESS_API_URL?.trim() || deriveAccessUrl(consoleUrl)),
     accessApiToken: process.env.UNIFI_ACCESS_API_TOKEN?.trim() ?? '',
-    protectApiKey: process.env.UNIFI_PROTECT_API_KEY?.trim() ?? '',
-    networkSiteId: process.env.UNIFI_SITE_ID?.trim() || 'default',
+    networkSiteId: process.env.UNIFI_SITE_ID?.trim() || undefined,
   }
 }
 
-/** Live mode needs a console URL plus the Access token and Network key. */
+/** Live mode needs a console URL and the Integration API key. */
 export function isUniFiLive(): boolean {
   if (process.env.UNIFI_DRY_RUN === 'true') return false
   const c = readUniFiConfig()
-  return !!(c && c.networkApiKey && c.accessApiToken)
+  return !!(c && c.apiKey)
 }
 
 export function currentMode(): UniFiMode {

@@ -18,12 +18,12 @@ class LiveUniFiProvider implements UniFiProvider {
   readonly mode = 'live' as const
   private readonly access: AccessClient
   private readonly network: NetworkClient
-  private readonly protect: ProtectClient | null
+  private readonly protect: ProtectClient
 
   constructor(cfg: UniFiConfig) {
     this.access = new AccessClient(cfg.accessApiUrl, cfg.accessApiToken)
-    this.network = new NetworkClient(cfg.consoleUrl, cfg.networkApiKey, cfg.networkSiteId)
-    this.protect = cfg.protectApiKey ? new ProtectClient(cfg.consoleUrl, cfg.protectApiKey) : null
+    this.network = new NetworkClient(cfg.consoleUrl, cfg.apiKey, cfg.networkSiteId)
+    this.protect = new ProtectClient(cfg.consoleUrl, cfg.apiKey)
   }
 
   listDoorGroups(): Promise<DoorGroup[]> {
@@ -42,20 +42,15 @@ class LiveUniFiProvider implements UniFiProvider {
   }
 
   async setWifiPassword(input: SetWifiInput): Promise<SetWifiResult> {
-    if (input.wifiNetworkId) {
-      await this.network.updateWifiPassword(input.wifiNetworkId, input.password)
-      return { wifiNetworkId: input.wifiNetworkId }
+    if (!input.wifiNetworkId) {
+      throw new Error(`No UniFi WiFi broadcast id mapped for SSID "${input.ssid}". Map the apartment's SSID first (Discover).`)
     }
-    const wifiNetworkId = await this.network.createWifi({
-      ssid: input.ssid,
-      password: input.password,
-      vlanId: input.vlanId ?? null,
-    })
-    return { wifiNetworkId }
+    await this.network.updateWifiPassword(input.wifiNetworkId, input.password)
+    return { wifiNetworkId: input.wifiNetworkId }
   }
 
   cameraSnapshotUrl(cameraId: string | null | undefined): string | null {
-    return cameraId && this.protect ? this.protect.snapshotUrl(cameraId) : null
+    return cameraId ? this.protect.snapshotUrl(cameraId) : null
   }
 }
 

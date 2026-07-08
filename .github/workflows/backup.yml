@@ -1,0 +1,111 @@
+# Nightly encrypted backup of all Supabase data (tables + auth users).
+#
+# Why this exists: the original Supabase project was a paused free-tier project
+# that got deleted, taking every row of data and every auth user with it. This
+# workflow makes that unrepeatable — every night it exports the full database
+# to an encrypted archive kept for 90 days as a GitHub Actions artifact.
+#
+# Required repository secrets (Settings → Secrets and variables → Actions):
+#   SUPABASE_SERVICE_ROLE_KEY  — the project's secret API key (sb_secret_...)
+#   BACKUP_PASSPHRASE          — any long random string; encrypts the archive.
+#     The repo is public, so artifacts MUST be encrypted. Losing this
+#     passphrase makes backups unreadable — store it in a password manager.
+#
+# To restore from a backup:
+#   1. Download the artifact from the Actions run and unzip it.
+#   2. openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+#        -in backup.tar.gz.enc -out backup.tar.gz -pass env:BACKUP_PASSPHRASE
+#   3. tar xzf backup.tar.gz  →  backup/<table>.jsonl, one JSON row per line.
+#   4. Re-insert rows via PostgREST or SQL. Auth users export has no password
+#      hashes — recreate accounts via the admin API and issue new passwords.
+
+name: Nightly Data Backup
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: https://vixpadnfeguwajummnfo.supabase.co
+    steps:
+      - name: Check required secrets
+        env:
+          SRK: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          missing=""
+          [ -z "$SRK" ] && missing="SUPABASE_SERVICE_ROLE_KEY"
+          [ -z "$PASSPHRASE" ] && missing="$missing BACKUP_PASSPHRASE"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repo secret(s):$missing — backups are NOT running. Add them under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - name: Export all tables and auth users
+        env:
+          SRK: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p backup
+          auth="-H \"apikey: $SRK\" -H \"Authorization: Bearer $SRK\""
+
+          # Discover every exposed table from the PostgREST OpenAPI spec so new
+          # tables are picked up automatically without editing this file.
+          tables=$(curl -sf "$SUPABASE_URL/rest/v1/" \
+            -H "apikey: $SRK" -H "Authorization: Bearer $SRK" \
+            | jq -r '.definitions | keys[]')
+          echo "Tables discovered: $tables"
+
+          for t in $tables; do
+            : > "backup/$t.jsonl"
+            offset=0
+            while :; do
+              rows=$(curl -sf "$SUPABASE_URL/rest/v1/$t?select=*&limit=1000&offset=$offset" \
+                -H "apikey: $SRK" -H "Authorization: Bearer $SRK")
+              n=$(echo "$rows" | jq 'length')
+              [ "$n" -eq 0 ] && break
+              echo "$rows" | jq -c '.[]' >> "backup/$t.jsonl"
+              offset=$((offset + 1000))
+              [ "$n" -lt 1000 ] && break
+            done
+            echo "$t: $(wc -l < "backup/$t.jsonl") rows"
+          done
+
+          # Auth users (emails, metadata, ids — password hashes are not
+          # exportable via the API; restore means recreating accounts).
+          : > backup/auth_users.jsonl
+          page=1
+          while :; do
+            users=$(curl -sf "$SUPABASE_URL/auth/v1/admin/users?page=$page&per_page=1000" \
+              -H "apikey: $SRK" -H "Authorization: Bearer $SRK" | jq '.users')
+            n=$(echo "$users" | jq 'length')
+            [ "$n" -eq 0 ] && break
+            echo "$users" | jq -c '.[]' >> backup/auth_users.jsonl
+            page=$((page + 1))
+            [ "$n" -lt 1000 ] && break
+          done
+          echo "auth_users: $(wc -l < backup/auth_users.jsonl) rows"
+
+      - name: Encrypt archive
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          tar czf backup.tar.gz backup
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+            -in backup.tar.gz -out backup.tar.gz.enc -pass env:BACKUP_PASSPHRASE
+          rm -rf backup backup.tar.gz
+
+      - name: Upload encrypted backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backup.tar.gz.enc
+          retention-days: 90

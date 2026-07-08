@@ -127,18 +127,39 @@ The app is a multi-tenant property management SaaS. Here is what has been built:
 - **STATUS (2026-07-08): Vercel env vars point at Supabase project
   `vixpadnfeguwajummnfo` for production/preview/development.**
 
+### Monitoring & backups (added 2026-07-08)
+- **UptimeRobot** keyword monitor (id `803470203`) checks
+  `https://www.smartsumai.com/auth/login` every 5 minutes for "Welcome back"
+  and emails kurtis@triplecitiestech.com after 5 minutes of downtime. The
+  checks also generate constant Supabase API traffic (middleware auth call),
+  which keeps the free-tier project from ever being flagged inactive/paused.
+- **Nightly data backup**: `.github/workflows/backup.yml` exports every table
+  plus auth users to an encrypted artifact (90-day retention) at 06:00 UTC.
+  Requires repo secrets `SUPABASE_SERVICE_ROLE_KEY` and `BACKUP_PASSPHRASE`;
+  fails loudly until they are added. Restore instructions are in the
+  workflow's header comment.
+
 ## What still needs to be done
 1. **Rotate exposed credentials** — the Vercel token, Supabase access token,
    Twilio auth token, and Resend API key committed to old workflow files are
    public in git history and were still valid as of 2026-07-08. Rotate all
    four, then add the new values as GitHub repo secrets (`VERCEL_TOKEN`,
    `SUPABASE_ACCESS_TOKEN`) and Vercel env vars.
-2. **Re-provision users** — the original database was deleted with all auth
-   users. `aweitsman@awproperties.com` was recreated (see
-   `scripts/create-user.mjs`); recreate any other accounts and re-enter
-   property data.
-3. **Add a sign-up flow** — the login page has no sign-up form; new tenants
-   can't self-register yet.
+2. **Re-provision users and data** — the original database was deleted with
+   all auth users. `aweitsman@awproperties.com` and
+   `kurtis@triplecitiestech.com` (role: owner) were recreated on 2026-07-08;
+   both have randomly generated passwords (the hardcoded one from the old
+   `scripts/create-user.mjs` was rotated because it was public). All property
+   data must be re-entered by hand — there is no backup to restore from.
+3. **Add a sign-up flow** — the login page has no sign-up form (the "Sign up"
+   link is a dead end), and there is no password-reset or password-change
+   page; passwords can only be set via the admin API.
+4. **Add backup secrets** — `.github/workflows/backup.yml` needs the
+   `SUPABASE_SERVICE_ROLE_KEY` and `BACKUP_PASSPHRASE` repo secrets before
+   nightly backups start succeeding.
+5. **Upgrade Supabase to Pro** (recommended) — free-tier projects pause after
+   ~1 week of inactivity and are deleted if paused ~90 days, which is exactly
+   how all data was lost. Pro projects never pause and include daily backups.
 
 ## Project structure
 ```
@@ -162,4 +183,5 @@ supabase/
   workflows/
     deploy.yml        # Vercel auto-deploy on push to main
     migrate.yml       # Manual migration runner
+    backup.yml        # Nightly encrypted data backup (tables + auth users)
 ```

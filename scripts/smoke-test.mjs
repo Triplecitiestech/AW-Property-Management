@@ -126,24 +126,25 @@ async function run() {
     fail('Guest report API', err.message)
   }
 
-  // ---- Test 5: Telegram webhook ----
-  console.log('\n5. Telegram webhook')
+  // ---- Test 5: SMS webhook ----
+  console.log('\n5. SMS webhook')
   try {
-    const res = await fetch(`${APP_URL}/api/webhooks/telegram`, {
+    const res = await fetch(`${APP_URL}/api/webhooks/sms`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'X-Telegram-Bot-Api-Secret-Token': 'wrong_secret',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-Twilio-Signature': 'wrong_signature',
       },
-      body: JSON.stringify({}),
+      body: new URLSearchParams({ From: '+15555550100', Body: 'help' }).toString(),
     })
+    // 401 when TWILIO_AUTH_TOKEN is set (signature rejected), 200 TwiML otherwise
     if (res.status === 200 || res.status === 401) {
-      pass('Telegram webhook endpoint reachable')
+      pass('SMS webhook endpoint reachable')
     } else {
-      fail('Telegram webhook', `Unexpected status ${res.status}`)
+      fail('SMS webhook', `Unexpected status ${res.status}`)
     }
   } catch (err) {
-    fail('Telegram webhook', err.message)
+    fail('SMS webhook', err.message)
   }
 
   // ---- Test 6: Guest page renders ----

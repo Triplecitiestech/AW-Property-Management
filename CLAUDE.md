@@ -1,14 +1,24 @@
 # Claude Code — AW Property Management
 
 ## Branch
-Always develop on and push to `claude/multi-agent-workflow-setup-hU5iv`.
+Develop on and push to the branch designated for the current session/task
+(e.g. `claude/website-504-gateway-timeout-5rimdw`). If no branch is designated,
+create a new `claude/<task>-<suffix>` branch off `main`.
 
 ## Automatic Git workflow
 After every set of changes — **do this automatically, without asking for confirmation**:
 1. `git pull origin main --no-rebase` — pull main and merge automatically
 2. `npx tsc --noEmit && npm run build` — verify build is clean, fix any errors before proceeding
 3. Commit with a clear message
-4. `git push -u origin claude/multi-agent-workflow-setup-hU5iv`
+4. `git push -u origin <designated-branch>`
+
+## Security — never commit credentials
+This is a **public repository**. Never put tokens, API keys, or service-role keys
+in workflow files, source, or docs — not even split into fragments. Use GitHub
+repository secrets (`${{ secrets.X }}`) in workflows and Vercel project env vars
+at runtime. Credentials previously committed here (Vercel token, Supabase access
+token, Twilio auth token, Resend key) were exposed and must be considered
+compromised until rotated.
 
 ## Mandatory pre-push verification
 Run these checks before every commit. If any fail, fix the issues before pushing:
@@ -40,7 +50,10 @@ All credentials live in `.env.local` (gitignored). If that file exists, read it 
 
 ### Supabase
 - **MCP**: If `mcp__supabase__*` tools are available, use them — they have full DB access.
-- **Project ref**: stored in `.env.local` as `NEXT_PUBLIC_SUPABASE_URL` (extract the ref from `https://<ref>.supabase.co`)
+- **Project ref**: `vixpadnfeguwajummnfo` (created 2026-07-08 via the Vercel
+  marketplace integration after the original project `ilooxnlkovwbxymwieaj` was
+  deleted — free-tier projects paused long enough get removed, which took all
+  data and auth users with it).
 - **Migration approach**: run `supabase/deploy.sql` as a single idempotent script, or use the MCP execute_sql tool.
 - **Schema**: all tables defined in `supabase/deploy.sql`. Current tables: `profiles`, `properties`, `property_status`, `stays`, `service_requests`, `service_request_comments`, `guest_reports`, `audit_log`, `property_checklist_items`, `property_contacts`, `organizations`, `org_members`, `property_access`, `invitations`
 - **Types**: manually maintained in `src/lib/supabase/types.ts` — update when schema changes.
@@ -74,7 +87,7 @@ All credentials live in `.env.local` (gitignored). If that file exists, read it 
 - Tailwind CSS
 - TypeScript strict mode
 
-## Current state (as of 2026-02-23)
+## Current state (as of 2026-07-08)
 The app is a multi-tenant property management SaaS. Here is what has been built:
 
 ### Multi-tenant architecture (fully implemented, migration not yet run in production)
@@ -85,7 +98,7 @@ The app is a multi-tenant property management SaaS. Here is what has been built:
 - `can_access_property(prop_id)` and `is_property_admin(prop_id)` DB functions used by all RLS policies
 - New properties automatically assigned to an org via `getOrCreateUserOrg()` in `src/lib/actions/organizations.ts`
 - Migration file: `supabase/migrations/20260221_multi_tenant.sql`
-- **STATUS: Migration NOT yet run in production Supabase — must be run before the app works**
+- **STATUS: Full schema (`supabase/deploy.sql`) applied to project `vixpadnfeguwajummnfo` on 2026-07-08.**
 
 ### Settings & invites (fully implemented)
 - `/settings` — org name editing, team member management, invite link generation
@@ -104,15 +117,28 @@ The app is a multi-tenant property management SaaS. Here is what has been built:
 - Sidebar includes: Dashboard, Properties, Stays, Tickets, Settings
 
 ### Deployment
-- GitHub Actions: `.github/workflows/deploy.yml` (auto-deploy to Vercel on push to main)
-- GitHub Actions: `.github/workflows/migrate.yml` (manual migration runner)
-- **STATUS: Vercel project exists but env vars not yet configured — app not live yet**
+- Vercel project `aw-property-management` is linked to this GitHub repo
+  (production branch `main`); production domain is `https://smartsumai.com`
+  (`NEXT_PUBLIC_APP_URL`), plus `aw-property-management.vercel.app`.
+- GitHub Actions: `.github/workflows/deploy.yml` (checks + CLI deploy on push to
+  main; deploy step requires the `VERCEL_TOKEN` repo secret, otherwise skipped)
+- GitHub Actions: `.github/workflows/migrate.yml` (manual migration runner;
+  requires the `SUPABASE_ACCESS_TOKEN` repo secret)
+- **STATUS (2026-07-08): Vercel env vars point at Supabase project
+  `vixpadnfeguwajummnfo` for production/preview/development.**
 
 ## What still needs to be done
-1. **Run the Supabase migration** — execute `supabase/migrations/20260221_multi_tenant.sql` in production
-2. **Configure Vercel env vars** — set all required env vars on the Vercel project
-3. **Merge branch to main** — merge `claude/multi-agent-workflow-setup-hU5iv` into `main` so GitHub Actions deploys
-4. **Add a sign-up flow** — the login page has no sign-up form; new tenants can't self-register yet
+1. **Rotate exposed credentials** — the Vercel token, Supabase access token,
+   Twilio auth token, and Resend API key committed to old workflow files are
+   public in git history and were still valid as of 2026-07-08. Rotate all
+   four, then add the new values as GitHub repo secrets (`VERCEL_TOKEN`,
+   `SUPABASE_ACCESS_TOKEN`) and Vercel env vars.
+2. **Re-provision users** — the original database was deleted with all auth
+   users. `aweitsman@awproperties.com` was recreated (see
+   `scripts/create-user.mjs`); recreate any other accounts and re-enter
+   property data.
+3. **Add a sign-up flow** — the login page has no sign-up form; new tenants
+   can't self-register yet.
 
 ## Project structure
 ```

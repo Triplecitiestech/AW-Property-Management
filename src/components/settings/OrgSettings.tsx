@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import {
   updateOrgName,
+  updateOrgAiInstructions,
   createOrgInvitation,
   revokeInvitation,
   removeOrgMember,
@@ -10,7 +11,7 @@ import {
 } from '@/lib/actions/organizations'
 import type { OrgRole } from '@/lib/supabase/types'
 
-type Org = { id: string; name: string; created_at: string }
+type Org = { id: string; name: string; ai_instructions: string | null; created_at: string }
 type Member = {
   org_id: string; user_id: string; role: string; joined_at: string
   profiles?: { full_name: string; email: string | null } | null
@@ -19,6 +20,8 @@ type Invitation = {
   id: string; token: string; role: string; email: string | null
   expires_at: string; created_at: string
 }
+
+const DEFAULT_AI_INSTRUCTIONS = `Be concise and professional. When creating work orders, always confirm the property and contact before proceeding. If a contact is missing for a category, ask the user if they'd like to add one or skip. Prefer texting over email for urgent matters. Always address the user by their first name.`
 
 const ROLE_LABELS: Record<string, string> = {
   owner: 'Owner', admin: 'Admin', member: 'Member',
@@ -68,6 +71,21 @@ export default function OrgSettings({
   const [nameError, setNameError] = useState<string | null>(null)
   const [nameSaved, setNameSaved] = useState(false)
   const [namePending, startNameTransition] = useTransition()
+
+  // ── Org AI Instructions ────────────────────────────────────────────────────
+  const [aiInstructions, setAiInstructions] = useState(org.ai_instructions ?? '')
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [aiSaved, setAiSaved] = useState(false)
+  const [aiPending, startAiTransition] = useTransition()
+
+  function handleSaveAi() {
+    setAiError(null)
+    startAiTransition(async () => {
+      const result = await updateOrgAiInstructions(org.id, aiInstructions)
+      if (result?.error) { setAiError(result.error) }
+      else { setAiSaved(true); setTimeout(() => setAiSaved(false), 2000) }
+    })
+  }
 
   function handleSaveName() {
     setNameError(null)
@@ -145,6 +163,55 @@ export default function OrgSettings({
             Created {new Date(org.created_at).toLocaleDateString()} · {members.length} member{members.length !== 1 ? 's' : ''}
           </p>
         </div>
+      </div>
+
+      {/* ── General AI Instructions ────────────────────────────── */}
+      <div className="card p-5">
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <h2 className="text-base font-semibold text-white">General AI Instructions</h2>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm('Restore AI instructions to the recommended defaults? Your current instructions will be replaced.')) {
+                  setAiInstructions(DEFAULT_AI_INSTRUCTIONS)
+                }
+              }}
+              className="text-xs text-[#6480a0] hover:text-sky-400 transition-colors flex-shrink-0"
+            >
+              Restore defaults
+            </button>
+          )}
+        </div>
+        <p className="text-xs text-[#6480a0] mb-2">
+          Default instructions for the AI agent across all your properties. Override per-property in the property&apos;s AI Agent Instructions section.
+        </p>
+        {/* Warning banner */}
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-sky-500/10 border border-sky-500/20 text-xs text-sky-300 mb-3">
+          <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <span>
+            <strong>Customize carefully.</strong> These instructions guide every AI interaction. Removing key rules (like contact checks or property name matching) may cause the AI to behave unexpectedly. Use &ldquo;Restore defaults&rdquo; if something goes wrong.
+          </span>
+        </div>
+        <textarea
+          className="form-input text-sm w-full"
+          rows={5}
+          value={aiInstructions}
+          onChange={e => setAiInstructions(e.target.value)}
+          placeholder="e.g. Always respond politely. Prefer texting over email. For maintenance issues, always contact the plumber first..."
+          disabled={!isAdmin}
+        />
+        {aiError && <p className="text-xs text-red-400 mt-1">{aiError}</p>}
+        {isAdmin && (
+          <div className="flex items-center gap-3 mt-2">
+            <button onClick={handleSaveAi} disabled={aiPending} className="btn-primary text-sm">
+              {aiPending ? 'Saving…' : aiSaved ? 'Saved!' : 'Save AI Instructions'}
+            </button>
+            {aiSaved && <span className="text-xs text-emerald-400">Instructions saved</span>}
+          </div>
+        )}
       </div>
 
       {/* ── Team Members ──────────────────────────────────────── */}

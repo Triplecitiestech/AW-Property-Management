@@ -2,8 +2,9 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { OrgRole, PropertyRole } from '@/lib/supabase/types'
+import { sendWelcomeEmail } from '@/lib/email/resend'
 
 // ─── Internal: Get or create the current user's primary org ──────────────────
 // Used by property-creation to ensure an org always exists.
@@ -14,19 +15,29 @@ export async function getOrCreateUserOrg(): Promise<string | null> {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return null
 
-    // Check for existing owner membership
+    // Check for ANY existing membership (not just 'owner')
     const { data: existing } = await supabase
       .from('org_members')
       .select('org_id')
       .eq('user_id', user.id)
-      .eq('role', 'owner')
       .limit(1)
       .maybeSingle()
 
     if (existing?.org_id) return existing.org_id
 
-    // Fetch profile for org name
-    const { data: profile } = await supabase
+    // Use service client to bypass RLS — regular client can't insert orgs/members
+    // without a profile row existing first (FK constraint).
+    const svc = createServiceClient()
+
+    // Ensure profile exists (required for org_members FK)
+    await svc.from('profiles').upsert({
+      id: user.id,
+      role: 'manager',
+      full_name: (user.user_metadata?.full_name as string) || user.email || '',
+      email: user.email || '',
+    }, { onConflict: 'id' })
+
+    const { data: profile } = await svc
       .from('profiles')
       .select('full_name, email')
       .eq('id', user.id)
@@ -34,8 +45,7 @@ export async function getOrCreateUserOrg(): Promise<string | null> {
 
     const orgName = profile?.full_name?.trim() || profile?.email?.split('@')[0] || 'My Organization'
 
-    // Create the organization
-    const { data: org, error: orgError } = await supabase
+    const { data: org, error: orgError } = await svc
       .from('organizations')
       .insert({ name: orgName })
       .select('id')
@@ -43,12 +53,21 @@ export async function getOrCreateUserOrg(): Promise<string | null> {
 
     if (orgError || !org) return null
 
-    // Add user as owner
-    await supabase.from('org_members').insert({
+    await svc.from('org_members').insert({
       org_id: org.id,
       user_id: user.id,
       role: 'owner',
     })
+
+    // Send welcome email to new user (fire-and-forget)
+    if (user.email) {
+      const twilioPhone = process.env.TWILIO_PHONE_NUMBER ?? ''
+      sendWelcomeEmail({
+        to: user.email,
+        name: profile?.full_name || user.email,
+        twilioPhone,
+      }).catch(console.error)
+    }
 
     return org.id
   } catch {
@@ -72,6 +91,23 @@ export async function getMyOrg() {
     .maybeSingle()
 
   return data ?? null
+}
+
+// ─── Update org AI instructions ───────────────────────────────────────────────
+
+export async function updateOrgAiInstructions(orgId: string, aiInstructions: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/login')
+
+  const { error } = await supabase
+    .from('organizations')
+    .update({ ai_instructions: aiInstructions.trim() || null })
+    .eq('id', orgId)
+
+  if (error) return { error: error.message }
+  revalidatePath('/settings')
+  return { success: true }
 }
 
 // ─── Update org name ──────────────────────────────────────────────────────────

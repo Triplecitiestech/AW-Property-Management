@@ -1,0 +1,135 @@
+name: E2E Tests (Browserbase)
+
+# Chains off deploy.yml — runs AFTER a successful deploy on claude/** branches.
+# Does NOT deploy its own preview (that was causing duplicate deployments).
+# Instead, downloads the deployment URL artifact uploaded by deploy.yml.
+#
+# Credentials (all from repository secrets — never inline; the repo is public):
+#   • VERCEL_TOKEN secret (for pulling Browserbase creds via `vercel env pull`)
+#   • E2E_EMAIL / E2E_PASSWORD secrets (test login account)
+#   • Browserbase API key + Project ID: pulled via `vercel env pull`
+
+on:
+  workflow_run:
+    workflows: ["Deploy to Vercel"]
+    types: [completed]
+    branches:
+      - 'claude/**'
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Test this URL directly (skips artifact download)'
+        required: false
+        type: string
+
+concurrency:
+  group: e2e-${{ github.event.workflow_run.head_branch || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Browserbase E2E
+    runs-on: ubuntu-latest
+    # Only run if deploy succeeded (or manual trigger).
+    # Skip production deploys — E2E is for preview branches only.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch != 'main')
+    env:
+      E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Check required secrets
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$E2E_EMAIL" ] || [ -z "$E2E_PASSWORD" ]; then
+            echo "::error::Missing VERCEL_TOKEN / E2E_EMAIL / E2E_PASSWORD repo secrets — E2E cannot run."
+            exit 1
+          fi
+
+      - name: Download deployment URL from deploy workflow
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-url
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Set BASE_URL
+        run: |
+          if [ -n "${{ github.event.inputs.base_url }}" ]; then
+            echo "BASE_URL=${{ github.event.inputs.base_url }}" >> "$GITHUB_ENV"
+          elif [ -f deployment-url.txt ]; then
+            URL=$(cat deployment-url.txt | tr -d '[:space:]')
+            echo "BASE_URL=$URL" >> "$GITHUB_ENV"
+          else
+            echo "::error::No deployment URL available — artifact missing"
+            exit 1
+          fi
+
+      - name: Print test target
+        run: echo "Running E2E tests against $BASE_URL"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Resolve Vercel IDs
+        run: |
+          set -euo pipefail
+          PROJ_RESP=$(curl -sf \
+            "https://api.vercel.com/v9/projects/AW-Property-Management?teamSlug=Triplecitiestech" \
+            -H "Authorization: Bearer $VERCEL_TOKEN")
+          echo "VERCEL_ORG_ID=$(echo "$PROJ_RESP"    | jq -r '.accountId')" >> "$GITHUB_ENV"
+          echo "VERCEL_PROJECT_ID=$(echo "$PROJ_RESP" | jq -r '.id')"       >> "$GITHUB_ENV"
+
+      - name: Pull Vercel env vars (Browserbase credentials)
+        run: |
+          vercel env pull .env.vercel --environment=preview --token="$VERCEL_TOKEN" --yes
+          grep -E '^(BROWSERBASE_|NEXT_PUBLIC_SUPABASE_|SUPABASE_)' .env.vercel >> "$GITHUB_ENV" || true
+          echo "Browserbase credentials loaded from Vercel project"
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Create auth state directory
+        run: mkdir -p tests/e2e/.auth
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-artifacts-${{ github.run_id }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 14
+
+      - name: Report results in summary
+        if: always()
+        run: |
+          echo "## E2E Test Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "Target URL: $BASE_URL" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f test-results/results.json ]; then
+            PASSED=$(node -e "const r=require('./test-results/results.json'); console.log(r.stats?.expected ?? 0)")
+            FAILED=$(node -e "const r=require('./test-results/results.json'); console.log(r.stats?.unexpected ?? 0)")
+            echo "Passed: $PASSED  Failed: $FAILED" >> "$GITHUB_STEP_SUMMARY"
+          fi

@@ -9,6 +9,7 @@ import {
   updateProperty,
   updatePropertyNotes,
   updateAiInstructions,
+  updatePropertyAccess,
 } from '@/lib/actions/properties'
 import { CONTACT_ROLES } from '@/lib/contact-roles'
 import { DEFAULT_CHECKLIST_LABELS } from '@/lib/checklist-defaults'
@@ -30,6 +31,7 @@ const EMPTY_CONTACT: ContactDraft = {
 
 const STEPS = [
   { id: 'details',   title: 'Property Details',        subtitle: 'Name, address, and property information' },
+  { id: 'access',    title: 'Guest Access Info',        subtitle: 'WiFi, door codes, check-in times — shared with guests & tenants' },
   { id: 'primary',   title: 'Primary Contact',          subtitle: 'Who manages this property?' },
   { id: 'services',  title: 'Service Contacts',          subtitle: 'Cleaning, maintenance, landscaping, and more' },
   { id: 'checklist', title: 'Cleaning Checklist',        subtitle: 'Items for your cleaning and inspection team' },
@@ -75,17 +77,32 @@ function StepButtons({
 
 // ─── Progress Indicator ───────────────────────────────────────────────────────
 
-function StepIndicator({ current, total }: { current: number; total: number }) {
+function StepIndicator({
+  current,
+  total,
+  maxReached,
+  onStepClick,
+}: {
+  current: number
+  total: number
+  maxReached: number
+  onStepClick: (step: number) => void
+}) {
   return (
     <div className="flex items-center gap-2 mb-6">
-      {Array.from({ length: total }).map((_, i) => (
-        <div
-          key={i}
-          className={`h-1.5 flex-1 rounded-full transition-colors ${
-            i < current ? 'bg-violet-500' : i === current ? 'bg-violet-400' : 'bg-[#262638]'
-          }`}
-        />
-      ))}
+      {Array.from({ length: total }).map((_, i) => {
+        const clickable = i <= maxReached && i !== current
+        return (
+          <div
+            key={i}
+            onClick={clickable ? () => onStepClick(i) : undefined}
+            title={clickable ? STEPS[i].title : undefined}
+            className={`h-1.5 flex-1 rounded-full transition-all ${
+              i < current ? 'bg-violet-500' : i === current ? 'bg-violet-400' : 'bg-[#262638]'
+            } ${clickable ? 'cursor-pointer hover:opacity-70' : ''}`}
+          />
+        )
+      })}
       <span className="text-xs text-[#60608a] ml-1 flex-shrink-0">
         {current + 1} / {total}
       </span>
@@ -125,6 +142,7 @@ function PropertyDetailsStep({
   initialName = '',
   initialAddress = '',
   initialDescription = '',
+  initialPropertyType = 'single_family',
   onSave,
   onSkip,
 }: {
@@ -133,11 +151,13 @@ function PropertyDetailsStep({
   initialName?: string
   initialAddress?: string
   initialDescription?: string
-  onSave: (propertyId: string, name: string) => void
+  initialPropertyType?: string
+  onSave: (propertyId: string, name: string, propertyType: string) => void
   onSkip?: () => void
 }) {
   const [name, setName] = useState(initialName)
   const [address, setAddress] = useState(initialAddress)
+  const [propertyType, setPropertyType] = useState(initialPropertyType)
 
   // Create mode: structured property info fields
   const [bedrooms, setBedrooms] = useState('')
@@ -151,8 +171,33 @@ function PropertyDetailsStep({
   // Edit mode: full-text description
   const [description, setDescription] = useState(initialDescription)
 
+  const [aiSummary, setAiSummary] = useState('')
+  const [summaryLoading, setSummaryLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+
+  async function fetchAiSummary() {
+    if (!address && !name) return
+    setSummaryLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/property-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, address }),
+      })
+      const data = await res.json()
+      if (data.error && !data.summary) {
+        setError(`AI summary unavailable: ${data.error}`)
+      } else if (data.summary) {
+        setAiSummary(data.summary)
+      }
+    } catch {
+      setError('Failed to generate AI summary. Check your API key configuration.')
+    } finally {
+      setSummaryLoading(false)
+    }
+  }
 
   function handleSave() {
     if (!name.trim()) { setError('Property name is required.'); return }
@@ -160,9 +205,17 @@ function PropertyDetailsStep({
     startTransition(async () => {
       if (isNew) {
         const desc = buildDescription(bedrooms, bathrooms, maxGuests, wifiName, wifiPass, amenities, extra)
-        const result = await createPropertyForWizard(name, address, desc || null)
+        const result = await createPropertyForWizard(name, address, desc || null, propertyType as 'single_family' | 'apartment_building' | 'hospitality')
         if ('error' in result) { setError(result.error); return }
-        onSave(result.propertyId, name.trim())
+        // Save AI summary if generated
+        if (aiSummary) {
+          await fetch('/api/property-summary', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ propertyId: result.propertyId, summary: aiSummary }),
+          }).catch(() => {})
+        }
+        onSave(result.propertyId, name.trim(), propertyType)
       } else {
         const fd = new FormData()
         fd.set('name', name)
@@ -170,7 +223,7 @@ function PropertyDetailsStep({
         fd.set('description', description)
         const result = await updateProperty(propertyId!, fd)
         if (result?.error) { setError(result.error); return }
-        onSave(propertyId!, name.trim())
+        onSave(propertyId!, name.trim(), propertyType)
       }
     })
   }
@@ -200,7 +253,48 @@ function PropertyDetailsStep({
             placeholder="123 Main St, City, State ZIP"
           />
         </div>
+        <div>
+          <label className="form-label text-xs">Property Type</label>
+          <select
+            className="form-select text-sm"
+            value={propertyType}
+            onChange={e => setPropertyType(e.target.value)}
+          >
+            <option value="single_family">Single Family / Vacation Rental</option>
+            <option value="apartment_building">Apartment Building (Multi-Unit)</option>
+            <option value="hospitality">Hotel / Hospitality</option>
+          </select>
+          {propertyType !== 'single_family' && (
+            <p className="text-[11px] text-[#6480a0] mt-1">
+              You can add and manage individual units from the property page after creation.
+            </p>
+          )}
+        </div>
       </div>
+
+      {/* AI Property Summary */}
+      {(name || address) && (
+        <div className="rounded-xl border border-[#2a3d58] bg-[#0f1829] p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="form-label text-xs mb-0">AI Property Summary</label>
+            <button
+              type="button"
+              onClick={fetchAiSummary}
+              disabled={summaryLoading}
+              className="text-xs text-violet-400 hover:text-violet-300 transition-colors disabled:opacity-50"
+            >
+              {summaryLoading ? 'Generating…' : aiSummary ? 'Regenerate' : '✨ Generate'}
+            </button>
+          </div>
+          <textarea
+            className="form-input text-sm w-full resize-none"
+            rows={3}
+            value={aiSummary}
+            onChange={e => setAiSummary(e.target.value)}
+            placeholder="Click Generate to get an AI-powered property description…"
+          />
+        </div>
+      )}
 
       {isNew ? (
         /* Create mode: structured fields */
@@ -315,7 +409,103 @@ function PropertyDetailsStep({
   )
 }
 
-// ─── Step 1: Primary Contact ───────────────────────────────────────────────────
+// ─── Step 1: Guest Access Info ────────────────────────────────────────────────
+
+function GuestAccessStep({
+  propertyId,
+  onNext,
+  onSkip,
+}: {
+  propertyId: string
+  onNext: () => void
+  onSkip: () => void
+}) {
+  const [wifiName, setWifiName] = useState('')
+  const [wifiPass, setWifiPass] = useState('')
+  const [doorCode, setDoorCode] = useState('')
+  const [gateCode, setGateCode] = useState('')
+  const [parkingInfo, setParkingInfo] = useState('')
+  const [checkIn, setCheckIn] = useState('')
+  const [checkOut, setCheckOut] = useState('')
+  const [trashSchedule, setTrashSchedule] = useState('')
+  const [houseRules, setHouseRules] = useState('')
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
+
+  function handleSave() {
+    setError(null)
+    startTransition(async () => {
+      const result = await updatePropertyAccess(propertyId, {
+        wifi_name: wifiName,
+        wifi_password: wifiPass,
+        door_code: doorCode,
+        gate_code: gateCode,
+        parking_info: parkingInfo,
+        check_in_time: checkIn,
+        check_out_time: checkOut,
+        trash_schedule: trashSchedule,
+        house_rules: houseRules,
+      })
+      if (result?.error) { setError(result.error) } else { onNext() }
+    })
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-[#8080aa]">
+        This info is auto-shared with guests and tenants when you invite them. You can update it any time from the property page.
+      </p>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="form-label text-xs">WiFi Network</label>
+          <input type="text" className="form-input text-sm" value={wifiName} onChange={e => setWifiName(e.target.value)} placeholder="HomeNetwork_5G" />
+        </div>
+        <div>
+          <label className="form-label text-xs">WiFi Password</label>
+          <input type="text" className="form-input text-sm" value={wifiPass} onChange={e => setWifiPass(e.target.value)} placeholder="password123" />
+        </div>
+        <div>
+          <label className="form-label text-xs">Door / Lock Code</label>
+          <input type="text" className="form-input text-sm" value={doorCode} onChange={e => setDoorCode(e.target.value)} placeholder="1234" />
+        </div>
+        <div>
+          <label className="form-label text-xs">Gate Code</label>
+          <input type="text" className="form-input text-sm" value={gateCode} onChange={e => setGateCode(e.target.value)} placeholder="5678 (if applicable)" />
+        </div>
+        <div>
+          <label className="form-label text-xs">Check-in Time</label>
+          <input type="text" className="form-input text-sm" value={checkIn} onChange={e => setCheckIn(e.target.value)} placeholder="3:00 PM" />
+        </div>
+        <div>
+          <label className="form-label text-xs">Check-out Time</label>
+          <input type="text" className="form-input text-sm" value={checkOut} onChange={e => setCheckOut(e.target.value)} placeholder="11:00 AM" />
+        </div>
+      </div>
+
+      <div>
+        <label className="form-label text-xs">Parking Info</label>
+        <input type="text" className="form-input text-sm" value={parkingInfo} onChange={e => setParkingInfo(e.target.value)} placeholder="2-car garage, code 9876. Street parking after 6pm." />
+      </div>
+
+      <div>
+        <label className="form-label text-xs">Trash Schedule</label>
+        <input type="text" className="form-input text-sm" value={trashSchedule} onChange={e => setTrashSchedule(e.target.value)} placeholder="Trash: Tuesday 7am. Recycling: every other week." />
+      </div>
+
+      <div>
+        <label className="form-label text-xs">House Rules</label>
+        <textarea className="form-input text-sm" rows={3} value={houseRules} onChange={e => setHouseRules(e.target.value)}
+          placeholder="No smoking inside. No parties. Pets allowed in backyard only. Quiet hours after 10pm." />
+      </div>
+
+      {error && <p className="text-xs text-red-400">{error}</p>}
+      <StepButtons onSave={handleSave} onSkip={onSkip} isPending={isPending} saveLabel="Save & Continue" />
+    </div>
+  )
+}
+
+// ─── Step 2: Primary Contact ───────────────────────────────────────────────────
 
 function PrimaryContactStep({
   propertyId,
@@ -732,15 +922,29 @@ export default function OnboardingWizard({
   initialAiInstructions?: string
 }) {
   const [step, setStep] = useState(0)
+  // For edit mode all steps are accessible; for new, start at 0 and expand as we progress
+  const [maxReached, setMaxReached] = useState(isNew ? 0 : STEPS.length - 1)
   const [resolvedPropertyId, setResolvedPropertyId] = useState<string | undefined>(propPropertyId)
   const [resolvedName, setResolvedName] = useState(initialName)
+  const [resolvedPropertyType, setResolvedPropertyType] = useState('single_family')
 
   const done = step >= STEPS.length
-  const next = () => setStep(s => s + 1)
+  const next = () => {
+    const nextStep = step + 1
+    setStep(nextStep)
+    setMaxReached(prev => Math.max(prev, nextStep))
+  }
 
-  function handleDetailsSave(id: string, name: string) {
+  function handleStepClick(targetStep: number) {
+    // Don't allow jumping past step 0 if no property exists yet
+    if (targetStep > 0 && !resolvedPropertyId) return
+    setStep(targetStep)
+  }
+
+  function handleDetailsSave(id: string, name: string, propertyType: string) {
     setResolvedPropertyId(id)
     setResolvedName(name)
+    setResolvedPropertyType(propertyType)
     next()
   }
 
@@ -774,7 +978,7 @@ export default function OnboardingWizard({
           <DoneScreen propertyId={resolvedPropertyId!} propertyName={resolvedName} isNew={isNew} />
         ) : (
           <>
-            <StepIndicator current={step} total={STEPS.length} />
+            <StepIndicator current={step} total={STEPS.length} maxReached={maxReached} onStepClick={handleStepClick} />
 
             <div className="mb-5">
               <h2 className="text-base font-semibold text-white">{STEPS[step].title}</h2>
@@ -793,12 +997,15 @@ export default function OnboardingWizard({
               />
             )}
             {step === 1 && resolvedPropertyId && (
-              <PrimaryContactStep propertyId={resolvedPropertyId} onNext={next} onSkip={next} />
+              <GuestAccessStep propertyId={resolvedPropertyId} onNext={next} onSkip={next} />
             )}
             {step === 2 && resolvedPropertyId && (
-              <ServiceContactsStep propertyId={resolvedPropertyId} onNext={next} onSkip={next} />
+              <PrimaryContactStep propertyId={resolvedPropertyId} onNext={next} onSkip={next} />
             )}
             {step === 3 && resolvedPropertyId && (
+              <ServiceContactsStep propertyId={resolvedPropertyId} onNext={next} onSkip={next} />
+            )}
+            {step === 4 && resolvedPropertyId && (
               <ChecklistStep
                 propertyId={resolvedPropertyId}
                 initialChecklist={initialChecklist}
@@ -806,7 +1013,7 @@ export default function OnboardingWizard({
                 onSkip={next}
               />
             )}
-            {step === 4 && resolvedPropertyId && (
+            {step === 5 && resolvedPropertyId && (
               <NotesStep
                 propertyId={resolvedPropertyId}
                 initialNotes={initialNotes}

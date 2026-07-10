@@ -2,18 +2,43 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { lookupUsernameEmail } from '@/lib/actions/auth'
+import { redeemFreeInviteCode } from '@/lib/actions/free-invites'
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0f1829] flex items-center justify-center">
+        <div className="text-[#6480a0] text-sm">Loading...</div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
+  const searchParams = useSearchParams()
+  const inviteCode = searchParams.get('invite')
   const [emailOrUsername, setEmailOrUsername] = useState('')
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [tosAgreed, setTosAgreed] = useState(false)
+  const [smsConsent, setSmsConsent] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  // Auto-set signup mode when invite code is present
+  useEffect(() => {
+    if (inviteCode) setMode('signup')
+  }, [inviteCode])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -34,15 +59,35 @@ export default function LoginPage() {
         }
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-        window.location.href = '/dashboard'
+        window.location.href = '/welcome'
       } else {
+        if (!tosAgreed) throw new Error('You must accept the Terms of Use to create an account.')
+        if (!phone.trim()) throw new Error('A phone number is required to use the SMS AI assistant.')
         const email = emailOrUsername.trim()
-        const { error } = await supabase.auth.signUp({
+        const { error, data: signUpData } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: fullName, role: 'owner' } },
+          options: {
+            data: {
+              full_name: fullName,
+              role: 'owner',
+              phone_number: phone.trim() || null,
+              tos_agreed_at: new Date().toISOString(),
+              sms_consent: smsConsent,
+              free_invite_code: inviteCode || undefined,
+            },
+          },
         })
         if (error) throw error
+
+        // If invite code was used and user is immediately available (auto-confirm),
+        // redeem the code now. Otherwise it will be redeemed on first login via callback.
+        if (inviteCode && signUpData.user?.id) {
+          await redeemFreeInviteCode(inviteCode, signUpData.user.id).catch(() => {
+            // Non-blocking — code will be retried on callback
+          })
+        }
+
         setMessage('Check your email to confirm your account, then log in.')
         setMode('login')
       }
@@ -61,15 +106,25 @@ export default function LoginPage() {
 
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5
-                          bg-gradient-to-br from-violet-600 to-cyan-500 shadow-2xl shadow-violet-900/60">
-            <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-white">AW Property Management</h1>
-          <p className="text-[#60608a] mt-1 text-sm">Property operations dashboard</p>
+          <a href="https://www.smartsumai.com/" className="inline-block group">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5
+                            bg-gradient-to-br from-violet-600 to-cyan-500 shadow-2xl shadow-violet-900/60
+                            group-hover:opacity-90 transition-opacity">
+              <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-white group-hover:opacity-90 transition-opacity">Smart <span className="text-teal-400">Sumai</span></h1>
+          </a>
+          <p className="text-[#60608a] mt-1 text-sm">AI-powered property management</p>
         </div>
+
+        {inviteCode && (
+          <div className="mb-4 p-3 rounded-xl bg-teal-950/40 border border-teal-500/30 text-center">
+            <p className="text-sm text-teal-300 font-medium">You&apos;ve been invited with free access</p>
+            <p className="text-xs text-[#6480a0] mt-0.5">Create an account below — no billing required.</p>
+          </div>
+        )}
 
         <div className="card p-8">
           <h2 className="text-lg font-semibold mb-6 text-white">
@@ -89,17 +144,66 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
-              <div>
-                <label className="form-label">Full Name</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={fullName}
-                  onChange={e => setFullName(e.target.value)}
-                  placeholder="Alex Williams"
-                  required
-                />
-              </div>
+              <>
+                <div>
+                  <label className="form-label">Full Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    placeholder="Alex Williams"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Phone Number <span className="text-red-400 font-normal text-xs">*required</span></label>
+                  <p className="text-[11px] text-[#60608a] mb-1.5">
+                    Required for SMS-based AI assistant access. Use E.164 format, e.g. <span className="font-mono">+16075550100</span>
+                  </p>
+                  <input
+                    type="tel"
+                    className="form-input"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    placeholder="+16075550100"
+                    required
+                  />
+                </div>
+                {/* SMS Consent — only shown when phone number is provided */}
+                {phone.trim() && (
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={smsConsent}
+                      onChange={e => setSmsConsent(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-[#2a3d58] bg-[#0f1829] text-violet-500 focus:ring-violet-500 flex-shrink-0"
+                    />
+                    <span className="text-[11px] text-[#60608a] leading-relaxed">
+                      I consent to receive automated SMS messages from Smart Sumai at this number for property
+                      management purposes. Message &amp; data rates may apply. Text STOP to opt out.{' '}
+                      <Link href="/sms-policy" target="_blank" className="text-violet-400 hover:text-violet-300 underline">SMS Policy</Link>
+                    </span>
+                  </label>
+                )}
+                {/* Terms of Use */}
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={tosAgreed}
+                    onChange={e => setTosAgreed(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 rounded border-[#2a3d58] bg-[#0f1829] text-violet-500 focus:ring-violet-500 flex-shrink-0"
+                    required
+                  />
+                  <span className="text-[11px] text-[#60608a] leading-relaxed">
+                    I have read and agree to the{' '}
+                    <Link href="/terms" target="_blank" className="text-violet-400 hover:text-violet-300 underline">Terms of Use</Link>
+                    {' '}and{' '}
+                    <Link href="/privacy" target="_blank" className="text-violet-400 hover:text-violet-300 underline">Privacy Policy</Link>
+                    . I am at least 18 years old.
+                  </span>
+                </label>
+              </>
             )}
             <div>
               <label className="form-label">
@@ -124,7 +228,7 @@ export default function LoginPage() {
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                minLength={6}
+                minLength={mode === 'login' ? 6 : 8}
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               />
             </div>

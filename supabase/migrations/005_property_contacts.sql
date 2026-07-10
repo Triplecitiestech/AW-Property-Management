@@ -1,6 +1,6 @@
 -- ============================================================
 -- Migration 005: Property Quick Notes, AI Instructions & Contacts
--- AW Property Management
+-- Smart Sumai
 -- ============================================================
 
 -- Add per-property overview notes and AI message instructions

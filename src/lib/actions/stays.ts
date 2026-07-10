@@ -13,25 +13,37 @@ export async function createStay(formData: FormData) {
   if (!user) redirect('/auth/login')
 
   const property_id = formData.get('property_id') as string
+  const unit_id = (formData.get('unit_id') as string) || null
   const guest_name = formData.get('guest_name') as string
   const guest_email = (formData.get('guest_email') as string) || null
   const start_date = formData.get('start_date') as string
   const end_date = formData.get('end_date') as string
   const notes = (formData.get('notes') as string) || null
+  const wifi_name = (formData.get('wifi_name') as string) || null
+  const wifi_password = (formData.get('wifi_password') as string) || null
+  const door_code = (formData.get('door_code') as string) || null
+  const host_instructions = (formData.get('host_instructions') as string) || null
+  const stay_type = (formData.get('stay_type') as string) || 'short_term'
 
   if (!property_id || !guest_name?.trim() || !start_date || !end_date) {
-    return { error: 'Property, guest name, start date, and end date are required.' }
+    return { error: 'Property, name, start date, and end date are required.' }
   }
 
   const { data: stay, error } = await supabase
     .from('stays')
     .insert({
       property_id,
+      unit_id: unit_id || null,
       guest_name: guest_name.trim(),
       guest_email: guest_email?.trim() || null,
       start_date,
       end_date,
       notes: notes?.trim() || null,
+      wifi_name: wifi_name?.trim() || null,
+      wifi_password: wifi_password?.trim() || null,
+      door_code: door_code?.trim() || null,
+      host_instructions: host_instructions?.trim() || null,
+      stay_type,
       created_by: user.id,
     })
     .select('*, properties(name)')

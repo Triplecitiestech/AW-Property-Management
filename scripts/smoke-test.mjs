@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Smoke Test Script — AW Property Management
+ * Smoke Test Script — Smart Sumai
  *
  * Tests key flows against a running local or deployed instance.
  * Requires: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, APP_URL environment variables
  *
  * Usage:
  *   APP_URL=http://localhost:3000 \
- *   SUPABASE_URL=https://xxx.supabase.co \
+ *   NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co \
  *   SUPABASE_SERVICE_ROLE_KEY=your_key \
  *   node scripts/smoke-test.mjs
  */
@@ -45,7 +45,7 @@ async function supabaseQuery(path, options = {}) {
 }
 
 async function run() {
-  console.log('\n🔍 AW Property Management — Smoke Tests\n')
+  console.log('\n🔍 Smart Sumai — Smoke Tests\n')
   console.log(`App URL: ${APP_URL}`)
   console.log(`Supabase: ${SUPABASE_URL}\n`)
 
@@ -68,8 +68,16 @@ async function run() {
   }
 
   // ---- Test 2: Database tables exist ----
+  // Matches the tables defined in supabase/deploy.sql
   console.log('\n2. Database schema')
-  const tables = ['profiles', 'properties', 'property_status', 'stays', 'service_requests', 'service_request_comments', 'guest_reports', 'audit_log', 'property_checklist_items', 'property_contacts', 'organizations', 'org_members', 'property_access', 'invitations']
+  const tables = [
+    'profiles', 'properties', 'property_status', 'stays',
+    'service_requests', 'service_request_comments', 'guest_reports',
+    'audit_log', 'property_checklist_items', 'property_contacts',
+    'organizations', 'org_members', 'property_access', 'invitations',
+    'error_logs', 'conversations', 'ai_usage', 'free_invite_codes',
+    'ai_mutation_log',
+  ]
   for (const table of tables) {
     try {
       await supabaseQuery(`${table}?limit=1`, { prefer: 'count=planned' })
@@ -81,10 +89,6 @@ async function run() {
 
   // ---- Test 3: Create a property ----
   console.log('\n3. CRUD operations')
-  let testPropertyId = null
-  let testStayId = null
-  let testTicketId = null
-  let guestToken = null
 
   try {
     const props = await supabaseQuery('properties', {
@@ -126,20 +130,21 @@ async function run() {
     fail('Guest report API', err.message)
   }
 
-  // ---- Test 5: SMS webhook ----
-  console.log('\n5. SMS webhook')
+  // ---- Test 5: Twilio SMS webhook ----
+  // An unsigned POST should return 401 when TWILIO_AUTH_TOKEN is set in production.
+  // This confirms the route is deployed and reachable.
+  console.log('\n5. Twilio SMS webhook')
   try {
     const res = await fetch(`${APP_URL}/api/webhooks/sms`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'X-Twilio-Signature': 'wrong_signature',
-      },
-      body: new URLSearchParams({ From: '+15555550100', Body: 'help' }).toString(),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'From=%2B15555550001&Body=smoke+test',
     })
-    // 401 when TWILIO_AUTH_TOKEN is set (signature rejected), 200 TwiML otherwise
-    if (res.status === 200 || res.status === 401) {
-      pass('SMS webhook endpoint reachable')
+    if (res.status === 401) {
+      pass('SMS webhook rejects unsigned requests (401) — auth working')
+    } else if (res.status === 200) {
+      // If no TWILIO_AUTH_TOKEN set (local dev), the handler processes the message
+      pass('SMS webhook endpoint reachable (no auth required in this environment)')
     } else {
       fail('SMS webhook', `Unexpected status ${res.status}`)
     }

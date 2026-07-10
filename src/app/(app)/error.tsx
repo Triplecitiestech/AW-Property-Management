@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
+import { logError } from '@/lib/log-error'
 
 export default function AppError({
   error,
@@ -11,7 +12,13 @@ export default function AppError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error(error)
+    logError({
+      source: 'client',
+      route: window.location.pathname,
+      message: error.message || 'Unknown error',
+      stack: error.stack,
+      metadata: { digest: error.digest },
+    })
   }, [error])
 
   return (
@@ -24,7 +31,7 @@ export default function AppError({
       </div>
       <h2 className="text-lg font-semibold text-white mb-2">Something went wrong</h2>
       <p className="text-sm text-[#60608a] mb-6 max-w-sm">
-        A page error occurred. This has been logged.
+        A page error occurred. It has been automatically logged.
         {error.digest && <span className="block mt-1 font-mono text-xs text-[#40405a]">ref: {error.digest}</span>}
       </p>
       <div className="flex gap-3">

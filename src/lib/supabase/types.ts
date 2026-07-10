@@ -1,16 +1,18 @@
 // ============================================================
-// Database Types — AW Property Management
+// Database Types — Smart Sumai
 // Manually maintained; regenerate with: supabase gen types typescript
 // ============================================================
 
 export type UserRole = 'owner' | 'manager'
 export type OrgRole = 'owner' | 'admin' | 'member'
 export type PropertyRole = 'manager' | 'viewer'
+export type PropertyType = 'single_family' | 'apartment_building' | 'hospitality'
 export type PropertyStatusEnum = 'clean' | 'needs_cleaning' | 'needs_maintenance' | 'needs_groceries'
 export type OccupancyEnum = 'occupied' | 'unoccupied'
-export type TicketCategory = 'maintenance' | 'cleaning' | 'supplies' | 'other'
+export type TicketCategory = 'maintenance' | 'cleaning' | 'supplies' | 'plumbing' | 'electrical' | 'hvac' | 'landscaping' | 'other'
 export type TicketPriority = 'low' | 'medium' | 'high' | 'urgent'
 export type TicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
+export type StayType = 'short_term' | 'long_term'
 export type AuditAction = 'created' | 'updated' | 'deleted'
 export type AuditEntity = 'property' | 'property_status' | 'stay' | 'service_request' | 'service_request_comment' | 'guest_report' | 'org_member' | 'property_access'
 
@@ -19,12 +21,29 @@ export interface Profile {
   role: UserRole
   full_name: string
   phone_number: string | null
+  email: string | null
+  is_super_admin: boolean
+  billing_exempt: boolean
+  billing_exempt_reason: string | null
+  created_at: string
+}
+
+export interface FreeInviteCode {
+  id: string
+  code: string
+  label: string
+  created_by: string
+  max_uses: number | null
+  used_count: number
+  expires_at: string | null
+  is_active: boolean
   created_at: string
 }
 
 export interface Organization {
   id: string
   name: string
+  ai_instructions: string | null
   created_at: string
 }
 
@@ -66,8 +85,31 @@ export interface Property {
   description: string | null
   quick_notes: string | null
   ai_instructions: string | null
+  ai_summary: string | null
+  wifi_name: string | null
+  wifi_password: string | null
+  door_code: string | null
+  gate_code: string | null
+  parking_info: string | null
+  trash_schedule: string | null
+  check_in_time: string | null
+  check_out_time: string | null
+  house_rules: string | null
+  property_type: PropertyType
   owner_id: string
   org_id: string | null
+  created_at: string
+}
+
+export interface PropertyUnit {
+  id: string
+  property_id: string
+  identifier: string   // "101", "56A", "Suite 5"
+  name: string | null  // optional display name
+  floor: number | null
+  notes: string | null
+  is_active: boolean
+  sort_order: number
   created_at: string
 }
 
@@ -84,11 +126,17 @@ export interface PropertyStatus {
 export interface Stay {
   id: string
   property_id: string
+  unit_id: string | null
   guest_name: string
   guest_email: string | null
   start_date: string
   end_date: string
   notes: string | null
+  wifi_name: string | null
+  wifi_password: string | null
+  door_code: string | null
+  host_instructions: string | null
+  stay_type: StayType
   guest_link_token: string
   created_by: string | null
   created_at: string
@@ -97,6 +145,7 @@ export interface Stay {
 export interface ServiceRequest {
   id: string
   property_id: string
+  unit_id: string | null
   stay_id: string | null
   title: string
   description: string | null
@@ -104,7 +153,10 @@ export interface ServiceRequest {
   priority: TicketPriority
   due_date: string | null
   assignee_id: string | null
+  assigned_contact_id: string | null
   status: TicketStatus
+  source: string | null
+  work_order_number: number | null
   created_by: string | null
   created_at: string
 }
@@ -140,6 +192,15 @@ export interface AuditLog {
   changed_at: string
   before_data: Record<string, unknown> | null
   after_data: Record<string, unknown> | null
+}
+
+export interface ContactPropertyLink {
+  id: string
+  contact_id: string
+  property_id: string
+  role: string
+  is_primary: boolean
+  created_at: string
 }
 
 // ---- Joined / View Types ----

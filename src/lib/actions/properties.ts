@@ -2,16 +2,18 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import type { PropertyStatusEnum, OccupancyEnum } from '@/lib/supabase/types'
 import { getOrCreateUserOrg } from '@/lib/actions/organizations'
+import { DEFAULT_CHECKLIST_LABELS } from '@/lib/checklist-defaults'
 
 // ---- Create Property (wizard flow — returns id, does not redirect) ----
 
 export async function createPropertyForWizard(
   name: string,
   address: string,
-  description: string | null
+  description: string | null,
+  propertyType: 'single_family' | 'apartment_building' | 'hospitality' = 'single_family'
 ): Promise<{ propertyId: string } | { error: string }> {
   try {
     const supabase = await createClient()
@@ -22,12 +24,16 @@ export async function createPropertyForWizard(
 
     const orgId = await getOrCreateUserOrg()
 
-    const { data: property, error } = await supabase
+    // Use service client for INSERT to bypass any stale RLS policy on the
+    // properties table. Auth has already been verified above via getUser().
+    const svc = createServiceClient()
+    const { data: property, error } = await svc
       .from('properties')
       .insert({
         name: name.trim(),
         address: address?.trim() ?? '',
         description: description?.trim() || null,
+        property_type: propertyType,
         owner_id: user.id,
         org_id: orgId,
       })
@@ -43,6 +49,14 @@ export async function createPropertyForWizard(
       changed_by: user.id,
       after_data: { name, address, description },
     })
+
+    // Seed default checklist items for new property
+    const defaultItems = DEFAULT_CHECKLIST_LABELS.map((label, i) => ({
+      property_id: property.id,
+      label,
+      sort_order: i,
+    }))
+    try { await supabase.from('property_checklist_items').insert(defaultItems) } catch { /* non-fatal */ }
 
     revalidatePath('/properties')
     revalidatePath('/dashboard')
@@ -231,4 +245,39 @@ export async function updatePropertyStatus(
     if (err instanceof Error && (err.message === 'NEXT_REDIRECT' || err.message === 'NEXT_NOT_FOUND')) throw err
     return { error: err instanceof Error ? err.message : 'Failed to update status' }
   }
+}
+
+// ---- Update Property Access Info ----
+
+export async function updatePropertyAccess(
+  propertyId: string,
+  data: {
+    wifi_name?: string
+    wifi_password?: string
+    door_code?: string
+    gate_code?: string
+    parking_info?: string
+    trash_schedule?: string
+    check_in_time?: string
+    check_out_time?: string
+    house_rules?: string
+  }
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/login')
+
+  const update = Object.fromEntries(
+    Object.entries(data).map(([k, v]) => [k, v?.trim() || null])
+  )
+
+  const { error } = await supabase
+    .from('properties')
+    .update(update)
+    .eq('id', propertyId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/properties/${propertyId}`)
+  return { success: true }
 }

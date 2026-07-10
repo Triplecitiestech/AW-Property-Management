@@ -176,7 +176,7 @@ users and data are being re-entered.
 
 ### Monitoring & backups (added 2026-07-08)
 - **UptimeRobot** keyword monitor (id `803470203`) checks
-  `https://www.smartsumai.com/auth/login` every 5 minutes for "Welcome back"
+  `https://www.smartsumai.com/auth/login` every 5 minutes for "Smart Sumai"
   and emails kurtis@triplecitiestech.com after 5 minutes of downtime. The
   checks also keep constant Supabase API traffic flowing so the free-tier
   project can never be flagged inactive/paused again.

@@ -1,12 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/lib/supabase/config'
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
@@ -27,8 +28,8 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes (no auth required)
-  const publicPaths = ['/auth/login', '/auth/callback', '/guest', '/invite']
-  const isPublic = publicPaths.some(p => pathname.startsWith(p))
+  const publicPaths = ['/auth/login', '/auth/callback', '/guest', '/invite', '/pricing', '/terms', '/sms-policy', '/privacy', '/faq']
+  const isPublic = publicPaths.some(p => pathname.startsWith(p)) || pathname === '/'
 
   // Also allow API routes without auth (handled within route)
   const isApi = pathname.startsWith('/api/')

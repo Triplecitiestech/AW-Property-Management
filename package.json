@@ -7,17 +7,26 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "smoke": "node scripts/smoke-test.mjs"
+    "smoke": "node scripts/smoke-test.mjs",
+    "check:access": "node scripts/check-access-control.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:local": "BASE_URL=http://localhost:3000 playwright test",
+    "test:e2e:headed": "BASE_URL=http://localhost:3000 playwright test --headed",
+    "test:e2e:ui": "BASE_URL=http://localhost:3000 playwright test --ui"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.48.1",
     "next": "^16.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "resend": "^4.1.2"
+    "resend": "^4.1.2",
+    "stripe": "^20.4.0"
   },
   "devDependencies": {
+    "@browserbasehq/sdk": "^2.7.0",
+    "@playwright/test": "^1.51.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

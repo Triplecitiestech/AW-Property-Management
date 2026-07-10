@@ -1,0 +1,111 @@
+name: Hourly Smoke Test
+
+on:
+  schedule:
+    # Runs every hour at :05
+    - cron: '5 * * * *'
+  workflow_dispatch:
+
+# Credentials come from repository secrets — never inline them; the repo is
+# public. Requires: NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY.
+env:
+  NEXT_PUBLIC_SUPABASE_URL: "https://vixpadnfeguwajummnfo.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  APP_URL: "https://smartsumai.com"
+
+jobs:
+  smoke-test:
+    name: Smoke Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check required secrets
+        run: |
+          if [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::warning::Supabase secrets not configured — skipping smoke test. Add NEXT_PUBLIC_SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY repo secrets."
+            echo "SKIP_SMOKE=1" >> "$GITHUB_ENV"
+          fi
+
+      - name: Checkout
+        if: env.SKIP_SMOKE != '1'
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: env.SKIP_SMOKE != '1'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: env.SKIP_SMOKE != '1'
+        run: npm ci
+
+      - name: Run smoke test
+        if: env.SKIP_SMOKE != '1'
+        id: smoke
+        run: |
+          node scripts/smoke-test.mjs 2>&1 | tee /tmp/smoke-output.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Create GitHub Issue on failure
+        if: env.SKIP_SMOKE != '1' && steps.smoke.outputs.exit_code != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Truncate output to stay within GitHub issue body limits
+          OUTPUT=$(head -c 5000 /tmp/smoke-output.txt)
+          TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
+
+          # Check if an open smoke-test issue already exists (avoid spam)
+          EXISTING=$(gh issue list \
+            --repo Triplecitiestech/AW-Property-Management \
+            --state open \
+            --label smoke-test-failure \
+            --json number \
+            --jq '.[0].number // empty' 2>/dev/null || true)
+
+          if [ -n "$EXISTING" ]; then
+            COMMENT_BODY=$(cat <<EOFBODY
+          ## Smoke test still failing — $TIMESTAMP
+
+          \`\`\`
+          $OUTPUT
+          \`\`\`
+          EOFBODY
+          )
+            gh issue comment "$EXISTING" \
+              --repo Triplecitiestech/AW-Property-Management \
+              --body "$COMMENT_BODY"
+            echo "Added comment to existing issue #$EXISTING"
+          else
+            ISSUE_BODY=$(cat <<EOFBODY
+          ## Smoke Test Failure
+
+          **Time:** $TIMESTAMP
+          **Workflow:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+          ### Output
+          \`\`\`
+          $OUTPUT
+          \`\`\`
+
+          ### Next Steps
+          1. Check the [Actions run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for full logs
+          2. Review recent deployments for regressions
+          3. Close this issue once the smoke test passes again
+          EOFBODY
+          )
+            gh issue create \
+              --repo Triplecitiestech/AW-Property-Management \
+              --title "Smoke test failed — $TIMESTAMP" \
+              --label smoke-test-failure \
+              --body "$ISSUE_BODY"
+            echo "Created new smoke-test-failure issue"
+          fi
+
+      - name: Fail the workflow if smoke test failed
+        if: env.SKIP_SMOKE != '1' && steps.smoke.outputs.exit_code != '0'
+        run: exit 1

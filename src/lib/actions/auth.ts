@@ -1,6 +1,7 @@
 'use server'
 
-import { createServiceClient } from '@/lib/supabase/server'
+import { createServiceClient, createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 
 /**
  * Given a plain username (no @ sign), look up the associated email via
@@ -31,4 +32,26 @@ export async function lookupUsernameEmail(username: string): Promise<string | nu
   } catch {
     return null
   }
+}
+
+/**
+ * Permanently delete the currently authenticated user's account and all
+ * their data (cascades via FK ON DELETE CASCADE in Supabase schema).
+ * Requires SUPABASE_SERVICE_ROLE_KEY.
+ */
+export async function deleteAccount(): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const svc = createServiceClient()
+
+  // Sign the user out of all sessions first
+  await supabase.auth.signOut()
+
+  // Delete the auth user via the admin API — all FK-cascaded data is removed automatically
+  const { error } = await svc.auth.admin.deleteUser(user.id)
+  if (error) return { error: error.message }
+
+  redirect('/')
 }

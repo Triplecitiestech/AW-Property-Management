@@ -1,0 +1,47 @@
+name: Supabase Keep-Alive
+
+# Prevents the Free-plan Supabase project (aw-property-management) from being
+# paused for inactivity. Supabase pauses Free-plan projects after ~7 days of
+# low database activity; this job makes a lightweight query on a schedule so
+# the project always shows recent activity.
+# Docs: https://supabase.com/docs/guides/platform/free-project-pausing
+#
+# NOTE: GitHub disables scheduled workflows in a repository that has had no
+# commit activity for 60 days. This repo is actively developed, so that is not
+# a concern today — but if development goes quiet, either push a commit or run
+# this workflow manually (Actions -> Supabase Keep-Alive -> Run workflow) to
+# re-enable it. The durable fix is upgrading the project to the Pro plan.
+
+on:
+  schedule:
+    # Every 6 hours (4x/day) at :37 to avoid top-of-hour scheduler congestion.
+    # GitHub cron can be delayed or skipped under load; 4x/day leaves ample
+    # margin against the 7-day inactivity window even if some runs are missed.
+    - cron: '37 */6 * * *'
+  workflow_dispatch:
+
+# Only one keep-alive run at a time; a slow run should not stack up.
+concurrency:
+  group: supabase-keep-alive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    name: Ping Supabase
+    runs-on: ubuntu-latest
+    env:
+      # Publishable (anon) key + project URL — safe to commit. The anon role can
+      # only run the keepalive() function and RLS-guarded reads.
+      SUPABASE_URL: 'https://vixpadnfeguwajummnfo.supabase.co'
+      SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpeHBhZG5mZWd1d2FqdW1tbmZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1Mjc2NjQsImV4cCI6MjA5OTEwMzY2NH0.jLueSJ4tXjeQb9cP3eTOehBRSqK1poO_nFhT8WlFRaQ'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Ping database
+        run: node scripts/keep-alive.mjs

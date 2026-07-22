@@ -15,11 +15,17 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const TOKEN = process.env.SUPABASE_ACCESS_TOKEN;
-const PROJECT_REF = process.env.SUPABASE_PROJECT_REF || 'ilooxnlkovwbxymwieaj';
+const PROJECT_REF = process.env.SUPABASE_PROJECT_REF;
 
 if (!TOKEN) {
   console.error('ERROR: SUPABASE_ACCESS_TOKEN is required.');
   console.error('Get one at: https://supabase.com/dashboard/account/tokens');
+  process.exit(1);
+}
+
+if (!PROJECT_REF) {
+  console.error('ERROR: SUPABASE_PROJECT_REF is required (the target project ref).');
+  console.error('Set it explicitly so migrations never run against the wrong project.');
   process.exit(1);
 }
 

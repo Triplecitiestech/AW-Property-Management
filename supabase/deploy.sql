@@ -458,5 +458,19 @@ CREATE POLICY "invitations_select" ON invitations FOR SELECT TO authenticated US
 CREATE POLICY "invitations_insert" ON invitations FOR INSERT TO authenticated WITH CHECK (invited_by = auth.uid());
 CREATE POLICY "invitations_delete" ON invitations FOR DELETE TO authenticated USING (invited_by = auth.uid());
 
+-- Keep-alive endpoint (prevents Free-plan inactivity pausing).
+-- A scheduled job (.github/workflows/keep-alive.yml) calls this via
+-- POST /rest/v1/rpc/keepalive to run a lightweight query and register activity.
+-- Docs: https://supabase.com/docs/guides/platform/free-project-pausing
+CREATE OR REPLACE FUNCTION public.keepalive()
+RETURNS timestamptz
+LANGUAGE sql
+STABLE
+AS $$ SELECT now(); $$;
+COMMENT ON FUNCTION public.keepalive() IS
+  'No-op called by the scheduled keep-alive job to register database activity and prevent Free-plan inactivity pausing.';
+REVOKE ALL ON FUNCTION public.keepalive() FROM public;
+GRANT EXECUTE ON FUNCTION public.keepalive() TO anon, authenticated;
+
 -- Done!
 SELECT 'Schema deployed successfully' AS result;
